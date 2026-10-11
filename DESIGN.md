@@ -15,6 +15,7 @@
 | **Dokumen Acuan** | PRD MyTeam Versi 1.0 & API Specification Contract Versi 1.0.0 |
 | **Tipografi Utama** | Google Font: **Inter** |
 | **Warna Utama Brand** | **Unand Emerald Green** (`#008000` / `#006400`) |
+| **Aset Logo Utama** | `assets/images/logo-MyTeam.png` (Dimensi: 1254 × 1254 px) |
 | **Anggota Tim (4 Mahasiswa)** | 1. **Nayla Puspita Sari** (2411521007) — *PIC Modul 4*<br>2. **Diva Ramadhani** (2411521017) — *PIC Modul 3*<br>3. **Fuadi Dhiyaulhaq** (2411522001) — *PIC Modul 1*<br>4. **Rafa Gian Atthari** (2411522014) — *PIC Modul 2* |
 
 ---
@@ -27,6 +28,28 @@ Gaya visual yang diusung adalah **_Modern Academic Minimal_**:
 * **Terstruktur & Berdensitas Tinggi:** Tata letak rapi dengan legibilitas teks yang tinggi untuk membaca abstrak kegiatan dan profil akademik.
 * **Pendekatan Tactile & Ergonomis:** Menggunakan sudut membulat (*rounded corners*) yang lembut dan bersahabat bagi interaksi sentuhan layar sentuh mobile.
 * **Identitas Hijau Unand (Emerald Green):** Menghindari kesan birokratis yang kaku dengan kombinasi putih bersih (*pure white canvas*), aksen hijau zamrud yang melambangkan pertumbuhan dan kebanggaan almamater, serta aksen semantik yang kaya.
+
+### 1.1 Identitas Brand & Aset Logo Aplikasi (`logo-MyTeam.png`)
+
+Logo resmi aplikasi **MyTeam** merupakan representasi grafis sinergi tim mahasiswa Unand:
+
+| Atribut Aset | Spesifikasi Teknis | Keterangan & Penggunaan |
+| :--- | :--- | :--- |
+| **Nama Berkas** | `logo-MyTeam.png` | Aset master logo berformat PNG transparan. |
+| **Dimensi Master** | **1254 × 1254 px** | Rasio 1:1 (*Square High-Resolution*), tajam untuk semua kerapatan layar mobile (*xxxhdpi*). |
+| **Lokasi Aset Flutter** | `assets/images/logo-MyTeam.png` | Struktur standar aset Flutter (didaftarkan di `pubspec.yaml`). |
+| **Palet Warna Dominan** | Emerald Green (`#008000` / `#006400`) | Selaras dengan warna identitas almamater Universitas Andalas. |
+
+#### Panduan Penggunaan Logo pada Antarmuka (UI Guidelines):
+1. **Layar Pembuka (*Splash Screen*):** 
+   - Tampilkan logo di tengah layar (*center aligned*) dengan ukuran render `128 × 128 dp` atau `140 × 140 dp`.
+   - Diiringi tipografi nama aplikasi **"MyTeam"** menggunakan font Inter Bold (24sp).
+2. **Bilah Aplikasi (*AppBar / Top Navigation*):** 
+   - Gunakan versi *logo mark* kompak dengan ukuran render `36 × 36 dp` atau `40 × 40 dp` di samping judul halaman utama / beranda.
+3. **Status Kosong & Dialog (*Empty State / About Dialog*):**
+   - Dapat digunakan sebagai ilustrasi dengan opasitas redup (50% - 70%) dan ukuran render `96 × 96 dp`.
+4. **Ikon Peluncur Aplikasi (*App Launcher Icon*):**
+   - Master aset `1254 × 1254 px` ini digunakan sebagai acuan *source icon* untuk di-*generate* menjadi berbagai ukuran launcher icon Android (`android/app/src/main/res/mipmap-*`).
 
 ---
 

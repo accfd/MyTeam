@@ -12,20 +12,20 @@ USE myteam_db;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- Kosongkan tabel jika ada data lama (urutan anak ke induk)
-TRUNCATE TABLE Notifikasi;
-TRUNCATE TABLE Pengajuan_Anggota;
-TRUNCATE TABLE Pengajuan_Bergabung_Tim;
-TRUNCATE TABLE Anggota_Tim;
-TRUNCATE TABLE Dokumen_Pendukung;
-TRUNCATE TABLE Kebutuhan_Anggota_Tim;
-TRUNCATE TABLE Data_Tim;
-TRUNCATE TABLE Preferensi_Pencarian;
-TRUNCATE TABLE Data_Pengalaman;
-TRUNCATE TABLE Data_Keahlian;
-TRUNCATE TABLE Data_Minat;
-TRUNCATE TABLE Media_Sosial;
-TRUNCATE TABLE Data_Diri;
-TRUNCATE TABLE Pengguna;
+DELETE FROM Notifikasi;
+DELETE FROM Pengajuan_Anggota;
+DELETE FROM Pengajuan_Bergabung_Tim;
+DELETE FROM Anggota_Tim;
+DELETE FROM Dokumen_Pendukung;
+DELETE FROM Kebutuhan_Anggota_Tim;
+DELETE FROM Data_Tim;
+DELETE FROM Preferensi_Pencarian;
+DELETE FROM Data_Pengalaman;
+DELETE FROM Data_Keahlian;
+DELETE FROM Data_Minat;
+DELETE FROM Media_Sosial;
+DELETE FROM Data_Diri;
+DELETE FROM Pengguna;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
