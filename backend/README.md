@@ -17,7 +17,7 @@ Cukup jalankan 5 langkah simpel berikut lewat terminal:
 1. Pastikan modul **Apache** dan **MySQL** di aplikasi XAMPP/Laragon sudah berstatus **Start**.
 2. Buka terminal dan masuk ke folder `backend` dengan mengetik: `cd backend`.
 3. Pasang dependensi package (cukup sekali di awal): `npm install`.
-4. Jalankan perintah impor database otomatis: `npm run db:setup` (perintah ini akan otomatis membuat database `myteam_db`, 14 tabel, dan mengisi data dummy 4 anggota tim tanpa perlu membuka phpMyAdmin).
+4. Jalankan perintah impor database otomatis: `npm run db:setup` (perintah ini otomatis membuat database `myteam_db`, 14 tabel, dan mengisi data dummy 4 anggota tim tanpa perlu membuka phpMyAdmin).
 5. Jalankan server backend: `npm start` (server akan aktif di port 8000 dan siap melayani login aplikasi Flutter).
 
 ---
@@ -32,15 +32,57 @@ Cukup jalankan 5 langkah simpel berikut lewat terminal:
 
 ---
 
-## 📡 Daftar Endpoint Utama
+## 📡 Daftar Pemetaan Endpoint Lengkap (Sesuai Kontrak API v1.0.0)
 
-| Modul | Method | Endpoint | Deskripsi |
-| :--- | :---: | :--- | :--- |
-| **Auth** | `POST` | `/api/v1/auth/login` | Login menggunakan NIM & Password |
-| **Auth** | `POST` | `/api/v1/auth/register` | Pendaftaran akun mahasiswa baru |
-| **Profil (M1)** | `GET` | `/api/v1/profile/detail/:id` | Mengambil detail profil lengkap & tim yang diikuti |
-| **Profil (M1)** | `POST` | `/api/v1/profile/pengalaman` | Menambah riwayat pengalaman (FR-05) |
-| **Tim (M2)** | `GET` | `/api/v1/teams/my-teams` | Melihat daftar tim yang dibuat pengguna |
-| **Tim (M3)** | `GET` | `/api/v1/teams/feed` | Melihat feed tim terbaru & filter pencarian |
-| **Lamaran (M3)**| `POST`| `/api/v1/applications/join-team` | Mengajukan lamaran bergabung ke tim (FR-17) |
-| **Notif (M4)** | `GET` | `/api/v1/notifications` | Mengambil riwayat notifikasi pengguna |
+Seluruh endpoint berikut diselaraskan 100% dengan dokumen [**`api_specification_contract.md`**](../api_specification_contract.md):
+
+### 🔑 Autentikasi Publik
+| Method | Endpoint API | Deskripsi |
+| :---: | :--- | :--- |
+| `POST` | `/api/v1/auth/register` | Pendaftaran akun mahasiswa baru |
+| `POST` | `/api/v1/auth/login` | Login mahasiswa menggunakan NIM & kata sandi |
+
+### 👤 Modul 1: Akun & Riwayat Diri (PIC: Fuadi Dhiyaulhaq)
+| Method | Endpoint API | Kode FR | Deskripsi |
+| :---: | :--- | :---: | :--- |
+| `GET` | `/api/v1/profile/detail/:id_pengguna` | **FR-06** | Profil lengkap, identitas, dan riwayat tim yang diikuti |
+| `GET`, `PUT` | `/api/v1/profile/data-diri` | **FR-01** | Mengelola informasi biodata & kontak |
+| `GET`, `POST`, `PUT`, `DELETE` | `/api/v1/profile/media-sosial` | **FR-02** | Mengelola tautan media sosial portofolio |
+| `GET`, `POST`, `PUT`, `DELETE` | `/api/v1/profile/minat` | **FR-03** | Mengelola keminatan mahasiswa |
+| `GET`, `POST`, `PUT`, `DELETE` | `/api/v1/profile/keahlian` | **FR-04** | Mengelola keahlian teknis & non-teknis |
+| `GET`, `POST`, `PUT`, `DELETE` | `/api/v1/profile/pengalaman` | **FR-05** | Mengelola riwayat kegiatan (dengan deskripsi) |
+| `GET`, `PUT` | `/api/v1/profile/preferensi` | **FR-07** | Mengatur preferensi peran (pencari tim/anggota/keduanya) |
+| *Auto-event* | `/api/v1/notifications` | **FR-08** | Notifikasi otomatis saat data riwayat diri diperbarui |
+
+### 👥 Modul 2: Pembentukan & Manajemen Tim (PIC: Rafa Gian Atthari)
+| Method | Endpoint API | Kode FR | Deskripsi |
+| :---: | :--- | :---: | :--- |
+| `POST` | `/api/v1/teams` | **FR-09** | Membuat tim baru beserta posisi dan upload poster/dokumen |
+| `GET` | `/api/v1/teams/my-teams` | **FR-10** | Melihat daftar tim yang dibuat oleh pengguna |
+| `GET` | `/api/v1/teams/:id_tim` | **FR-10** | Melihat rincian detail tim yang dibuat |
+| `PUT` | `/api/v1/teams/:id_tim` | **FR-11** | Mengubah informasi tim dan kebutuhan anggota |
+| `DELETE`| `/api/v1/teams/:id_tim` | **FR-12** | Menghapus tim (cascade aman ke berkas & relasi terkait) |
+| *Auto-event* | `/api/v1/notifications` | **FR-13** | Notifikasi ke pembuat tim saat ada pelamar masuk |
+
+### 🔍 Modul 3: Pencarian Tim & Pengajuan Bergabung (PIC: Diva Ramadhani)
+| Method | Endpoint API | Kode FR | Deskripsi |
+| :---: | :--- | :---: | :--- |
+| `GET` | `/api/v1/teams/feed` | **FR-14, FR-15** | Feed tim terbaru & filter (kategori, search, keahlian) |
+| `GET` | `/api/v1/teams/feed/:id_tim` | **FR-16** | Melihat detail tim dari feed pencarian |
+| `POST` | `/api/v1/applications/join-team` | **FR-17** | Mengajukan bergabung ke tim (wajib menyertakan atribut `posisi`) |
+| `GET` | `/api/v1/teams/:id_tim/applications` | **FR-18** | Pembuat tim melihat daftar pelamar yang masuk |
+| `GET` | `/api/v1/applications/join-team/:id` | **FR-19** | Pembuat tim melihat detail profil & posisi pelamar |
+| `PATCH`| `/api/v1/applications/join-team/:id/status` | **FR-20** | Pembuat tim menerima atau menolak lamaran |
+| `GET` | `/api/v1/applications/my-applications` | **FR-21** | Pelamar memantau status lamaran yang diajukannya |
+
+### 📢 Modul 4: Pencarian Anggota, Rekrutmen & Notifikasi (PIC: Nayla Puspita Sari)
+| Method | Endpoint API | Kode FR | Deskripsi |
+| :---: | :--- | :---: | :--- |
+| `GET` | `/api/v1/members/search` | **FR-22** | Mencari calon anggota (nama, keahlian, minat, pengalaman) |
+| `GET` | `/api/v1/profile/detail/:id_pengguna` | **FR-23** | Melihat detail profil calon anggota dari pencarian |
+| `POST` | `/api/v1/applications/invite-member` | **FR-24** | Pembuat tim mengirim undangan ajakan ke calon anggota |
+| `GET`, `PATCH` | `/api/v1/applications/received-invitations` | **FR-25** | Calon anggota melihat & merespons undangan tim |
+| *Auto-event* | `/api/v1/notifications` | **FR-26** | Notifikasi ke pembuat tim saat undangan direspons |
+| `GET` | `/api/v1/notifications` | **Universal** | Mengambil seluruh daftar notifikasi pengguna |
+| `PATCH`| `/api/v1/notifications/:id/read` | **Universal** | Menandai notifikasi telah dibaca |
+| `GET` | `/api/v1/notifications/unread-count` | **Universal** | Menghitung jumlah notifikasi yang belum dibaca |
