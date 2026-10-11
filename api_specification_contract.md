@@ -43,12 +43,12 @@ Matriks berikut memetakan 26 Kebutuhan Fungsional (*Functional Requirements*) da
 | **FR-05** | Mengelola pengalaman (nama kegiatan, peran, tahun, deskripsi) | `GET`, `POST`, `PUT`, `DELETE` | `/profile/pengalaman` | Fuadi (M1) |
 | **FR-06** | Melihat informasi tim yang diikuti (nama tim, kegiatan, kategori, posisi) | `GET` | `/profile/detail/{id_pengguna}` | Fuadi (M1) |
 | **FR-07** | Mengelola preferensi pencarian (pencari tim/anggota/keduanya) | `GET`, `PUT` | `/profile/preferensi` | Fuadi (M1) |
-| **FR-08** | Sistem mengirim notifikasi aktivitas data riwayat diri | *Auto-event* | `/notifications` | Nayla (M4) |
+| **FR-08** | Sistem mengirim notifikasi aktivitas data riwayat diri | *Auto-event* | `/notifications` | Fuadi (M1) |
 | **FR-09** | Membuat tim baru & mengunggah dokumen pendukung (poster/panduan) | `POST` | `/teams` | Rafa (M2) |
 | **FR-10** | Melihat daftar dan detail tim yang dibuat | `GET` | `/teams/my-teams`, `/teams/{id}` | Rafa (M2) |
 | **FR-11** | Mengubah informasi & dokumen tim (kategori kegiatan dikunci) | `PUT` | `/teams/{id}` | Rafa (M2) |
 | **FR-12** | Menghapus tim yang telah dibuat | `DELETE` | `/teams/{id}` | Rafa (M2) |
-| **FR-13** | Menerima notifikasi saat ada pengajuan bergabung ke tim | *Auto-event* | `/notifications` | Nayla (M4) |
+| **FR-13** | Menerima notifikasi saat ada pengajuan bergabung ke tim | *Auto-event* | `/notifications` | Rafa (M2) |
 | **FR-14** | Melihat feed tim atau kegiatan terbaru | `GET` | `/teams/feed` | Diva (M3) |
 | **FR-15** | Pencarian dan penyaringan tim berdasarkan kriteria | `GET` | `/teams/feed?search=&kategori=&keahlian=` | Diva (M3) |
 | **FR-16** | Melihat detail tim dari hasil pencarian | `GET` | `/teams/feed/{id_tim}` | Diva (M3) |
@@ -347,6 +347,19 @@ Authorization: Bearer <jwt_access_token>
 }
 ```
 
+#### 4.1.10 Notifikasi Aktivitas Data Riwayat Diri (FR-08)
+* **Trigger:** *Auto-event* sistem saat pengguna berhasil memperbarui data diri, keahlian, minat, pengalaman, atau preferensi pencarian.
+* **Aksi Sistem:** Menyimpan riwayat aktivitas ke tabel `Notifikasi` untuk akun pengguna bersangkutan dengan jenis `aktivitas_profil`.
+* **Payload Event:**
+```json
+{
+  "id_pengguna": "usr_2411522001",
+  "jenis_notifikasi": "aktivitas_profil",
+  "pesan_notifikasi": "Data riwayat diri Anda berhasil diperbarui.",
+  "status_dibaca": false
+}
+```
+
 ---
 
 ### MODUL 2: PEMBENTUKAN & MANAJEMEN TIM (PIC: Rafa Gian Atthari)
@@ -443,6 +456,20 @@ Authorization: Bearer <jwt_access_token>
 {
   "success": true,
   "message": "Tim berhasil dihapus dari sistem beserta seluruh berkas terkait."
+}
+```
+
+#### 4.2.6 Notifikasi Pengajuan Masuk ke Tim (FR-13)
+* **Trigger:** *Auto-event* sistem saat ada pencari tim yang mengajukan lamaran bergabung ke tim milik pembuat tim (`POST /applications/join-team`).
+* **Aksi Sistem:** Mengirimkan dan mencatat record notifikasi ke tabel `Notifikasi` untuk akun pemilik tim dengan jenis `pengajuan_masuk`.
+* **Payload Event:**
+```json
+{
+  "id_pengguna": "usr_2411522014",
+  "jenis_notifikasi": "pengajuan_masuk",
+  "pesan_notifikasi": "Pengajuan bergabung baru diterima dari Fuadi Dhiyaulhaq untuk posisi Computer Vision Specialist pada tim 'Tim Robotik Cerdas Unand'.",
+  "id_pengajuan_bergabung_tim": "pbg_9901b",
+  "status_dibaca": false
 }
 ```
 
@@ -653,7 +680,15 @@ Authorization: Bearer <jwt_access_token>
 ```
 *(Nilai valid: `"diterima"` atau `"ditolak"`)*
 
-#### 4.4.4 Modul Notifikasi Sistem (FR-08, FR-13, FR-21, FR-26)
+#### 4.4.4 Notifikasi Respon Calon Anggota (FR-26) & Endpoint Kotak Masuk Notifikasi
+> **Distribusi Notifikasi:** Setiap modul bertanggung jawab atas pembuatan (*trigger & event dispatch*) notifikasi masing-masing:
+> - **Modul 1 (Fuadi):** FR-08 (Aktivitas pembaruan data riwayat diri)
+> - **Modul 2 (Rafa):** FR-13 (Pengajuan baru yang masuk ke tim buatan pengguna)
+> - **Modul 3 (Diva):** FR-21 (Pembaruan status pengajuan bergabung: diterima/ditolak)
+> - **Modul 4 (Nayla):** FR-26 (Respon calon anggota atas ajakan tim: diterima/ditolak)
+> 
+> Endpoint berikut menyediakan antarmuka terpusat bagi pengguna untuk melihat dan mengelola seluruh notifikasi yang diterima:
+
 * **Ambil Daftar Notifikasi:** `GET /notifications?page=1&limit=15`
 * **Respon Sukses (200 OK):**
 ```json
