@@ -209,10 +209,10 @@ INSERT INTO Pengajuan_Anggota (id_pengajuan_anggota, id_tim, id_pengguna, pesan_
 -- =============================================================================
 -- 13. TABEL NOTIFIKASI (Sinkron Penuh dengan Seluruh Aktivitas di Atas)
 -- Distribusi Notifikasi Modul 1 s/d Modul 4:
--- - Fuadi (M1): Notifikasi update profil (FR-07) & notifikasi ajakan masuk dari Nayla
--- - Rafa (M2): Notifikasi lamaran masuk dari Diva & Fuadi (FR-12)
--- - Diva (M3): Notifikasi status lamaran diterima oleh Rafa (FR-20)
--- - Nayla (M4): Notifikasi konfirmasi respon ajakan calon anggota (FR-25)
+-- - Fuadi (M1): Notifikasi update profil (FR-07) & notifikasi ajakan masuk dari tim
+-- - Nayla (M2): Notifikasi lamaran baru yang masuk ke tim buatan pengguna (FR-12)
+-- - Rafa (M3): Notifikasi status lamaran yang diajukan pelamar (FR-20)
+-- - Diva (M4): Notifikasi konfirmasi respon ajakan calon anggota (FR-25)
 -- =============================================================================
 INSERT INTO Notifikasi (id_notifikasi, id_pengguna, id_pengajuan_bergabung_tim, id_pengajuan_anggota, jenis_notifikasi, pesan_notifikasi, waktu_notifikasi, status_dibaca) VALUES
 -- 1. Notifikasi Fuadi: Pembaruan data riwayat diri berhasil (FR-07 - Modul 1 Fuadi)
@@ -221,13 +221,13 @@ INSERT INTO Notifikasi (id_notifikasi, id_pengguna, id_pengajuan_bergabung_tim, 
  'Data riwayat diri dan portofolio Anda berhasil diperbarui di sistem MyTeam.', 
  '2026-10-03 14:06:00', TRUE),
 
--- 2. Notifikasi Rafa: Ada lamaran masuk dari Diva (FR-12 - Modul 2 Rafa)
+-- 2. Notifikasi Rafa: Ada lamaran masuk dari Diva (FR-12 - Modul 2 Notifikasi Lamaran Tim)
 ('notif_02', 'usr_rafa_02', 'pbg_01', NULL, 
  'pengajuan_masuk', 
  'Diva Ramadhani mengajukan diri untuk bergabung pada posisi UI/UX Designer di tim Anda (Tim Robotik Cerdas Unand).', 
  '2026-10-07 13:01:00', TRUE),
 
--- 3. Notifikasi Diva: Lamaran ke tim Rafa diterima (FR-20 - Modul 3 Diva)
+-- 3. Notifikasi Diva: Lamaran ke tim Rafa diterima (FR-20 - Modul 3 Notifikasi Status Pelamar)
 ('notif_03', 'usr_diva_03', 'pbg_01', NULL, 
  'pengajuan_diterima', 
  'Selamat! Pengajuan bergabung Anda untuk posisi UI/UX Designer pada "Tim Robotik Cerdas Unand" telah diterima oleh Rafa Gian Atthari.', 

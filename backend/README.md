@@ -53,7 +53,7 @@ Seluruh endpoint berikut diselaraskan 100% dengan dokumen [**`api_specification_
 | `GET`, `POST`, `PUT`, `DELETE` | `/api/v1/profile/pengalaman` | **FR-05** | Mengelola riwayat kegiatan (dengan deskripsi) |
 | *Auto-event* | `/api/v1/notifications` | **FR-07** | Notifikasi otomatis saat data riwayat diri diperbarui |
 
-### 👥 Modul 2: Pembentukan & Manajemen Tim (PIC: Rafa Gian Atthari)
+### 👥 Modul 2: Pembentukan & Manajemen Tim (PIC: Nayla Puspita Sari)
 | Method | Endpoint API | Kode FR | Deskripsi |
 | :---: | :--- | :---: | :--- |
 | `POST` | `/api/v1/teams` | **FR-08** | Membuat tim baru beserta posisi dan upload poster/dokumen |
@@ -63,7 +63,7 @@ Seluruh endpoint berikut diselaraskan 100% dengan dokumen [**`api_specification_
 | `DELETE`| `/api/v1/teams/:id_tim` | **FR-11** | Menghapus tim (cascade aman ke berkas & relasi terkait) |
 | *Auto-event* | `/api/v1/notifications` | **FR-12** | Notifikasi ke pembuat tim saat ada pelamar masuk |
 
-### 🔍 Modul 3: Pencarian Tim & Pengajuan Bergabung (PIC: Diva Ramadhani)
+### 🔍 Modul 3: Pencarian Tim & Pengajuan Bergabung (PIC: Rafa Gian Atthari)
 | Method | Endpoint API | Kode FR | Deskripsi |
 | :---: | :--- | :---: | :--- |
 | `GET` | `/api/v1/teams/feed` | **FR-13, FR-14** | Feed tim terbaru & filter (kategori, search, keahlian) |
@@ -74,7 +74,7 @@ Seluruh endpoint berikut diselaraskan 100% dengan dokumen [**`api_specification_
 | `PATCH`| `/api/v1/applications/join-team/:id/status` | **FR-19** | Pembuat tim menerima atau menolak lamaran |
 | `GET` | `/api/v1/applications/my-applications` | **FR-20** | Pelamar memantau status lamaran yang diajukannya |
 
-### 📢 Modul 4: Pencarian Anggota, Rekrutmen & Notifikasi (PIC: Nayla Puspita Sari)
+### 📢 Modul 4: Pencarian Anggota, Rekrutmen & Notifikasi (PIC: Diva Ramadhani)
 | Method | Endpoint API | Kode FR | Deskripsi |
 | :---: | :--- | :---: | :--- |
 | `GET` | `/api/v1/members/search` | **FR-21** | Mencari calon anggota (nama, keahlian, minat, pengalaman) |

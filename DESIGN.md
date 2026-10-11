@@ -16,7 +16,7 @@
 | **Tipografi Utama** | Google Font: **Inter** |
 | **Warna Utama Brand** | **Unand Emerald Green** (`#008000` / `#006400`) |
 | **Aset Logo Utama** | `assets/images/logo-MyTeam.png` (Dimensi: 1254 × 1254 px) |
-| **Anggota Tim (4 Mahasiswa)** | 1. **Nayla Puspita Sari** (2411521007) — *PIC Modul 4*<br>2. **Diva Ramadhani** (2411521017) — *PIC Modul 3*<br>3. **Fuadi Dhiyaulhaq** (2411522001) — *PIC Modul 1*<br>4. **Rafa Gian Atthari** (2411522014) — *PIC Modul 2* |
+| **Anggota Tim (4 Mahasiswa)** | 1. **Fuadi Dhiyaulhaq** (2411522001) — *PIC Modul 1*<br>2. **Nayla Puspita Sari** (2411521007) — *PIC Modul 2*<br>3. **Rafa Gian Atthari** (2411522014) — *PIC Modul 3*<br>4. **Diva Ramadhani** (2411521017) — *PIC Modul 4* |
 
 ---
 

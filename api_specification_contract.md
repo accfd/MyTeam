@@ -14,7 +14,7 @@
 | **Acuan Dokumen** | Product Requirements Document (PRD MyTeam Versi 1.0) |
 | **Base URL Development** | `http://10.0.2.2:8000/api/v1` (Android Emulator) / `http://localhost:8000/api/v1` |
 | **Protokol Komunikasi** | RESTful JSON & Multipart Form-Data over HTTP/HTTPS |
-| **Anggota Tim (4 Mahasiswa)** | 1. **Nayla Puspita Sari** (2411521007) — *PIC Modul 4*<br>2. **Diva Ramadhani** (2411521017) — *PIC Modul 3*<br>3. **Fuadi Dhiyaulhaq** (2411522001) — *PIC Modul 1*<br>4. **Rafa Gian Atthari** (2411522014) — *PIC Modul 2* |
+| **Anggota Tim (4 Mahasiswa)** | 1. **Fuadi Dhiyaulhaq** (2411522001) — *PIC Modul 1*<br>2. **Nayla Puspita Sari** (2411521007) — *PIC Modul 2*<br>3. **Rafa Gian Atthari** (2411522014) — *PIC Modul 3*<br>4. **Diva Ramadhani** (2411521017) — *PIC Modul 4* |
 
 ---
 
@@ -43,24 +43,24 @@ Matriks berikut memetakan 25 Kebutuhan Fungsional (*Functional Requirements*) da
 | **FR-05** | Mengelola pengalaman (nama kegiatan, peran, tahun, deskripsi) | `GET`, `POST`, `PUT`, `DELETE` | `/profile/pengalaman` | Fuadi (M1) |
 | **FR-06** | Melihat informasi tim yang diikuti (nama tim, kegiatan, kategori, posisi) | `GET` | `/profile/detail/{id_pengguna}` | Fuadi (M1) |
 | **FR-07** | Sistem mengirim notifikasi aktivitas data riwayat diri | *Auto-event* | `/notifications` | Fuadi (M1) |
-| **FR-08** | Membuat tim baru & mengunggah dokumen pendukung (poster/panduan) | `POST` | `/teams` | Rafa (M2) |
-| **FR-09** | Melihat daftar dan detail tim yang dibuat | `GET` | `/teams/my-teams`, `/teams/{id}` | Rafa (M2) |
-| **FR-10** | Mengubah informasi & dokumen tim (kategori kegiatan dikunci) | `PUT` | `/teams/{id}` | Rafa (M2) |
-| **FR-11** | Menghapus tim yang telah dibuat | `DELETE` | `/teams/{id}` | Rafa (M2) |
-| **FR-12** | Menerima notifikasi saat ada pengajuan bergabung ke tim | *Auto-event* | `/notifications` | Rafa (M2) |
-| **FR-13** | Melihat feed tim atau kegiatan terbaru | `GET` | `/teams/feed` | Diva (M3) |
-| **FR-14** | Pencarian dan penyaringan tim berdasarkan kriteria | `GET` | `/teams/feed?search=&kategori=&keahlian=` | Diva (M3) |
-| **FR-15** | Melihat detail tim dari hasil pencarian | `GET` | `/teams/feed/{id_tim}` | Diva (M3) |
-| **FR-16** | Mengajukan bergabung ke tim dengan **posisi yang dilamar** & pesan | `POST` | `/applications/join-team` | Diva (M3) |
-| **FR-17** | Pembuat tim melihat daftar pengajuan bergabung | `GET` | `/teams/{id_tim}/applications` | Diva (M3) |
-| **FR-18** | Pembuat tim melihat detail pengajuan (posisi dilamar & profil pelamar) | `GET` | `/applications/join-team/{id}` | Diva (M3) |
-| **FR-19** | Pembuat tim menerima atau menolak pengajuan bergabung | `PATCH` | `/applications/join-team/{id}/status` | Diva (M3) |
-| **FR-20** | Melihat status pengajuan & notifikasi pembaruan status | `GET`, *Event* | `/applications/my-applications` | Diva (M3) |
-| **FR-21** | Mencari calon anggota berdasarkan nama, keahlian, pengalaman, minat | `GET` | `/members/search` | Nayla (M4) |
-| **FR-22** | Melihat detail profil calon anggota dari hasil pencarian | `GET` | `/profile/detail/{id_pengguna}` | Nayla (M4) |
-| **FR-23** | Pembuat tim mengajukan permintaan (undangan) ke calon anggota | `POST` | `/applications/invite-member` | Nayla (M4) |
-| **FR-24** | Calon anggota melihat detail tim & menerima/menolak undangan | `GET`, `PATCH` | `/applications/received-invitations`, status | Nayla (M4) |
-| **FR-25** | Notifikasi respon undangan tim (calon anggota terima/tolak) | *Auto-event* | `/notifications` | Nayla (M4) |
+| **FR-08** | Membuat tim baru & mengunggah dokumen pendukung (poster/panduan) | `POST` | `/teams` | Nayla (M2) |
+| **FR-09** | Melihat daftar dan detail tim yang dibuat | `GET` | `/teams/my-teams`, `/teams/{id}` | Nayla (M2) |
+| **FR-10** | Mengubah informasi & dokumen tim (kategori kegiatan dikunci) | `PUT` | `/teams/{id}` | Nayla (M2) |
+| **FR-11** | Menghapus tim yang telah dibuat | `DELETE` | `/teams/{id}` | Nayla (M2) |
+| **FR-12** | Menerima notifikasi saat ada pengajuan bergabung ke tim | *Auto-event* | `/notifications` | Nayla (M2) |
+| **FR-13** | Melihat feed tim atau kegiatan terbaru | `GET` | `/teams/feed` | Rafa (M3) |
+| **FR-14** | Pencarian dan penyaringan tim berdasarkan kriteria | `GET` | `/teams/feed?search=&kategori=&keahlian=` | Rafa (M3) |
+| **FR-15** | Melihat detail tim dari hasil pencarian | `GET` | `/teams/feed/{id_tim}` | Rafa (M3) |
+| **FR-16** | Mengajukan bergabung ke tim dengan **posisi yang dilamar** & pesan | `POST` | `/applications/join-team` | Rafa (M3) |
+| **FR-17** | Pembuat tim melihat daftar pengajuan bergabung | `GET` | `/teams/{id_tim}/applications` | Rafa (M3) |
+| **FR-18** | Pembuat tim melihat detail pengajuan (posisi dilamar & profil pelamar) | `GET` | `/applications/join-team/{id}` | Rafa (M3) |
+| **FR-19** | Pembuat tim menerima atau menolak pengajuan bergabung | `PATCH` | `/applications/join-team/{id}/status` | Rafa (M3) |
+| **FR-20** | Melihat status pengajuan & notifikasi pembaruan status | `GET`, *Event* | `/applications/my-applications` | Rafa (M3) |
+| **FR-21** | Mencari calon anggota berdasarkan nama, keahlian, pengalaman, minat | `GET` | `/members/search` | Diva (M4) |
+| **FR-22** | Melihat detail profil calon anggota dari hasil pencarian | `GET` | `/profile/detail/{id_pengguna}` | Diva (M4) |
+| **FR-23** | Pembuat tim mengajukan permintaan (undangan) ke calon anggota | `POST` | `/applications/invite-member` | Diva (M4) |
+| **FR-24** | Calon anggota melihat detail tim & menerima/menolak undangan | `GET`, `PATCH` | `/applications/received-invitations`, status | Diva (M4) |
+| **FR-25** | Notifikasi respon undangan tim (calon anggota terima/tolak) | *Auto-event* | `/notifications` | Diva (M4) |
 
 ---
 
@@ -349,7 +349,7 @@ Authorization: Bearer <jwt_access_token>
 
 ---
 
-### MODUL 2: PEMBENTUKAN & MANAJEMEN TIM (PIC: Rafa Gian Atthari)
+### MODUL 2: PEMBENTUKAN & MANAJEMEN TIM (PIC: Nayla Puspita Sari)
 
 #### 4.2.1 Pembuatan Tim Baru (FR-08)
 * **Endpoint:** `POST /teams`
@@ -462,7 +462,7 @@ Authorization: Bearer <jwt_access_token>
 
 ---
 
-### MODUL 3: PENCARIAN TIM & PENGAJUAN BERGABUNG (PIC: Diva Ramadhani)
+### MODUL 3: PENCARIAN TIM & PENGAJUAN BERGABUNG (PIC: Rafa Gian Atthari)
 
 #### 4.3.1 Feed Tim & Filter Pencarian (FR-13, FR-14)
 * **Endpoint:** `GET /teams/feed`
@@ -593,7 +593,7 @@ Authorization: Bearer <jwt_access_token>
 
 ---
 
-### MODUL 4: PENCARIAN ANGGOTA, REKRUTMEN & NOTIFIKASI (PIC: Nayla Puspita Sari)
+### MODUL 4: PENCARIAN ANGGOTA, REKRUTMEN & NOTIFIKASI (PIC: Diva Ramadhani)
 
 #### 4.4.1 Pencarian Calon Anggota (FR-21)
 * **Endpoint:** `GET /members/search`
@@ -670,9 +670,9 @@ Authorization: Bearer <jwt_access_token>
 #### 4.4.4 Notifikasi Respon Calon Anggota (FR-25) & Endpoint Kotak Masuk Notifikasi
 > **Distribusi Notifikasi:** Setiap modul bertanggung jawab atas pembuatan (*trigger & event dispatch*) notifikasi masing-masing:
 > - **Modul 1 (Fuadi):** FR-07 (Aktivitas pembaruan data riwayat diri)
-> - **Modul 2 (Rafa):** FR-12 (Pengajuan baru yang masuk ke tim buatan pengguna)
-> - **Modul 3 (Diva):** FR-20 (Pembaruan status pengajuan bergabung: diterima/ditolak)
-> - **Modul 4 (Nayla):** FR-25 (Respon calon anggota atas ajakan tim: diterima/ditolak)
+> - **Modul 2 (Nayla):** FR-12 (Pengajuan baru yang masuk ke tim buatan pengguna)
+> - **Modul 3 (Rafa):** FR-20 (Pembaruan status pengajuan bergabung: diterima/ditolak)
+> - **Modul 4 (Diva):** FR-25 (Respon calon anggota atas ajakan tim: diterima/ditolak)
 > 
 > Endpoint berikut menyediakan antarmuka terpusat bagi pengguna untuk melihat dan mengelola seluruh notifikasi yang diterima:
 

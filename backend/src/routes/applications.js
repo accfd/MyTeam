@@ -20,7 +20,7 @@ router.post('/join-team', async (req, res) => {
       [id_pbg, id_tim, id_pengguna, posisi, pesan_pengajuan, 'menunggu']
     );
 
-    // Kirim notifikasi otomatis ke pembuat tim (FR-12 - Modul 2 Rafa)
+    // Kirim notifikasi otomatis ke pembuat tim (FR-12 - Modul 2 Nayla)
     const [team] = await db.query('SELECT id_pengguna, nama_tim FROM Data_Tim WHERE id_tim = ?', [id_tim]);
     if (team.length > 0) {
       const idPembuat = team[0].id_pengguna;
@@ -95,7 +95,7 @@ router.patch('/join-team/:id/status', async (req, res) => {
     const [team] = await db.query('SELECT nama_tim FROM Data_Tim WHERE id_tim = ?', [app.id_tim]);
     const namaTim = team[0]?.nama_tim || 'Tim';
 
-    // Kirim notifikasi hasil ke pelamar (FR-20 - Modul 3 Diva)
+    // Kirim notifikasi hasil ke pelamar (FR-20 - Modul 3 Rafa)
     const notifMsg = status_pengajuan === 'diterima'
       ? `Selamat! Pengajuan bergabung Anda untuk posisi ${app.posisi} pada "${namaTim}" telah diterima.`
       : `Mohon maaf, pengajuan bergabung Anda pada "${namaTim}" belum dapat diterima.`;
@@ -195,7 +195,7 @@ router.patch('/received-invitations/:id/status', async (req, res) => {
     const inv = rows[0];
     await db.query('UPDATE Pengajuan_Anggota SET status_pengajuan = ? WHERE id_pengajuan_anggota = ?', [status_pengajuan, id]);
 
-    // Kirim notifikasi respon ke ketua tim (FR-25 - Modul 4 Nayla)
+    // Kirim notifikasi respon ke ketua tim (FR-25 - Modul 4 Diva)
     const [team] = await db.query('SELECT id_pengguna, nama_tim FROM Data_Tim WHERE id_tim = ?', [inv.id_tim]);
     if (team.length > 0) {
       const [calon] = await db.query('SELECT nama_pengguna FROM Pengguna WHERE id_pengguna = ?', [inv.id_pengguna]);
