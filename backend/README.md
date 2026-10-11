@@ -36,21 +36,22 @@ Cukup jalankan 5 langkah simpel berikut lewat terminal:
 
 Seluruh endpoint berikut diselaraskan 100% dengan dokumen [**`api_specification_contract.md`**](../api_specification_contract.md):
 
-### 🔑 Autentikasi Publik
+### 🔑 Modul 0: Autentikasi & Identitas Akun (Core / Shared Service)
 | Method | Endpoint API | Deskripsi |
 | :---: | :--- | :--- |
 | `POST` | `/api/v1/auth/register` | Pendaftaran akun mahasiswa baru |
 | `POST` | `/api/v1/auth/login` | Login mahasiswa menggunakan NIM & kata sandi |
+| `POST` | `/api/v1/auth/foto-profil` | Unggah foto profil pengguna |
 
-### 👤 Modul 1: Akun & Riwayat Diri (PIC: Fuadi Dhiyaulhaq)
+### 👤 Modul 1: Akun & Data Riwayat Diri (PIC: Fuadi Dhiyaulhaq)
 | Method | Endpoint API | Kode FR | Deskripsi |
 | :---: | :--- | :---: | :--- |
-| `GET` | `/api/v1/profile/detail/:id_pengguna` | **FR-06** | Profil lengkap, identitas, dan riwayat tim yang diikuti |
 | `GET`, `PUT` | `/api/v1/profile/data-diri` | **FR-01** | Mengelola informasi biodata & kontak |
 | `GET`, `POST`, `PUT`, `DELETE` | `/api/v1/profile/media-sosial` | **FR-02** | Mengelola tautan media sosial portofolio |
 | `GET`, `POST`, `PUT`, `DELETE` | `/api/v1/profile/minat` | **FR-03** | Mengelola keminatan mahasiswa |
 | `GET`, `POST`, `PUT`, `DELETE` | `/api/v1/profile/keahlian` | **FR-04** | Mengelola keahlian teknis & non-teknis |
 | `GET`, `POST`, `PUT`, `DELETE` | `/api/v1/profile/pengalaman` | **FR-05** | Mengelola riwayat kegiatan (dengan deskripsi) |
+| `GET` | `/api/v1/profile/detail/:id_pengguna` | **FR-06** | Profil lengkap, identitas, dan riwayat tim yang diikuti |
 | *Auto-event* | `/api/v1/notifications` | **FR-07** | Notifikasi otomatis saat data riwayat diri diperbarui |
 
 ### 👥 Modul 2: Pembentukan & Manajemen Tim (PIC: Nayla Puspita Sari)

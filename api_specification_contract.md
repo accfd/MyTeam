@@ -137,9 +137,9 @@ Authorization: Bearer <jwt_access_token>
 
 ---
 
-### MODUL 1: AUTENTIKASI, AKUN & DATA RIWAYAT DIRI (PIC: Fuadi Dhiyaulhaq)
+### MODUL 0: AUTENTIKASI & IDENTITAS AKUN (Core / Shared Service)
 
-#### 4.1.1 Registrasi Akun Mahasiswa
+#### 4.0.1 Registrasi Akun Mahasiswa
 * **Endpoint:** `POST /auth/register`
 * **Akses:** Publik
 * **Request Body:**
@@ -166,7 +166,7 @@ Authorization: Bearer <jwt_access_token>
 }
 ```
 
-#### 4.1.2 Login Akun Mahasiswa
+#### 4.0.2 Login Akun Mahasiswa
 * **Endpoint:** `POST /auth/login`
 * **Akses:** Publik
 * **Request Body:**
@@ -193,7 +193,7 @@ Authorization: Bearer <jwt_access_token>
 }
 ```
 
-#### 4.1.3 Unggah Foto Profil Pengguna
+#### 4.0.3 Unggah Foto Profil Pengguna
 * **Endpoint:** `POST /auth/foto-profil`
 * **Akses:** Terautentikasi (`Bearer Token`)
 * **Content-Type:** `multipart/form-data`
@@ -209,7 +209,11 @@ Authorization: Bearer <jwt_access_token>
 }
 ```
 
-#### 4.1.4 Kelola Data Diri (FR-01)
+---
+
+### MODUL 1: AKUN & DATA RIWAYAT DIRI (PIC: Fuadi Dhiyaulhaq)
+
+#### 4.1.1 Kelola Data Diri (FR-01)
 * **Ambil Data Diri:** `GET /profile/data-diri`
 * **Simpan / Perbarui Data Diri:** `PUT /profile/data-diri`
 * **Request Body (PUT):**
@@ -238,20 +242,28 @@ Authorization: Bearer <jwt_access_token>
 }
 ```
 
-#### 4.1.5 Kelola Media Sosial (FR-02)
+#### 4.1.2 Kelola Media Sosial (FR-02)
 * **List Media Sosial:** `GET /profile/media-sosial`
 * **Tambah Media Sosial:** `POST /profile/media-sosial`
   * Body: `{"nama_media_sosial": "LinkedIn", "link_media_sosial": "https://linkedin.com/in/fuadidhy"}`
 * **Ubah Media Sosial:** `PUT /profile/media-sosial/{id_media_sosial}`
 * **Hapus Media Sosial:** `DELETE /profile/media-sosial/{id_media_sosial}`
 
-#### 4.1.6 Kelola Minat & Keahlian (FR-03, FR-04)
-* **Kelola Minat:** `GET`, `POST`, `PUT`, `DELETE` pada `/profile/minat` (dan `/profile/minat/{id_minat}`)
-  * Body POST: `{"minat": "Mobile App Development", "deskripsi_minat": "Fokus pada Flutter dan Android Native"}`
-* **Kelola Keahlian:** `GET`, `POST`, `PUT`, `DELETE` pada `/profile/keahlian` (dan `/profile/keahlian/{id_keahlian}`)
-  * Body POST: `{"keahlian": "Flutter & Dart", "deskripsi_keahlian": "State management Provider, REST API integration"}`
+#### 4.1.3 Kelola Minat (FR-03)
+* **List Minat:** `GET /profile/minat`
+* **Tambah Minat:** `POST /profile/minat`
+  * Body: `{"minat": "Mobile App Development", "deskripsi_minat": "Fokus pada Flutter dan Android Native"}`
+* **Ubah Minat:** `PUT /profile/minat/{id_minat}`
+* **Hapus Minat:** `DELETE /profile/minat/{id_minat}`
 
-#### 4.1.7 Kelola Riwayat Pengalaman (FR-05 — PRD v1.0 Refinement)
+#### 4.1.4 Kelola Keahlian (FR-04)
+* **List Keahlian:** `GET /profile/keahlian`
+* **Tambah Keahlian:** `POST /profile/keahlian`
+  * Body: `{"keahlian": "Flutter & Dart", "deskripsi_keahlian": "State management Provider, REST API integration"}`
+* **Ubah Keahlian:** `PUT /profile/keahlian/{id_keahlian}`
+* **Hapus Keahlian:** `DELETE /profile/keahlian/{id_keahlian}`
+
+#### 4.1.5 Kelola Riwayat Pengalaman (FR-05 — PRD v1.0 Refinement)
 > **Catatan Penting PRD v1.0:** Fitur media/bukti pendukung dihapus, digantikan dengan penambahan atribut `deskripsi_pengalaman`.
 
 * **Ambil Daftar Pengalaman:** `GET /profile/pengalaman`
@@ -268,7 +280,7 @@ Authorization: Bearer <jwt_access_token>
 * **Ubah Pengalaman:** `PUT /profile/pengalaman/{id_pengalaman}`
 * **Hapus Pengalaman:** `DELETE /profile/pengalaman/{id_pengalaman}`
 
-#### 4.1.8 Detail Profil Lengkap & Tim yang Diikuti (FR-06)
+#### 4.1.6 Detail Profil Lengkap & Tim yang Diikuti (FR-06)
 * **Endpoint:** `GET /profile/detail/{id_pengguna}`
 * **Akses:** Terautentikasi
 * **Respon Sukses (200 OK):**
@@ -334,7 +346,7 @@ Authorization: Bearer <jwt_access_token>
 }
 ```
 
-#### 4.1.9 Notifikasi Aktivitas Data Riwayat Diri (FR-07)
+#### 4.1.7 Notifikasi Aktivitas Data Riwayat Diri (FR-07)
 * **Trigger:** *Auto-event* sistem saat pengguna berhasil memperbarui data diri, keahlian, minat, atau pengalaman.
 * **Aksi Sistem:** Menyimpan riwayat aktivitas ke tabel `Notifikasi` untuk akun pengguna bersangkutan dengan jenis `aktivitas_profil`.
 * **Payload Event:**
