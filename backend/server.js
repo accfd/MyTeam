@@ -43,6 +43,7 @@ app.use('/api/v1/auth', require('./src/routes/auth'));
 app.use('/api/v1/profile', require('./src/routes/profile'));
 app.use('/api/v1/teams', require('./src/routes/teams'));
 app.use('/api/v1/applications', require('./src/routes/applications'));
+app.use('/api/v1/members', require('./src/routes/members'));
 app.use('/api/v1/notifications', require('./src/routes/notifications'));
 
 // Error 404 Handler

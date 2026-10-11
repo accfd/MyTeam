@@ -21,6 +21,23 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/v1/notifications/unread-count (Hitung Belum Dibaca)
+router.get('/unread-count', async (req, res) => {
+  try {
+    const id_pengguna = req.query.id_pengguna || 'usr_fuadi_01';
+    const [rows] = await db.query(
+      'SELECT COUNT(*) AS unread_count FROM Notifikasi WHERE id_pengguna = ? AND status_dibaca = FALSE',
+      [id_pengguna]
+    );
+    return res.json({
+      success: true,
+      data: { unread_count: rows[0].unread_count }
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // PATCH /api/v1/notifications/:id/read (Tandai Dibaca)
 router.patch('/:id/read', async (req, res) => {
   try {

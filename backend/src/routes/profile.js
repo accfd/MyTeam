@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 
-// GET /api/v1/profile/detail/:id_pengguna (FR-06 & Detail Profil Lengkap)
+// GET /api/v1/profile/detail/:id_pengguna (FR-06 & FR-23: Detail Profil Lengkap)
 router.get('/detail/:id_pengguna', async (req, res) => {
   try {
     const { id_pengguna } = req.params;
@@ -51,6 +51,88 @@ router.get('/detail/:id_pengguna', async (req, res) => {
   }
 });
 
+// GET /api/v1/profile/data-diri (FR-01)
+router.get('/data-diri', async (req, res) => {
+  try {
+    const id_pengguna = req.query.id_pengguna || 'usr_fuadi_01';
+    const [rows] = await db.query('SELECT * FROM Data_Diri WHERE id_pengguna = ?', [id_pengguna]);
+    return res.json({ success: true, data: rows[0] || null });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// PUT /api/v1/profile/data-diri (FR-01)
+router.put('/data-diri', async (req, res) => {
+  try {
+    const { id_pengguna, deskripsi_singkat, kontak, program_studi, fakultas, ipk } = req.body;
+    await db.query(`
+      INSERT INTO Data_Diri (id_pengguna, deskripsi_singkat, kontak, program_studi, fakultas, ipk)
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        deskripsi_singkat = VALUES(deskripsi_singkat),
+        kontak = VALUES(kontak),
+        program_studi = VALUES(program_studi),
+        fakultas = VALUES(fakultas),
+        ipk = VALUES(ipk)
+    `, [id_pengguna, deskripsi_singkat, kontak, program_studi, fakultas, ipk]);
+
+    // Notifikasi update profil (FR-08 - Modul 1 Fuadi)
+    await db.query(
+      'INSERT INTO Notifikasi (id_notifikasi, id_pengguna, jenis_notifikasi, pesan_notifikasi) VALUES (?, ?, ?, ?)',
+      [`notif_${Date.now()}`, id_pengguna, 'aktivitas_profil', 'Data diri dan kontak berhasil diperbarui.']
+    );
+
+    return res.json({ success: true, message: 'Data diri berhasil diperbarui' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// GET & POST /api/v1/profile/minat (FR-03)
+router.get('/minat', async (req, res) => {
+  try {
+    const id_pengguna = req.query.id_pengguna || 'usr_fuadi_01';
+    const [rows] = await db.query('SELECT * FROM Data_Minat WHERE id_pengguna = ?', [id_pengguna]);
+    return res.json({ success: true, data: rows });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.post('/minat', async (req, res) => {
+  try {
+    const { id_pengguna, minat, deskripsi_minat } = req.body;
+    const id_minat = `mnt_${Date.now()}`;
+    await db.query('INSERT INTO Data_Minat (id_minat, id_pengguna, minat, deskripsi_minat) VALUES (?, ?, ?, ?)', [id_minat, id_pengguna, minat, deskripsi_minat]);
+    return res.status(201).json({ success: true, message: 'Minat berhasil ditambahkan', data: { id_minat, minat, deskripsi_minat } });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// GET & POST /api/v1/profile/keahlian (FR-04)
+router.get('/keahlian', async (req, res) => {
+  try {
+    const id_pengguna = req.query.id_pengguna || 'usr_fuadi_01';
+    const [rows] = await db.query('SELECT * FROM Data_Keahlian WHERE id_pengguna = ?', [id_pengguna]);
+    return res.json({ success: true, data: rows });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.post('/keahlian', async (req, res) => {
+  try {
+    const { id_pengguna, keahlian, deskripsi_keahlian } = req.body;
+    const id_keahlian = `khl_${Date.now()}`;
+    await db.query('INSERT INTO Data_Keahlian (id_keahlian, id_pengguna, keahlian, deskripsi_keahlian) VALUES (?, ?, ?, ?)', [id_keahlian, id_pengguna, keahlian, deskripsi_keahlian]);
+    return res.status(201).json({ success: true, message: 'Keahlian berhasil ditambahkan', data: { id_keahlian, keahlian, deskripsi_keahlian } });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // GET /api/v1/profile/pengalaman (FR-05)
 router.get('/pengalaman', async (req, res) => {
   try {
@@ -84,6 +166,31 @@ router.post('/pengalaman', async (req, res) => {
       message: 'Riwayat pengalaman berhasil ditambahkan',
       data: { id_pengalaman, nama_kegiatan, peran, tahun, deskripsi_pengalaman }
     });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// GET & PUT /api/v1/profile/preferensi (FR-07)
+router.get('/preferensi', async (req, res) => {
+  try {
+    const id_pengguna = req.query.id_pengguna || 'usr_fuadi_01';
+    const [rows] = await db.query('SELECT preferensi_pencarian FROM Preferensi_Pencarian WHERE id_pengguna = ?', [id_pengguna]);
+    return res.json({ success: true, data: rows[0] || { preferensi_pencarian: 'keduanya' } });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.put('/preferensi', async (req, res) => {
+  try {
+    const { id_pengguna, preferensi_pencarian } = req.body;
+    await db.query(`
+      INSERT INTO Preferensi_Pencarian (id_pengguna, preferensi_pencarian)
+      VALUES (?, ?)
+      ON DUPLICATE KEY UPDATE preferensi_pencarian = VALUES(preferensi_pencarian)
+    `, [id_pengguna, preferensi_pencarian]);
+    return res.json({ success: true, message: 'Preferensi pencarian berhasil diperbarui', data: { preferensi_pencarian } });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
