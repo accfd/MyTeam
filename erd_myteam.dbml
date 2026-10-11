@@ -84,14 +84,6 @@ Table Data_Pengalaman {
   Note: 'Riwayat pengalaman kegiatan mahasiswa (FR-05 refinement)'
 }
 
-Table Preferensi_Pencarian {
-  id_pengguna varchar(36) [primary key, note: 'FK ke Pengguna (1:1)']
-  preferensi_pencarian varchar(20) [not null, default: 'keduanya', note: 'pencari_tim | pencari_anggota | keduanya']
-  updated_at timestamp [default: `now()`]
-
-  Note: 'Pengaturan preferensi peran aktif pengguna (FR-07)'
-}
-
 // -----------------------------------------------------------------------------
 // BLOK 2: MODUL 2 — DATA TIM, KEBUTUHAN, DAN DOKUMEN PENDUKUNG
 // -----------------------------------------------------------------------------
@@ -180,7 +172,7 @@ Table Notifikasi {
   waktu_notifikasi timestamp [default: `now()`]
   status_dibaca boolean [default: false, note: 'Status sudah dibaca / belum']
 
-  Note: 'Pemberitahuan sistem multi-modul (FR-08, FR-13, FR-21, FR-26)'
+  Note: 'Pemberitahuan sistem multi-modul (FR-07, FR-12, FR-20, FR-25)'
 }
 
 // -----------------------------------------------------------------------------
@@ -193,7 +185,6 @@ Ref: Pengguna.id_pengguna < Media_Sosial.id_pengguna [delete: cascade, update: c
 Ref: Pengguna.id_pengguna < Data_Minat.id_pengguna [delete: cascade, update: cascade]
 Ref: Pengguna.id_pengguna < Data_Keahlian.id_pengguna [delete: cascade, update: cascade]
 Ref: Pengguna.id_pengguna < Data_Pengalaman.id_pengguna [delete: cascade, update: cascade]
-Ref: Pengguna.id_pengguna - Preferensi_Pencarian.id_pengguna [delete: cascade, update: cascade]
 
 // Modul 2: Relasi Data Tim & Manajemen Tim
 Ref: Pengguna.id_pengguna < Data_Tim.id_pengguna [delete: cascade, update: cascade]
@@ -233,13 +224,6 @@ Records Data_Diri(id_pengguna, deskripsi_singkat, kontak, program_studi, fakulta
   'usr_rafa_02',  'Antusias dalam Machine Learning, Computer Vision, dan arsitektur sistem.', '081267891012', 'Sistem Informasi', 'Teknologi Informasi', 3.80
   'usr_diva_03',  'UI/UX Designer yang berfokus pada design thinking dan user-centric product.', '081267891013', 'Sistem Informasi', 'Teknologi Informasi', 3.82
   'usr_nayla_04', 'Tech researcher dan data analyst untuk pengembangan aplikasi sosial cerdas.', '081267891014', 'Sistem Informasi', 'Teknologi Informasi', 3.88
-}
-
-Records Preferensi_Pencarian(id_pengguna, preferensi_pencarian) {
-  'usr_fuadi_01', 'pencari_tim'
-  'usr_rafa_02',  'pencari_anggota'
-  'usr_diva_03',  'keduanya'
-  'usr_nayla_04', 'pencari_anggota'
 }
 
 Records Data_Tim(id_tim, id_pengguna, nama_tim, nama_kegiatan, kategori_kegiatan, deskripsi, status_tim) {

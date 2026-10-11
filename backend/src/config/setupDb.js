@@ -25,7 +25,7 @@ async function setupDatabase() {
       throw new Error(`File schema tidak ditemukan di: ${schemaPath}`);
     }
     const schemaSql = fs.readFileSync(schemaPath, 'utf8');
-    console.log('⏳ Mengimpor skema 14 tabel (schema_myteam.sql)...');
+    console.log('⏳ Mengimpor skema 13 tabel (schema_myteam.sql)...');
     await connection.query(schemaSql);
     console.log('✅ Skema tabel berhasil dibuat!');
 

@@ -32,7 +32,7 @@ Dokumen ini merupakan kontrak resmi antarmuka pemrograman aplikasi (*API Specifi
 
 ## 2. Matriks Keterlacakan Kebutuhan (FR Traceability Matrix)
 
-Matriks berikut memetakan 26 Kebutuhan Fungsional (*Functional Requirements*) dari PRD v1.0 ke endpoint API yang bersesuaian, beserta penanggung jawab (*PIC*) modul:
+Matriks berikut memetakan 25 Kebutuhan Fungsional (*Functional Requirements*) dari PRD v1.0 ke endpoint API yang bersesuaian, beserta penanggung jawab (*PIC*) modul:
 
 | Kode FR | Deskripsi Kebutuhan Fungsional PRD v1.0 | HTTP Method | Endpoint API | PIC Modul |
 | :---: | :--- | :---: | :--- | :---: |
@@ -42,26 +42,25 @@ Matriks berikut memetakan 26 Kebutuhan Fungsional (*Functional Requirements*) da
 | **FR-04** | Mengelola keahlian (nama keahlian & deskripsi) | `GET`, `POST`, `PUT`, `DELETE` | `/profile/keahlian` | Fuadi (M1) |
 | **FR-05** | Mengelola pengalaman (nama kegiatan, peran, tahun, deskripsi) | `GET`, `POST`, `PUT`, `DELETE` | `/profile/pengalaman` | Fuadi (M1) |
 | **FR-06** | Melihat informasi tim yang diikuti (nama tim, kegiatan, kategori, posisi) | `GET` | `/profile/detail/{id_pengguna}` | Fuadi (M1) |
-| **FR-07** | Mengelola preferensi pencarian (pencari tim/anggota/keduanya) | `GET`, `PUT` | `/profile/preferensi` | Fuadi (M1) |
-| **FR-08** | Sistem mengirim notifikasi aktivitas data riwayat diri | *Auto-event* | `/notifications` | Fuadi (M1) |
-| **FR-09** | Membuat tim baru & mengunggah dokumen pendukung (poster/panduan) | `POST` | `/teams` | Rafa (M2) |
-| **FR-10** | Melihat daftar dan detail tim yang dibuat | `GET` | `/teams/my-teams`, `/teams/{id}` | Rafa (M2) |
-| **FR-11** | Mengubah informasi & dokumen tim (kategori kegiatan dikunci) | `PUT` | `/teams/{id}` | Rafa (M2) |
-| **FR-12** | Menghapus tim yang telah dibuat | `DELETE` | `/teams/{id}` | Rafa (M2) |
-| **FR-13** | Menerima notifikasi saat ada pengajuan bergabung ke tim | *Auto-event* | `/notifications` | Rafa (M2) |
-| **FR-14** | Melihat feed tim atau kegiatan terbaru | `GET` | `/teams/feed` | Diva (M3) |
-| **FR-15** | Pencarian dan penyaringan tim berdasarkan kriteria | `GET` | `/teams/feed?search=&kategori=&keahlian=` | Diva (M3) |
-| **FR-16** | Melihat detail tim dari hasil pencarian | `GET` | `/teams/feed/{id_tim}` | Diva (M3) |
-| **FR-17** | Mengajukan bergabung ke tim dengan **posisi yang dilamar** & pesan | `POST` | `/applications/join-team` | Diva (M3) |
-| **FR-18** | Pembuat tim melihat daftar pengajuan bergabung | `GET` | `/teams/{id_tim}/applications` | Diva (M3) |
-| **FR-19** | Pembuat tim melihat detail pengajuan (posisi dilamar & profil pelamar) | `GET` | `/applications/join-team/{id}` | Diva (M3) |
-| **FR-20** | Pembuat tim menerima atau menolak pengajuan bergabung | `PATCH` | `/applications/join-team/{id}/status` | Diva (M3) |
-| **FR-21** | Melihat status pengajuan & notifikasi pembaruan status | `GET`, *Event* | `/applications/my-applications` | Diva (M3) |
-| **FR-22** | Mencari calon anggota berdasarkan nama, keahlian, pengalaman, minat | `GET` | `/members/search` | Nayla (M4) |
-| **FR-23** | Melihat detail profil calon anggota dari hasil pencarian | `GET` | `/profile/detail/{id_pengguna}` | Nayla (M4) |
-| **FR-24** | Pembuat tim mengajukan permintaan (undangan) ke calon anggota | `POST` | `/applications/invite-member` | Nayla (M4) |
-| **FR-25** | Calon anggota melihat detail tim & menerima/menolak undangan | `GET`, `PATCH` | `/applications/received-invitations`, status | Nayla (M4) |
-| **FR-26** | Notifikasi respon undangan tim (calon anggota terima/tolak) | *Auto-event* | `/notifications` | Nayla (M4) |
+| **FR-07** | Sistem mengirim notifikasi aktivitas data riwayat diri | *Auto-event* | `/notifications` | Fuadi (M1) |
+| **FR-08** | Membuat tim baru & mengunggah dokumen pendukung (poster/panduan) | `POST` | `/teams` | Rafa (M2) |
+| **FR-09** | Melihat daftar dan detail tim yang dibuat | `GET` | `/teams/my-teams`, `/teams/{id}` | Rafa (M2) |
+| **FR-10** | Mengubah informasi & dokumen tim (kategori kegiatan dikunci) | `PUT` | `/teams/{id}` | Rafa (M2) |
+| **FR-11** | Menghapus tim yang telah dibuat | `DELETE` | `/teams/{id}` | Rafa (M2) |
+| **FR-12** | Menerima notifikasi saat ada pengajuan bergabung ke tim | *Auto-event* | `/notifications` | Rafa (M2) |
+| **FR-13** | Melihat feed tim atau kegiatan terbaru | `GET` | `/teams/feed` | Diva (M3) |
+| **FR-14** | Pencarian dan penyaringan tim berdasarkan kriteria | `GET` | `/teams/feed?search=&kategori=&keahlian=` | Diva (M3) |
+| **FR-15** | Melihat detail tim dari hasil pencarian | `GET` | `/teams/feed/{id_tim}` | Diva (M3) |
+| **FR-16** | Mengajukan bergabung ke tim dengan **posisi yang dilamar** & pesan | `POST` | `/applications/join-team` | Diva (M3) |
+| **FR-17** | Pembuat tim melihat daftar pengajuan bergabung | `GET` | `/teams/{id_tim}/applications` | Diva (M3) |
+| **FR-18** | Pembuat tim melihat detail pengajuan (posisi dilamar & profil pelamar) | `GET` | `/applications/join-team/{id}` | Diva (M3) |
+| **FR-19** | Pembuat tim menerima atau menolak pengajuan bergabung | `PATCH` | `/applications/join-team/{id}/status` | Diva (M3) |
+| **FR-20** | Melihat status pengajuan & notifikasi pembaruan status | `GET`, *Event* | `/applications/my-applications` | Diva (M3) |
+| **FR-21** | Mencari calon anggota berdasarkan nama, keahlian, pengalaman, minat | `GET` | `/members/search` | Nayla (M4) |
+| **FR-22** | Melihat detail profil calon anggota dari hasil pencarian | `GET` | `/profile/detail/{id_pengguna}` | Nayla (M4) |
+| **FR-23** | Pembuat tim mengajukan permintaan (undangan) ke calon anggota | `POST` | `/applications/invite-member` | Nayla (M4) |
+| **FR-24** | Calon anggota melihat detail tim & menerima/menolak undangan | `GET`, `PATCH` | `/applications/received-invitations`, status | Nayla (M4) |
+| **FR-25** | Notifikasi respon undangan tim (calon anggota terima/tolak) | *Auto-event* | `/notifications` | Nayla (M4) |
 
 ---
 
@@ -78,7 +77,6 @@ Authorization: Bearer <jwt_access_token>
 ### 3.2 Kamus Nilai Terbatas (Enumerasi / Domain Values)
 * **Kategori Kegiatan Tim:** `'Lomba'`, `'Penelitian'`, `'Proyek'`, `'Lainnya'`
 * **Status Tim:** `'terbuka'`, `'ditutup'`
-* **Preferensi Pencarian:** `'pencari_tim'`, `'pencari_anggota'`, `'keduanya'`
 * **Jenis Dokumen Pendukung:** `'poster'`, `'panduan'`
 * **Status Pengajuan / Undangan:** `'menunggu'`, `'diterima'`, `'ditolak'`
 * **Jenis Notifikasi:** `'riwayat_diri_diperbarui'`, `'pengajuan_masuk'`, `'pengajuan_diterima'`, `'pengajuan_ditolak'`, `'undangan_masuk'`, `'undangan_diterima'`, `'undangan_ditolak'`
@@ -270,17 +268,7 @@ Authorization: Bearer <jwt_access_token>
 * **Ubah Pengalaman:** `PUT /profile/pengalaman/{id_pengalaman}`
 * **Hapus Pengalaman:** `DELETE /profile/pengalaman/{id_pengalaman}`
 
-#### 4.1.8 Kelola Preferensi Pencarian (FR-07)
-* **Ambil Preferensi:** `GET /profile/preferensi`
-* **Simpan Preferensi:** `PUT /profile/preferensi`
-  * **Request Body:**
-```json
-{
-  "preferensi_pencarian": "keduanya"
-}
-```
-
-#### 4.1.9 Detail Profil Lengkap & Tim yang Diikuti (FR-06)
+#### 4.1.8 Detail Profil Lengkap & Tim yang Diikuti (FR-06)
 * **Endpoint:** `GET /profile/detail/{id_pengguna}`
 * **Akses:** Terautentikasi
 * **Respon Sukses (200 OK):**
@@ -302,7 +290,6 @@ Authorization: Bearer <jwt_access_token>
       "fakultas": "Teknologi Informasi",
       "ipk": 3.88
     },
-    "preferensi_pencarian": "keduanya",
     "media_sosial": [
       {
         "id_media_sosial": "soc_01",
@@ -347,8 +334,8 @@ Authorization: Bearer <jwt_access_token>
 }
 ```
 
-#### 4.1.10 Notifikasi Aktivitas Data Riwayat Diri (FR-08)
-* **Trigger:** *Auto-event* sistem saat pengguna berhasil memperbarui data diri, keahlian, minat, pengalaman, atau preferensi pencarian.
+#### 4.1.9 Notifikasi Aktivitas Data Riwayat Diri (FR-07)
+* **Trigger:** *Auto-event* sistem saat pengguna berhasil memperbarui data diri, keahlian, minat, atau pengalaman.
 * **Aksi Sistem:** Menyimpan riwayat aktivitas ke tabel `Notifikasi` untuk akun pengguna bersangkutan dengan jenis `aktivitas_profil`.
 * **Payload Event:**
 ```json
@@ -364,7 +351,7 @@ Authorization: Bearer <jwt_access_token>
 
 ### MODUL 2: PEMBENTUKAN & MANAJEMEN TIM (PIC: Rafa Gian Atthari)
 
-#### 4.2.1 Pembuatan Tim Baru (FR-09)
+#### 4.2.1 Pembuatan Tim Baru (FR-08)
 * **Endpoint:** `POST /teams`
 * **Akses:** Terautentikasi
 * **Content-Type:** `multipart/form-data`
@@ -423,20 +410,20 @@ Authorization: Bearer <jwt_access_token>
 }
 ```
 
-#### 4.2.2 Daftar Tim yang Dibuat Pengguna (FR-10)
+#### 4.2.2 Daftar Tim yang Dibuat Pengguna (FR-09)
 * **Endpoint:** `GET /teams/my-teams`
 * **Akses:** Terautentikasi
 * **Respon Sukses (200 OK):** Mengembalikan daftar seluruh tim yang diinisiasi oleh pengguna yang sedang login.
 
-#### 4.2.3 Detail Tim Pembuat (FR-10)
+#### 4.2.3 Detail Tim Pembuat (FR-09)
 * **Endpoint:** `GET /teams/{id_tim}`
 * **Akses:** Terautentikasi (khusus pemilik tim)
 * **Respon Sukses (200 OK):** Mengembalikan informasi tim, dokumen pendukung, kebutuhan tim, dan daftar anggota aktif saat ini.
 
-#### 4.2.4 Pembaruan Informasi Tim (FR-11)
+#### 4.2.4 Pembaruan Informasi Tim (FR-10)
 * **Endpoint:** `PUT /teams/{id_tim}` (atau `POST /teams/{id_tim}/update` untuk form-data)
 * **Akses:** Terautentikasi (khusus pemilik tim)
-* **Aturan Bisnis FR-11:** Nilai `kategori_kegiatan` **dikunci / tidak boleh diubah**. Upaya mengubah field ini akan ditolak backend dengan status HTTP 422.
+* **Aturan Bisnis FR-10:** Nilai `kategori_kegiatan` **dikunci / tidak boleh diubah**. Upaya mengubah field ini akan ditolak backend dengan status HTTP 422.
 * **Request Body:**
 ```json
 {
@@ -447,7 +434,7 @@ Authorization: Bearer <jwt_access_token>
 }
 ```
 
-#### 4.2.5 Penghapusan Tim (FR-12)
+#### 4.2.5 Penghapusan Tim (FR-11)
 * **Endpoint:** `DELETE /teams/{id_tim}`
 * **Akses:** Terautentikasi (khusus pemilik tim)
 * **Aturan Bisnis NFR-07:** Sistem menjamin penghapusan secara konsisten (*cascade* aman) terhadap relasi kebutuhan, dokumen fisik, dan membatalkan pengajuan terkait.
@@ -459,7 +446,7 @@ Authorization: Bearer <jwt_access_token>
 }
 ```
 
-#### 4.2.6 Notifikasi Pengajuan Masuk ke Tim (FR-13)
+#### 4.2.6 Notifikasi Pengajuan Masuk ke Tim (FR-12)
 * **Trigger:** *Auto-event* sistem saat ada pencari tim yang mengajukan lamaran bergabung ke tim milik pembuat tim (`POST /applications/join-team`).
 * **Aksi Sistem:** Mengirimkan dan mencatat record notifikasi ke tabel `Notifikasi` untuk akun pemilik tim dengan jenis `pengajuan_masuk`.
 * **Payload Event:**
@@ -477,7 +464,7 @@ Authorization: Bearer <jwt_access_token>
 
 ### MODUL 3: PENCARIAN TIM & PENGAJUAN BERGABUNG (PIC: Diva Ramadhani)
 
-#### 4.3.1 Feed Tim & Filter Pencarian (FR-14, FR-15)
+#### 4.3.1 Feed Tim & Filter Pencarian (FR-13, FR-14)
 * **Endpoint:** `GET /teams/feed`
 * **Akses:** Terautentikasi
 * **Query Parameters:**
@@ -531,12 +518,12 @@ Authorization: Bearer <jwt_access_token>
 }
 ```
 
-#### 4.3.2 Detail Tim untuk Calon Pelamar (FR-16)
+#### 4.3.2 Detail Tim untuk Calon Pelamar (FR-15)
 * **Endpoint:** `GET /teams/feed/{id_tim}`
 * **Akses:** Terautentikasi
 * **Respon Sukses (200 OK):** Mengembalikan profil lengkap tim, detail posisi terbuka, dan profil singkat pembuat tim.
 
-#### 4.3.3 Pengajuan Bergabung ke Tim (FR-17 — PRD v1.0 Refinement)
+#### 4.3.3 Pengajuan Bergabung ke Tim (FR-16 — PRD v1.0 Refinement)
 > **Catatan Penting PRD v1.0:** Pelamar **wajib menyertakan atribut `posisi`** (posisi yang dilamar) sesuai opsi yang dibuka oleh pembuat tim.
 
 * **Endpoint:** `POST /applications/join-team`
@@ -566,17 +553,17 @@ Authorization: Bearer <jwt_access_token>
 }
 ```
 
-#### 4.3.4 Daftar Pengajuan Masuk Tim (FR-18 — Pembuat Tim)
+#### 4.3.4 Daftar Pengajuan Masuk Tim (FR-17 — Pembuat Tim)
 * **Endpoint:** `GET /teams/{id_tim}/applications`
 * **Akses:** Terautentikasi (khusus pemilik tim)
 * **Respon Sukses (200 OK):** Menampilkan daftar pelamar, posisi yang mereka lamar, waktu pengajuan, dan status.
 
-#### 4.3.5 Detail Pengajuan Bergabung (FR-19)
+#### 4.3.5 Detail Pengajuan Bergabung (FR-18)
 * **Endpoint:** `GET /applications/join-team/{id_pengajuan_bergabung_tim}`
 * **Akses:** Terautentikasi (pemilik tim)
 * **Respon Sukses (200 OK):** Menampilkan detail lengkap surat pengajuan, posisi yang dilamar, serta profil akademik pelamar.
 
-#### 4.3.6 Keputusan Pengajuan: Terima / Tolak (FR-20)
+#### 4.3.6 Keputusan Pengajuan: Terima / Tolak (FR-19)
 * **Endpoint:** `PATCH /applications/join-team/{id_pengajuan_bergabung_tim}/status`
 * **Akses:** Terautentikasi (pemilik tim)
 * **Request Body:**
@@ -599,7 +586,7 @@ Authorization: Bearer <jwt_access_token>
 }
 ```
 
-#### 4.3.7 Riwayat Pengajuan Saya (FR-21 — Pelamar)
+#### 4.3.7 Riwayat Pengajuan Saya (FR-20 — Pelamar)
 * **Endpoint:** `GET /applications/my-applications`
 * **Akses:** Terautentikasi
 * **Respon Sukses (200 OK):** Menampilkan seluruh status pengajuan yang pernah dikirimkan oleh pengguna (`menunggu`, `diterima`, `ditolak`).
@@ -608,7 +595,7 @@ Authorization: Bearer <jwt_access_token>
 
 ### MODUL 4: PENCARIAN ANGGOTA, REKRUTMEN & NOTIFIKASI (PIC: Nayla Puspita Sari)
 
-#### 4.4.1 Pencarian Calon Anggota (FR-22)
+#### 4.4.1 Pencarian Calon Anggota (FR-21)
 * **Endpoint:** `GET /members/search`
 * **Akses:** Terautentikasi
 * **Query Parameters:**
@@ -642,7 +629,7 @@ Authorization: Bearer <jwt_access_token>
 }
 ```
 
-#### 4.4.2 Undangan Rekrutmen ke Calon Anggota (FR-24)
+#### 4.4.2 Undangan Rekrutmen ke Calon Anggota (FR-23)
 * **Endpoint:** `POST /applications/invite-member`
 * **Akses:** Terautentikasi (Pembuat Tim)
 * **Request Body:**
@@ -669,7 +656,7 @@ Authorization: Bearer <jwt_access_token>
 }
 ```
 
-#### 4.4.3 Respon Calon Anggota terhadap Undangan (FR-25)
+#### 4.4.3 Respon Calon Anggota terhadap Undangan (FR-24)
 * **Daftar Undangan Masuk ke Saya:** `GET /applications/received-invitations`
 * **Keputusan Calon Anggota:** `PATCH /applications/invite-member/{id_pengajuan_anggota}/status`
 * **Request Body:**
@@ -680,12 +667,12 @@ Authorization: Bearer <jwt_access_token>
 ```
 *(Nilai valid: `"diterima"` atau `"ditolak"`)*
 
-#### 4.4.4 Notifikasi Respon Calon Anggota (FR-26) & Endpoint Kotak Masuk Notifikasi
+#### 4.4.4 Notifikasi Respon Calon Anggota (FR-25) & Endpoint Kotak Masuk Notifikasi
 > **Distribusi Notifikasi:** Setiap modul bertanggung jawab atas pembuatan (*trigger & event dispatch*) notifikasi masing-masing:
-> - **Modul 1 (Fuadi):** FR-08 (Aktivitas pembaruan data riwayat diri)
-> - **Modul 2 (Rafa):** FR-13 (Pengajuan baru yang masuk ke tim buatan pengguna)
-> - **Modul 3 (Diva):** FR-21 (Pembaruan status pengajuan bergabung: diterima/ditolak)
-> - **Modul 4 (Nayla):** FR-26 (Respon calon anggota atas ajakan tim: diterima/ditolak)
+> - **Modul 1 (Fuadi):** FR-07 (Aktivitas pembaruan data riwayat diri)
+> - **Modul 2 (Rafa):** FR-12 (Pengajuan baru yang masuk ke tim buatan pengguna)
+> - **Modul 3 (Diva):** FR-20 (Pembaruan status pengajuan bergabung: diterima/ditolak)
+> - **Modul 4 (Nayla):** FR-25 (Respon calon anggota atas ajakan tim: diterima/ditolak)
 > 
 > Endpoint berikut menyediakan antarmuka terpusat bagi pengguna untuk melihat dan mengelola seluruh notifikasi yang diterima:
 
@@ -872,14 +859,14 @@ Untuk memastikan pekerjaan tiap modul berjalan paralel tanpa terhalang server ba
 ```dart
 // Contoh Implementasi Abstraksi Repository Flutter (Contract First)
 abstract class TeamApplicationRepository {
-  /// Mengirim pengajuan bergabung ke tim dengan posisi yang dilamar (FR-17)
+  /// Mengirim pengajuan bergabung ke tim dengan posisi yang dilamar (FR-16)
   Future<ApplicationResult> applyToTeam({
     required String teamId,
     required String position,
     required String message,
   });
 
-  /// Mengambil daftar riwayat pengajuan milik pengguna (FR-21)
+  /// Mengambil daftar riwayat pengajuan milik pengguna (FR-20)
   Future<List<ApplicationHistory>> getMyApplications();
 }
 ```

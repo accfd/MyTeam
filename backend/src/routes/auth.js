@@ -41,14 +41,10 @@ router.post('/register', async (req, res) => {
       [id_pengguna, nim, hash, nama_pengguna]
     );
 
-    // Inisialisasi Data_Diri & Preferensi_Pencarian default
+    // Inisialisasi Data_Diri default
     await db.query(
       'INSERT INTO Data_Diri (id_pengguna, deskripsi_singkat, kontak, program_studi, fakultas, ipk) VALUES (?, ?, ?, ?, ?, ?)',
       [id_pengguna, '', '', 'Sistem Informasi', 'Teknologi Informasi', 0.00]
-    );
-    await db.query(
-      'INSERT INTO Preferensi_Pencarian (id_pengguna, preferensi_pencarian) VALUES (?, ?)',
-      [id_pengguna, 'keduanya']
     );
 
     const token = jwt.sign(

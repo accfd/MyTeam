@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 
-// GET /api/v1/teams/feed (FR-14, FR-15: Feed & Filter Tim)
+// GET /api/v1/teams/feed (FR-13, FR-14: Feed & Filter Tim)
 router.get('/feed', async (req, res) => {
   try {
     const { search, kategori, keahlian } = req.query;
@@ -46,7 +46,7 @@ router.get('/feed', async (req, res) => {
   }
 });
 
-// GET /api/v1/teams/feed/:id_tim (FR-16: Detail Tim dari Feed)
+// GET /api/v1/teams/feed/:id_tim (FR-15: Detail Tim dari Feed)
 router.get('/feed/:id_tim', async (req, res) => {
   try {
     const { id_tim } = req.params;
@@ -81,7 +81,7 @@ router.get('/feed/:id_tim', async (req, res) => {
   }
 });
 
-// GET /api/v1/teams/my-teams (FR-10: Daftar Tim Saya)
+// GET /api/v1/teams/my-teams (FR-09: Daftar Tim Saya)
 router.get('/my-teams', async (req, res) => {
   try {
     const id_pengguna = req.query.id_pengguna || 'usr_rafa_02';
@@ -92,7 +92,7 @@ router.get('/my-teams', async (req, res) => {
   }
 });
 
-// POST /api/v1/teams (FR-09: Buat Tim Baru)
+// POST /api/v1/teams (FR-08: Buat Tim Baru)
 router.post('/', async (req, res) => {
   try {
     const { id_pengguna, nama_tim, nama_kegiatan, kategori_kegiatan, deskripsi, kebutuhan } = req.body;
@@ -124,7 +124,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET /api/v1/teams/:id_tim/applications (FR-18: Pelamar Masuk ke Tim)
+// GET /api/v1/teams/:id_tim/applications (FR-17: Pelamar Masuk ke Tim)
 router.get('/:id_tim/applications', async (req, res) => {
   try {
     const { id_tim } = req.params;
@@ -142,7 +142,7 @@ router.get('/:id_tim/applications', async (req, res) => {
   }
 });
 
-// GET /api/v1/teams/:id_tim (FR-10: Detail Tim)
+// GET /api/v1/teams/:id_tim (FR-09: Detail Tim)
 router.get('/:id_tim', async (req, res) => {
   try {
     const { id_tim } = req.params;
@@ -154,7 +154,7 @@ router.get('/:id_tim', async (req, res) => {
   }
 });
 
-// PUT /api/v1/teams/:id_tim (FR-11: Ubah Tim)
+// PUT /api/v1/teams/:id_tim (FR-10: Ubah Tim)
 router.put('/:id_tim', async (req, res) => {
   try {
     const { id_tim } = req.params;
@@ -169,7 +169,7 @@ router.put('/:id_tim', async (req, res) => {
   }
 });
 
-// DELETE /api/v1/teams/:id_tim (FR-12: Hapus Tim)
+// DELETE /api/v1/teams/:id_tim (FR-11: Hapus Tim)
 router.delete('/:id_tim', async (req, res) => {
   try {
     const { id_tim } = req.params;

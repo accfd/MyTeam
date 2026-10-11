@@ -26,7 +26,6 @@ DROP TABLE IF EXISTS Anggota_Tim;
 DROP TABLE IF EXISTS Dokumen_Pendukung;
 DROP TABLE IF EXISTS Kebutuhan_Anggota_Tim;
 DROP TABLE IF EXISTS Data_Tim;
-DROP TABLE IF EXISTS Preferensi_Pencarian;
 DROP TABLE IF EXISTS Data_Pengalaman;
 DROP TABLE IF EXISTS Data_Keahlian;
 DROP TABLE IF EXISTS Data_Minat;
@@ -126,22 +125,11 @@ CREATE TABLE Data_Pengalaman (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
--- 7. Tabel Preferensi_Pencarian (Peran Pengguna dalam Aplikasi - FR-07)
-CREATE TABLE Preferensi_Pencarian (
-    id_pengguna VARCHAR(36) NOT NULL,
-    preferensi_pencarian ENUM('pencari_tim', 'pencari_anggota', 'keduanya') NOT NULL DEFAULT 'keduanya',
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id_pengguna),
-    CONSTRAINT fk_preferensi_pengguna FOREIGN KEY (id_pengguna) 
-        REFERENCES Pengguna (id_pengguna) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
 -- =============================================================================
 -- BLOK 2: MODUL 2 — DATA TIM, KEBUTUHAN, DAN DOKUMEN PENDUKUNG
 -- =============================================================================
 
--- 8. Tabel Data_Tim (Informasi Tim yang Dibentuk oleh Mahasiswa - FR-09..12)
+-- 7. Tabel Data_Tim (Informasi Tim yang Dibentuk oleh Mahasiswa - FR-08..11)
 CREATE TABLE Data_Tim (
     id_tim VARCHAR(36) NOT NULL,
     id_pengguna VARCHAR(36) NOT NULL, -- Relasi ke Pembuat Tim
@@ -158,7 +146,7 @@ CREATE TABLE Data_Tim (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
--- 9. Tabel Kebutuhan_Anggota_Tim (Posisi & Kriteria Anggota yang Dibutuhkan Tim)
+-- 8. Tabel Kebutuhan_Anggota_Tim (Posisi & Kriteria Anggota yang Dibutuhkan Tim)
 CREATE TABLE Kebutuhan_Anggota_Tim (
     id_kebutuhan VARCHAR(36) NOT NULL,
     id_tim VARCHAR(36) NOT NULL,
@@ -172,7 +160,7 @@ CREATE TABLE Kebutuhan_Anggota_Tim (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
--- 10. Tabel Dokumen_Pendukung (Poster dan Pedoman Panduan Tim)
+-- 9. Tabel Dokumen_Pendukung (Poster dan Pedoman Panduan Tim)
 CREATE TABLE Dokumen_Pendukung (
     id_dokumen VARCHAR(36) NOT NULL,
     id_tim VARCHAR(36) NOT NULL,
@@ -187,7 +175,7 @@ CREATE TABLE Dokumen_Pendukung (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
--- 11. Tabel Anggota_Tim (Daftar Mahasiswa yang Resmi Bergabung dalam Tim)
+-- 10. Tabel Anggota_Tim (Daftar Mahasiswa yang Resmi Bergabung dalam Tim)
 CREATE TABLE Anggota_Tim (
     id_anggota_tim VARCHAR(36) NOT NULL,
     id_tim VARCHAR(36) NOT NULL,
@@ -207,7 +195,7 @@ CREATE TABLE Anggota_Tim (
 -- BLOK 3: MODUL 3 & 4 — PENGAJUAN BERGABUNG, PENGAJUAN ANGGOTA & NOTIFIKASI
 -- =============================================================================
 
--- 12. Tabel Pengajuan_Bergabung_Tim (Lamaran Pencari Tim ke Tim Tertentu - FR-17 Refinement)
+-- 11. Tabel Pengajuan_Bergabung_Tim (Lamaran Pencari Tim ke Tim Tertentu - FR-16 Refinement)
 -- Catatan PRD v1.0: Atribut posisi wajib disertakan saat melamar
 CREATE TABLE Pengajuan_Bergabung_Tim (
     id_pengajuan_bergabung_tim VARCHAR(36) NOT NULL,
@@ -225,7 +213,7 @@ CREATE TABLE Pengajuan_Bergabung_Tim (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
--- 13. Tabel Pengajuan_Anggota (Undangan Rekrutmen Pembuat Tim ke Calon Anggota - FR-24)
+-- 12. Tabel Pengajuan_Anggota (Undangan Rekrutmen Pembuat Tim ke Calon Anggota - FR-23)
 CREATE TABLE Pengajuan_Anggota (
     id_pengajuan_anggota VARCHAR(36) NOT NULL,
     id_tim VARCHAR(36) NOT NULL,
@@ -241,7 +229,7 @@ CREATE TABLE Pengajuan_Anggota (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
--- 14. Tabel Notifikasi (Pemberitahuan Sistem untuk Semua Modul)
+-- 13. Tabel Notifikasi (Pemberitahuan Sistem untuk Semua Modul)
 CREATE TABLE Notifikasi (
     id_notifikasi VARCHAR(36) NOT NULL,
     id_pengguna VARCHAR(36) NOT NULL, -- Penerima Notifikasi

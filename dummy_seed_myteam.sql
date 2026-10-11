@@ -19,7 +19,6 @@ DELETE FROM Anggota_Tim;
 DELETE FROM Dokumen_Pendukung;
 DELETE FROM Kebutuhan_Anggota_Tim;
 DELETE FROM Data_Tim;
-DELETE FROM Preferensi_Pencarian;
 DELETE FROM Data_Pengalaman;
 DELETE FROM Data_Keahlian;
 DELETE FROM Data_Minat;
@@ -132,17 +131,7 @@ INSERT INTO Data_Pengalaman (id_pengalaman, id_pengguna, nama_kegiatan, peran, t
 
 
 -- =============================================================================
--- 7. TABEL PREFERENSI_PENCARIAN (FR-07: Peran Pengguna di Aplikasi)
--- =============================================================================
-INSERT INTO Preferensi_Pencarian (id_pengguna, preferensi_pencarian, updated_at) VALUES
-('usr_fuadi_01', 'pencari_tim',     '2026-10-03 15:00:00'), -- Fuadi: Ingin melamar ke tim
-('usr_rafa_02',  'pencari_anggota', '2026-10-03 15:05:00'), -- Rafa: Mencari anggota tim
-('usr_diva_03',  'keduanya',        '2026-10-03 15:10:00'), -- Diva: Melamar tim & bisa diajak
-('usr_nayla_04', 'pencari_anggota', '2026-10-03 15:15:00'); -- Nayla: Mencari anggota tim riset
-
-
--- =============================================================================
--- 8. TABEL DATA_TIM (2 Tim yang Dibentuk Mahasiswa: Rafa & Nayla)
+-- 7. TABEL DATA_TIM (2 Tim yang Dibentuk Mahasiswa: Rafa & Nayla)
 -- =============================================================================
 INSERT INTO Data_Tim (id_tim, id_pengguna, nama_tim, nama_kegiatan, kategori_kegiatan, deskripsi, status_tim, created_at) VALUES
 ('tim_gemastik_01', 'usr_rafa_02', 
@@ -161,7 +150,7 @@ INSERT INTO Data_Tim (id_tim, id_pengguna, nama_tim, nama_kegiatan, kategori_keg
 
 
 -- =============================================================================
--- 9. TABEL KEBUTUHAN_ANGGOTA_TIM (Kriteria Posisi Terbuka pada Tim)
+-- 8. TABEL KEBUTUHAN_ANGGOTA_TIM (Kriteria Posisi Terbuka pada Tim)
 -- =============================================================================
 INSERT INTO Kebutuhan_Anggota_Tim (id_kebutuhan, id_tim, posisi_dibutuhkan, keahlian_dibutuhkan, jumlah_anggota_dibutuhkan, created_at) VALUES
 -- Kebutuhan Tim Rafa (GEMASTIK)
@@ -174,7 +163,7 @@ INSERT INTO Kebutuhan_Anggota_Tim (id_kebutuhan, id_tim, posisi_dibutuhkan, keah
 
 
 -- =============================================================================
--- 10. TABEL DOKUMEN_PENDUKUNG (Poster & Panduan Kegiatan Tim)
+-- 9. TABEL DOKUMEN_PENDUKUNG (Poster & Panduan Kegiatan Tim)
 -- =============================================================================
 INSERT INTO Dokumen_Pendukung (id_dokumen, id_tim, jenis_dokumen, nama_file, path_file, urutan, uploaded_at) VALUES
 ('dok_01', 'tim_gemastik_01', 'poster',  'Poster_Gemastik_XVII_Unand.jpg',    'uploads/teams/tim_gemastik_01/poster_gemastik.jpg', 1, '2026-10-05 09:20:00'),
@@ -183,7 +172,7 @@ INSERT INTO Dokumen_Pendukung (id_dokumen, id_tim, jenis_dokumen, nama_file, pat
 
 
 -- =============================================================================
--- 11. TABEL PENGAJUAN_BERGABUNG_TIM (Pencari Tim Melamar ke Tim Tertentu)
+-- 10. TABEL PENGAJUAN_BERGABUNG_TIM (Pencari Tim Melamar ke Tim Tertentu)
 -- Skenario:
 -- 1. Diva melamar ke tim Rafa posisi "UI/UX Designer" -> status: diterima
 -- 2. Fuadi melamar ke tim Rafa posisi "Frontend Flutter" -> status: menunggu
@@ -199,14 +188,14 @@ INSERT INTO Pengajuan_Bergabung_Tim (id_pengajuan_bergabung_tim, id_tim, id_peng
 
 
 -- =============================================================================
--- 12. TABEL ANGGOTA_TIM (Diva Resmi Bergabung ke Tim Rafa setelah Diterima)
+-- 11. TABEL ANGGOTA_TIM (Diva Resmi Bergabung ke Tim Rafa setelah Diterima)
 -- =============================================================================
 INSERT INTO Anggota_Tim (id_anggota_tim, id_tim, id_pengguna, posisi, joined_at) VALUES
 ('ang_01', 'tim_gemastik_01', 'usr_diva_03', 'UI/UX Designer', '2026-10-07 16:00:00');
 
 
 -- =============================================================================
--- 13. TABEL PENGAJUAN_ANGGOTA (Nayla Menemukan Fuadi & Mengajak Bergabung Tim PKM)
+-- 12. TABEL PENGAJUAN_ANGGOTA (Nayla Menemukan Fuadi & Mengajak Bergabung Tim PKM)
 -- Skenario:
 -- Nayla mencari Fuadi lewat fitur cari anggota, melihat profilnya yang kuat di Flutter,
 -- lalu mengirim ajakan bergabung -> status: menunggu respon Fuadi.
@@ -218,33 +207,33 @@ INSERT INTO Pengajuan_Anggota (id_pengajuan_anggota, id_tim, id_pengguna, pesan_
 
 
 -- =============================================================================
--- 14. TABEL NOTIFIKASI (Sinkron Penuh dengan Seluruh Aktivitas di Atas)
+-- 13. TABEL NOTIFIKASI (Sinkron Penuh dengan Seluruh Aktivitas di Atas)
 -- Distribusi Notifikasi Modul 1 s/d Modul 4:
--- - Fuadi (M1): Notifikasi update profil (FR-08) & notifikasi ajakan masuk dari Nayla
--- - Rafa (M2): Notifikasi lamaran masuk dari Diva & Fuadi (FR-13)
--- - Diva (M3): Notifikasi status lamaran diterima oleh Rafa (FR-21)
--- - Nayla (M4): Notifikasi konfirmasi pengiriman ajakan ke calon anggota (FR-26)
+-- - Fuadi (M1): Notifikasi update profil (FR-07) & notifikasi ajakan masuk dari Nayla
+-- - Rafa (M2): Notifikasi lamaran masuk dari Diva & Fuadi (FR-12)
+-- - Diva (M3): Notifikasi status lamaran diterima oleh Rafa (FR-20)
+-- - Nayla (M4): Notifikasi konfirmasi respon ajakan calon anggota (FR-25)
 -- =============================================================================
 INSERT INTO Notifikasi (id_notifikasi, id_pengguna, id_pengajuan_bergabung_tim, id_pengajuan_anggota, jenis_notifikasi, pesan_notifikasi, waktu_notifikasi, status_dibaca) VALUES
--- 1. Notifikasi Fuadi: Pembaruan data riwayat diri berhasil (FR-08 - Modul 1 Fuadi)
+-- 1. Notifikasi Fuadi: Pembaruan data riwayat diri berhasil (FR-07 - Modul 1 Fuadi)
 ('notif_01', 'usr_fuadi_01', NULL, NULL, 
  'aktivitas_profil', 
  'Data riwayat diri dan portofolio Anda berhasil diperbarui di sistem MyTeam.', 
  '2026-10-03 14:06:00', TRUE),
 
--- 2. Notifikasi Rafa: Ada lamaran masuk dari Diva (FR-13 - Modul 2 Rafa)
+-- 2. Notifikasi Rafa: Ada lamaran masuk dari Diva (FR-12 - Modul 2 Rafa)
 ('notif_02', 'usr_rafa_02', 'pbg_01', NULL, 
  'pengajuan_masuk', 
  'Diva Ramadhani mengajukan diri untuk bergabung pada posisi UI/UX Designer di tim Anda (Tim Robotik Cerdas Unand).', 
  '2026-10-07 13:01:00', TRUE),
 
--- 3. Notifikasi Diva: Lamaran ke tim Rafa diterima (FR-21 - Modul 3 Diva)
+-- 3. Notifikasi Diva: Lamaran ke tim Rafa diterima (FR-20 - Modul 3 Diva)
 ('notif_03', 'usr_diva_03', 'pbg_01', NULL, 
  'pengajuan_diterima', 
  'Selamat! Pengajuan bergabung Anda untuk posisi UI/UX Designer pada "Tim Robotik Cerdas Unand" telah diterima oleh Rafa Gian Atthari.', 
  '2026-10-07 16:01:00', TRUE),
 
--- 4. Notifikasi Rafa: Ada lamaran masuk dari Fuadi (FR-13 - Modul 2 Rafa)
+-- 4. Notifikasi Rafa: Ada lamaran masuk dari Fuadi (FR-12 - Modul 2 Rafa)
 ('notif_04', 'usr_rafa_02', 'pbg_02', NULL, 
  'pengajuan_masuk', 
  'Fuadi Dhiyaulhaq mengajukan diri untuk bergabung pada posisi Frontend Flutter di tim Anda (Tim Robotik Cerdas Unand).', 

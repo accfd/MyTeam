@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 
-// GET /api/v1/profile/detail/:id_pengguna (FR-06 & FR-23: Detail Profil Lengkap)
+// GET /api/v1/profile/detail/:id_pengguna (FR-06 & FR-22: Detail Profil Lengkap)
 router.get('/detail/:id_pengguna', async (req, res) => {
   try {
     const { id_pengguna } = req.params;
@@ -17,7 +17,6 @@ router.get('/detail/:id_pengguna', async (req, res) => {
     }
 
     const [dataDiri] = await db.query('SELECT * FROM Data_Diri WHERE id_pengguna = ?', [id_pengguna]);
-    const [pref] = await db.query('SELECT preferensi_pencarian FROM Preferensi_Pencarian WHERE id_pengguna = ?', [id_pengguna]);
     const [medsos] = await db.query('SELECT id_media_sosial, nama_media_sosial, link_media_sosial FROM Media_Sosial WHERE id_pengguna = ?', [id_pengguna]);
     const [minat] = await db.query('SELECT id_minat, minat, deskripsi_minat FROM Data_Minat WHERE id_pengguna = ?', [id_pengguna]);
     const [keahlian] = await db.query('SELECT id_keahlian, keahlian, deskripsi_keahlian FROM Data_Keahlian WHERE id_pengguna = ?', [id_pengguna]);
@@ -37,7 +36,6 @@ router.get('/detail/:id_pengguna', async (req, res) => {
       data: {
         pengguna: user[0],
         data_diri: dataDiri[0] || null,
-        preferensi_pencarian: pref[0]?.preferensi_pencarian || 'keduanya',
         media_sosial: medsos,
         minat,
         keahlian,
@@ -77,7 +75,7 @@ router.put('/data-diri', async (req, res) => {
         ipk = VALUES(ipk)
     `, [id_pengguna, deskripsi_singkat, kontak, program_studi, fakultas, ipk]);
 
-    // Notifikasi update profil (FR-08 - Modul 1 Fuadi)
+    // Notifikasi update profil (FR-07 - Modul 1 Fuadi)
     await db.query(
       'INSERT INTO Notifikasi (id_notifikasi, id_pengguna, jenis_notifikasi, pesan_notifikasi) VALUES (?, ?, ?, ?)',
       [`notif_${Date.now()}`, id_pengguna, 'aktivitas_profil', 'Data diri dan kontak berhasil diperbarui.']
@@ -155,7 +153,7 @@ router.post('/pengalaman', async (req, res) => {
       [id_pengalaman, id_pengguna, nama_kegiatan, peran, tahun, deskripsi_pengalaman]
     );
 
-    // Auto-event notifikasi (FR-08 - Modul 1 Fuadi)
+    // Auto-event notifikasi (FR-07 - Modul 1 Fuadi)
     await db.query(
       'INSERT INTO Notifikasi (id_notifikasi, id_pengguna, jenis_notifikasi, pesan_notifikasi) VALUES (?, ?, ?, ?)',
       [`notif_${Date.now()}`, id_pengguna, 'aktivitas_profil', `Riwayat pengalaman "${nama_kegiatan}" berhasil ditambahkan.`]
@@ -166,31 +164,6 @@ router.post('/pengalaman', async (req, res) => {
       message: 'Riwayat pengalaman berhasil ditambahkan',
       data: { id_pengalaman, nama_kegiatan, peran, tahun, deskripsi_pengalaman }
     });
-  } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-// GET & PUT /api/v1/profile/preferensi (FR-07)
-router.get('/preferensi', async (req, res) => {
-  try {
-    const id_pengguna = req.query.id_pengguna || 'usr_fuadi_01';
-    const [rows] = await db.query('SELECT preferensi_pencarian FROM Preferensi_Pencarian WHERE id_pengguna = ?', [id_pengguna]);
-    return res.json({ success: true, data: rows[0] || { preferensi_pencarian: 'keduanya' } });
-  } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-router.put('/preferensi', async (req, res) => {
-  try {
-    const { id_pengguna, preferensi_pencarian } = req.body;
-    await db.query(`
-      INSERT INTO Preferensi_Pencarian (id_pengguna, preferensi_pencarian)
-      VALUES (?, ?)
-      ON DUPLICATE KEY UPDATE preferensi_pencarian = VALUES(preferensi_pencarian)
-    `, [id_pengguna, preferensi_pencarian]);
-    return res.json({ success: true, message: 'Preferensi pencarian berhasil diperbarui', data: { preferensi_pencarian } });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
