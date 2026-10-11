@@ -5,10 +5,13 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 8000;
 
+const path = require('path');
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/storage', express.static(path.join(__dirname, 'storage')));
 
 // Rute Pengujian Status Server (Health Check)
 app.get('/', (req, res) => {
