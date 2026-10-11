@@ -95,7 +95,10 @@ router.post('/login', async (req, res) => {
     }
 
     const user = rows[0];
-    const isMatch = await bcrypt.compare(kata_sandi, user.kata_sandi);
+    // Fix kompatibilitas: hash dummy seed pakai prefix $2y$ (PHP),
+    // bcryptjs Node.js pakai $2b$ — keduanya algoritmanya sama, beda prefix saja.
+    const hashCompat = user.kata_sandi.replace(/^\$2y\$/, '$2b$');
+    const isMatch = await bcrypt.compare(kata_sandi, hashCompat);
     if (!isMatch) {
       return res.status(401).json({
         success: false,

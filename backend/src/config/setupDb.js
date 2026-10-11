@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const mysql = require('mysql2/promise');
+const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 async function setupDatabase() {
@@ -39,8 +40,17 @@ async function setupDatabase() {
     await connection.query(seedSql);
     console.log('✅ Data dummy seeder berhasil diimpor!');
 
+    // 4. Generate ulang hash bcrypt yang benar menggunakan bcryptjs
+    //    (hash di seed SQL adalah format $2y$ PHP, perlu diganti $2b$ Node.js)
+    console.log('⏳ Memperbaiki hash password akun dummy...');
+    const correctHash = await bcrypt.hash('SandiAman123!', 10);
+    await connection.query('USE myteam_db');
+    await connection.query('UPDATE Pengguna SET kata_sandi = ?', [correctHash]);
+    console.log('✅ Hash password semua akun dummy berhasil diperbaiki!');
+
     console.log('\n======================================================');
     console.log('🎉 SUKSES! Database myteam_db dan data dummy siap dipakai!');
+    console.log('   Login dengan: NIM mana saja + kata sandi: SandiAman123!');
     console.log('======================================================');
   } catch (error) {
     console.error('❌ Gagal inisialisasi database:', error.message);
