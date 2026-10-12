@@ -7,6 +7,7 @@ import '../../models/feed_team_model.dart';
 import '../../../talent_search/models/talent_member_model.dart';
 import '../../services/team_feed_service.dart';
 import '../../../profile/views/screens/profile_screen.dart';
+import '../../../team_management/views/screens/team_management_screen.dart';
 
 /// Home Screen — MyTeam
 /// Feed utama: Rekomendasi Tim, Talenta Mahasiswa, CTA Buat Tim
@@ -125,12 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
           icon: Icons.search_rounded,
         );
       case 2:
-        return _buildPlaceholderTab(
-          title: 'Manajemen Tim (MyTeam)',
-          moduleLabel: 'Modul 2 • Pembentukan & Seleksi Tim',
-          description: 'Fitur pembentukan tim baru, pengunggahan poster panduan kegiatan, serta pengelolaan dan seleksi pelamar masuk.',
-          icon: Icons.groups_rounded,
-        );
+        return const TeamManagementScreen();
       case 3:
         return _buildPlaceholderTab(
           title: 'Pusat Notifikasi',
@@ -153,7 +149,8 @@ class _HomeScreenState extends State<HomeScreen> {
       case 1:
         return _buildBrandedAppBar('Eksplorasi & Pencarian Talenta');
       case 2:
-        return _buildBrandedAppBar('Pembentukan & Manajemen Tim');
+      case 4:
+        return null;
       case 3:
         return _buildBrandedAppBar('Pusat Notifikasi & Aktivitas');
       default:
