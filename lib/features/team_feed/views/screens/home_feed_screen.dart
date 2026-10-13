@@ -8,6 +8,8 @@ import '../../../talent_search/models/talent_member_model.dart';
 import '../../services/team_feed_service.dart';
 import '../../../profile/views/screens/profile_screen.dart';
 import '../../../team_management/views/screens/team_management_screen.dart';
+import '../../../talent_search/views/screens/talent_search_screen.dart';
+import '../../../talent_search/views/screens/received_invitations_screen.dart';
 
 /// Home Screen — MyTeam
 /// Feed utama: Rekomendasi Tim, Talenta Mahasiswa, CTA Buat Tim
@@ -119,21 +121,13 @@ class _HomeScreenState extends State<HomeScreen> {
           icon: Icons.explore_rounded,
         );
       case 1:
-        return _buildPlaceholderTab(
-          title: 'Pencarian Tim & Mahasiswa',
-          moduleLabel: 'Modul 4 • Pencarian & Filter Talenta',
-          description: 'Fitur pencarian dan penyaringan calon rekan setim berdasarkan program studi, minat, dan keahlian spesifik.',
-          icon: Icons.search_rounded,
-        );
+        // FR-21, FR-22, FR-23 — Modul 4 Diva Ramadhani
+        return const TalentSearchScreen();
       case 2:
         return const TeamManagementScreen();
       case 3:
-        return _buildPlaceholderTab(
-          title: 'Pusat Notifikasi',
-          moduleLabel: 'Sistem Notifikasi & Riwayat Pengajuan',
-          description: 'Pemberitahuan real-time terkait status lamaran diterima/ditolak, undangan masuk tim lain, dan aktivitas akun.',
-          icon: Icons.notifications_none_rounded,
-        );
+        // FR-24: Undangan Masuk + FR-25: Respon undangan & notifikasi
+        return const ReceivedInvitationsScreen();
       case 4:
         return const ProfileScreen();
       default:
@@ -147,12 +141,14 @@ class _HomeScreenState extends State<HomeScreen> {
       case 0:
         return _buildBrandedAppBar('Feed & Rekomendasi Kegiatan');
       case 1:
+        // TalentSearchScreen manages its own header; AppBar still shown above
         return _buildBrandedAppBar('Eksplorasi & Pencarian Talenta');
       case 2:
       case 4:
         return null;
       case 3:
-        return _buildBrandedAppBar('Pusat Notifikasi & Aktivitas');
+        // ReceivedInvitationsScreen has its own AppBar
+        return null;
       default:
         return null;
     }

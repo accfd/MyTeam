@@ -212,4 +212,41 @@ router.patch('/received-invitations/:id/status', async (req, res) => {
   }
 });
 
+// GET /api/v1/applications/sent-invitations (FR-25: Status Undangan Terkirim)
+// Digunakan oleh ketua tim untuk melihat status semua undangan yang pernah dikirim
+router.get('/sent-invitations', async (req, res) => {
+  try {
+    const id_pengguna = req.query.id_pengguna || 'usr_fuadi_01';
+
+    // Ambil semua undangan dari tim yang dimiliki user
+    const [rows] = await db.query(`
+      SELECT
+        pa.id_pengajuan_anggota,
+        pa.id_tim,
+        pa.id_pengguna        AS id_calon,
+        pa.pesan_pengajuan,
+        pa.status_pengajuan,
+        pa.waktu_pengajuan,
+        dt.nama_tim,
+        dt.nama_kegiatan,
+        dt.kategori_kegiatan,
+        p.nama_pengguna       AS nama_calon,
+        p.foto_profil         AS foto_calon,
+        p.nim                 AS nim_calon,
+        dd.program_studi      AS prodi_calon
+      FROM Pengajuan_Anggota pa
+      JOIN Data_Tim dt ON pa.id_tim = dt.id_tim
+      JOIN Pengguna p  ON pa.id_pengguna = p.id_pengguna
+      LEFT JOIN Data_Diri dd ON p.id_pengguna = dd.id_pengguna
+      WHERE dt.id_pengguna = ?
+      ORDER BY pa.waktu_pengajuan DESC
+    `, [id_pengguna]);
+
+    return res.json({ success: true, data: rows });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 module.exports = router;
+

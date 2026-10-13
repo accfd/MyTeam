@@ -60,7 +60,8 @@ Matriks berikut memetakan 25 Kebutuhan Fungsional (*Functional Requirements*) da
 | **FR-22** | Melihat detail profil calon anggota dari hasil pencarian | `GET` | `/profile/detail/{id_pengguna}` | Diva (M4) |
 | **FR-23** | Pembuat tim mengajukan permintaan (undangan) ke calon anggota | `POST` | `/applications/invite-member` | Diva (M4) |
 | **FR-24** | Calon anggota melihat detail tim & menerima/menolak undangan | `GET`, `PATCH` | `/applications/received-invitations`, status | Diva (M4) |
-| **FR-25** | Notifikasi respon undangan tim (calon anggota terima/tolak) | *Auto-event* | `/notifications` | Diva (M4) |
+| **FR-24b** | Pembuat tim melihat status undangan terkirim (menunggu/diterima/ditolak) | `GET` | `/applications/sent-invitations` | Diva (M4) |
+| **FR-25** | Notifikasi respon undangan tim (calon anggota terima/tolak → pembuat tim notif) | *Auto-event* | `/notifications` | Diva (M4) |
 
 ---
 
@@ -668,9 +669,33 @@ Authorization: Bearer <jwt_access_token>
 }
 ```
 
-#### 4.4.3 Respon Calon Anggota terhadap Undangan (FR-24)
-* **Daftar Undangan Masuk ke Saya:** `GET /applications/received-invitations`
-* **Keputusan Calon Anggota:** `PATCH /applications/invite-member/{id_pengajuan_anggota}/status`
+#### 4.4.3 Respon Calon Anggota terhadap Undangan (FR-24 — Tab Undangan Masuk)
+Pada antarmuka pengguna **Notifikasi Undangan**, calon anggota dapat membuka tab **"Undangan Masuk"** untuk melihat tim-tim yang mengajak mereka bergabung dan memberikan keputusan (*Terima* / *Tolak*).
+
+* **Daftar Undangan Masuk:** `GET /applications/received-invitations?id_pengguna={id_pengguna}`
+* **Akses:** Terautentikasi (Calon Anggota)
+* **Respon Sukses (200 OK):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id_pengajuan_anggota": "pga_1728800001",
+      "id_tim": "tim_77189a",
+      "id_pengguna": "usr_2411522001",
+      "pesan_pengajuan": "Ayo bergabung ke tim kami!",
+      "status_pengajuan": "menunggu",
+      "waktu_pengajuan": "2026-10-13T10:00:00.000Z",
+      "nama_tim": "PKM-KC Inovasi Pertanian",
+      "nama_kegiatan": "PKM Karsa Cipta - Smart Farming IoT",
+      "kategori_kegiatan": "Penelitian",
+      "deskripsi_tim": "Tim PKM Karsa Cipta yang mengembangkan sistem monitoring kebun cerdas berbasis IoT dan dashboard real-time untuk petani Sumatera Barat."
+    }
+  ]
+}
+```
+
+* **Aksi Keputusan Calon Anggota:** `PATCH /applications/received-invitations/{id_pengajuan_anggota}/status`
 * **Request Body:**
 ```json
 {
@@ -678,17 +703,69 @@ Authorization: Bearer <jwt_access_token>
 }
 ```
 *(Nilai valid: `"diterima"` atau `"ditolak"`)*
+* **Respon Sukses (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Undangan berhasil di-diterima."
+}
+```
 
-#### 4.4.4 Notifikasi Respon Calon Anggota (FR-25) & Endpoint Kotak Masuk Notifikasi
-> **Distribusi Notifikasi:** Setiap modul bertanggung jawab atas pembuatan (*trigger & event dispatch*) notifikasi masing-masing:
-> - **Modul 1 (Fuadi):** FR-07 (Aktivitas pembaruan data riwayat diri)
-> - **Modul 2 (Nayla):** FR-12 (Pengajuan baru yang masuk ke tim buatan pengguna)
-> - **Modul 3 (Rafa):** FR-20 (Pembaruan status pengajuan bergabung: diterima/ditolak)
-> - **Modul 4 (Diva):** FR-25 (Respon calon anggota atas ajakan tim: diterima/ditolak)
-> 
-> Endpoint berikut menyediakan antarmuka terpusat bagi pengguna untuk melihat dan mengelola seluruh notifikasi yang diterima:
+#### 4.4.4 Pemantauan Undangan Terkirim (FR-24b), Notifikasi Respon (FR-25), & Endpoint Kotak Masuk Notifikasi
 
-* **Ambil Daftar Notifikasi:** `GET /notifications?page=1&limit=15`
+Fitur ini menyediakan antarmuka terpadu pada halaman **Notifikasi Undangan** dan **Pusat Notifikasi Aplikasi**:
+1. **Tab "Undangan Terkirim" (FR-24b):** Memungkinkan pembuat/ketua tim memantau seluruh undangan yang pernah mereka kirim ke calon anggota beserta status terkininya.
+2. **Auto-Event Notifikasi Respon (FR-25):** Saat calon anggota menerima atau menolak undangan pada FR-24, backend secara otomatis membuat notifikasi respon untuk ketua tim.
+3. **Pusat Kotak Masuk Notifikasi (In-App Notification Center):** Mengelola seluruh notifikasi dari seluruh modul aplikasi.
+
+---
+
+##### A. Pemantauan Status Undangan Terkirim (FR-24b — Tab Undangan Terkirim)
+* **Endpoint:** `GET /applications/sent-invitations?id_pengguna={id_pengguna}`
+* **Akses:** Terautentikasi (Pembuat / Ketua Tim)
+* **Deskripsi:** Menampilkan status seluruh undangan yang dikirim oleh tim milik pengguna. Nilai `status_pengajuan` dapat berupa `"menunggu"`, `"diterima"`, atau `"ditolak"`.
+* **Respon Sukses (200 OK):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id_pengajuan_anggota": "pga_1728800002",
+      "id_tim": "tim_77189b",
+      "id_calon": "usr_2411521007",
+      "pesan_pengajuan": "Halo Nayla, kami melihat keahlian UI/UX Anda sangat cocok untuk kebutuhan tim kami.",
+      "status_pengajuan": "menunggu",
+      "waktu_pengajuan": "2026-10-13T10:05:00.000Z",
+      "nama_tim": "Inovator Pangan Unand",
+      "nama_kegiatan": "Program Kreativitas Mahasiswa Riset Eksakta (PKM-RE) 2026",
+      "kategori_kegiatan": "Penelitian",
+      "nama_calon": "Nayla Puspita Sari",
+      "foto_calon": "profiles/usr_nayla_04.jpg",
+      "nim_calon": "2411521007",
+      "prodi_calon": "Sistem Informasi"
+    }
+  ]
+}
+```
+
+---
+
+##### B. Mekanisme Notifikasi Otomatis Respon Calon Anggota (FR-25 Auto-Event)
+> **Distribusi Event Notifikasi Lintas Modul:**
+> Setiap modul bertanggung jawab atas pembuatan (*trigger & event dispatch*) notifikasi masing-masing ke tabel basis data `Notifikasi`:
+> - **Modul 1 (Fuadi):** FR-07 (Pembaruan data profil & rekam akademik)
+> - **Modul 2 (Nayla):** FR-12 (Pengajuan baru yang masuk ke tim buatan pengguna: `jenis_notifikasi = 'pengajuan_masuk'`)
+> - **Modul 3 (Rafa):** FR-20 (Pembaruan status pelamar bergabung ke tim: `jenis_notifikasi = 'pengajuan_diterima'` / `'pengajuan_ditolak'`)
+> - **Modul 4 (Diva):** 
+>   - FR-23: Calon anggota menerima ajakan bergabung (`jenis_notifikasi = 'undangan_masuk'`)
+>   - FR-25: Ketua tim menerima notifikasi atas keputusan calon anggota (`jenis_notifikasi = 'respon_undangan'`)
+
+---
+
+##### C. Endpoint Terpusat Kotak Masuk Notifikasi
+Endpoint universal untuk menampilkan feed notifikasi dan mengelola lencana belum dibaca (*unread badge counter*):
+
+* **Ambil Seluruh Daftar Notifikasi:** `GET /notifications?id_pengguna={id_pengguna}`
 * **Respon Sukses (200 OK):**
 ```json
 {
@@ -696,20 +773,38 @@ Authorization: Bearer <jwt_access_token>
   "message": "Daftar notifikasi berhasil diambil",
   "data": [
     {
-      "id_notifikasi": "notif_501",
-      "id_pengguna": "usr_2411522001",
-      "jenis_notifikasi": "pengajuan_diterima",
-      "pesan_notifikasi": "Selamat! Pengajuan bergabung Anda untuk posisi Computer Vision Specialist pada 'Tim Robotik Cerdas Unand' telah diterima.",
-      "id_pengajuan_bergabung_tim": "pbg_9901b",
-      "id_pengajuan_anggota": null,
+      "id_notifikasi": "notif_502",
+      "id_pengguna": "usr_2411521017",
+      "jenis_notifikasi": "respon_undangan",
+      "pesan_notifikasi": "Fuadi Dhiyaulhaq telah menerima undangan bergabung ke tim \"PKM-KC Inovasi Pertanian\".",
+      "id_pengajuan_bergabung_tim": null,
+      "id_pengajuan_anggota": "pga_1728800001",
       "status_dibaca": false,
-      "waktu_notifikasi": "2026-10-11T15:10:00Z"
+      "waktu_notifikasi": "2026-10-13T10:15:00.000Z"
     }
   ]
 }
 ```
-* **Tandai Telah Dibaca:** `PATCH /notifications/{id_notifikasi}/read`
-* **Hitung Notifikasi Belum Dibaca:** `GET /notifications/unread-count`
+
+* **Hitung Notifikasi Belum Dibaca (Unread Counter Badge):** `GET /notifications/unread-count?id_pengguna={id_pengguna}`
+* **Respon Sukses (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "unread_count": 2
+  }
+}
+```
+
+* **Tandai Notifikasi Telah Dibaca:** `PATCH /notifications/{id_notifikasi}/read`
+* **Respon Sukses (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Notifikasi ditandai telah dibaca."
+}
+```
 
 ---
 
