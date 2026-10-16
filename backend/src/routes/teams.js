@@ -133,7 +133,18 @@ router.get('/feed/:id_tim', async (req, res) => {
 router.get('/my-teams', async (req, res) => {
   try {
     const id_pengguna = getAuthUserId(req);
-    const [rows] = await db.query('SELECT * FROM Data_Tim WHERE id_pengguna = ? ORDER BY created_at DESC', [id_pengguna]);
+    const [rows] = await db.query(`
+      SELECT dt.*,
+        CASE WHEN dt.id_pengguna = ? THEN 'pemilik' ELSE 'anggota' END AS peran
+      FROM Data_Tim dt
+      WHERE dt.id_pengguna = ?
+        OR EXISTS (
+          SELECT 1
+          FROM Anggota_Tim at
+          WHERE at.id_tim = dt.id_tim AND at.id_pengguna = ?
+        )
+      ORDER BY dt.created_at DESC
+    `, [id_pengguna, id_pengguna, id_pengguna]);
 
     for (const team of rows) {
       const [kebutuhan] = await db.query('SELECT * FROM Kebutuhan_Anggota_Tim WHERE id_tim = ?', [team.id_tim]);
@@ -209,6 +220,7 @@ router.post('/', upload.any(), async (req, res) => {
     createdTeam.kebutuhan_tim = kebutuhanList;
     createdTeam.dokumen_pendukung = dokumenList;
     createdTeam.anggota_tim = [];
+    createdTeam.peran = 'pemilik';
 
     return res.status(201).json({
       success: true,
@@ -243,16 +255,28 @@ router.get('/:id_tim/applications', async (req, res) => {
 router.get('/:id_tim', async (req, res) => {
   try {
     const { id_tim } = req.params;
+    const id_pengguna = getAuthUserId(req);
     const [teams] = await db.query(`
-      SELECT dt.*, p.nama_pengguna, p.foto_profil
+      SELECT dt.*, p.nama_pengguna, p.foto_profil,
+        CASE WHEN dt.id_pengguna = ? THEN 'pemilik' ELSE 'anggota' END AS peran
       FROM Data_Tim dt
       JOIN Pengguna p ON dt.id_pengguna = p.id_pengguna
       WHERE dt.id_tim = ?
-    `, [id_tim]);
+    `, [id_pengguna, id_tim]);
 
     if (teams.length === 0) return res.status(404).json({ success: false, message: 'Tim tidak ditemukan' });
 
     const team = teams[0];
+    if (team.id_pengguna !== id_pengguna) {
+      const [membership] = await db.query(
+        'SELECT id_anggota_tim FROM Anggota_Tim WHERE id_tim = ? AND id_pengguna = ?',
+        [id_tim, id_pengguna]
+      );
+      if (membership.length === 0) {
+        return res.status(403).json({ success: false, message: 'Hanya pemilik atau anggota tim yang dapat melihat detail ini.' });
+      }
+    }
+
     const [kebutuhan] = await db.query('SELECT * FROM Kebutuhan_Anggota_Tim WHERE id_tim = ?', [id_tim]);
     const [dokumen] = await db.query('SELECT * FROM Dokumen_Pendukung WHERE id_tim = ? ORDER BY urutan ASC', [id_tim]);
     const [anggota] = await db.query(`
@@ -288,6 +312,9 @@ router.post('/:id_tim/update', upload.any(), async (req, res) => {
     const [existing] = await db.query('SELECT * FROM Data_Tim WHERE id_tim = ?', [id_tim]);
     if (existing.length === 0) {
       return res.status(404).json({ success: false, message: 'Tim tidak ditemukan' });
+    }
+    if (existing[0].id_pengguna !== getAuthUserId(req)) {
+      return res.status(403).json({ success: false, message: 'Hanya pemilik tim yang dapat mengubah tim ini.' });
     }
 
     // Aturan Bisnis FR-10: kategori_kegiatan dikunci / tidak boleh diubah
@@ -330,6 +357,7 @@ router.post('/:id_tim/update', upload.any(), async (req, res) => {
     // Ambil data tim terbaru
     const [teams] = await db.query('SELECT * FROM Data_Tim WHERE id_tim = ?', [id_tim]);
     const team = teams[0] || {};
+    team.peran = 'pemilik';
     const [kebutuhanList] = await db.query('SELECT * FROM Kebutuhan_Anggota_Tim WHERE id_tim = ?', [id_tim]);
     const [dokumenList] = await db.query('SELECT * FROM Dokumen_Pendukung WHERE id_tim = ? ORDER BY urutan ASC', [id_tim]);
     const [anggotaList] = await db.query(`
@@ -360,6 +388,9 @@ router.put('/:id_tim', async (req, res) => {
     if (existing.length === 0) {
       return res.status(404).json({ success: false, message: 'Tim tidak ditemukan' });
     }
+    if (existing[0].id_pengguna !== getAuthUserId(req)) {
+      return res.status(403).json({ success: false, message: 'Hanya pemilik tim yang dapat mengubah tim ini.' });
+    }
 
     // Aturan Bisnis FR-10: kategori_kegiatan dikunci / tidak boleh diubah
     if (req.body.kategori_kegiatan && req.body.kategori_kegiatan !== existing[0].kategori_kegiatan) {
@@ -383,9 +414,12 @@ router.put('/:id_tim', async (req, res) => {
 router.delete('/:id_tim', async (req, res) => {
   try {
     const { id_tim } = req.params;
-    const [existing] = await db.query('SELECT id_tim FROM Data_Tim WHERE id_tim = ?', [id_tim]);
+    const [existing] = await db.query('SELECT id_tim, id_pengguna FROM Data_Tim WHERE id_tim = ?', [id_tim]);
     if (existing.length === 0) {
       return res.status(404).json({ success: false, message: 'Tim tidak ditemukan' });
+    }
+    if (existing[0].id_pengguna !== getAuthUserId(req)) {
+      return res.status(403).json({ success: false, message: 'Hanya pemilik tim yang dapat menghapus tim ini.' });
     }
 
     await db.query('DELETE FROM Data_Tim WHERE id_tim = ?', [id_tim]);

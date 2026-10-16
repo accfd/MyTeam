@@ -56,12 +56,18 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
   // ── Load Received ──────────────────────────────────────────────────────────
   Future<void> _loadReceived() async {
     if (!mounted) return;
-    setState(() { _loadingReceived = true; _errorReceived = null; });
+    setState(() {
+      _loadingReceived = true;
+      _errorReceived = null;
+    });
     try {
       final data = await TalentSearchService.getReceivedInvitations(_myUserId);
       if (mounted) setState(() => _received = data);
     } catch (e) {
-      if (mounted) setState(() => _errorReceived = e.toString().replaceFirst('Exception: ', ''));
+      if (mounted)
+        setState(
+          () => _errorReceived = e.toString().replaceFirst('Exception: ', ''),
+        );
     } finally {
       if (mounted) setState(() => _loadingReceived = false);
     }
@@ -70,12 +76,18 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
   // ── Load Sent ─────────────────────────────────────────────────────────────
   Future<void> _loadSent() async {
     if (!mounted) return;
-    setState(() { _loadingSent = true; _errorSent = null; });
+    setState(() {
+      _loadingSent = true;
+      _errorSent = null;
+    });
     try {
       final data = await TalentSearchService.getSentInvitations(_myUserId);
       if (mounted) setState(() => _sent = data);
     } catch (e) {
-      if (mounted) setState(() => _errorSent = e.toString().replaceFirst('Exception: ', ''));
+      if (mounted)
+        setState(
+          () => _errorSent = e.toString().replaceFirst('Exception: ', ''),
+        );
     } finally {
       if (mounted) setState(() => _loadingSent = false);
     }
@@ -85,66 +97,236 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
   Future<void> _respond(String id, String status) async {
     setState(() => _processingIds.add(id));
     try {
-      await TalentSearchService.respondInvitation(
-          idPengajuanAnggota: id, status: status);
+      final response = await TalentSearchService.respondInvitation(
+        idPengajuanAnggota: id,
+        status: status,
+      );
       if (mounted) {
-        final label = status == 'diterima' ? 'diterima' : 'ditolak';
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Undangan berhasil $label.'),
-          backgroundColor: status == 'diterima'
-              ? AppColors.statusSuccessText
-              : AppColors.statusDangerText,
-          behavior: SnackBarBehavior.floating,
-        ));
+        final finalStatus = response['status_pengajuan'] as String;
+        final message = response['message'] as String;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: finalStatus == 'diterima'
+                ? AppColors.statusSuccessText
+                : AppColors.statusDangerText,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
         await _loadReceived();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: AppColors.statusDangerText,
-          behavior: SnackBarBehavior.floating,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
+            backgroundColor: AppColors.statusDangerText,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _processingIds.remove(id));
     }
   }
 
-  Future<void> _confirmRespond(String id, String namaTim, String status) async {
+  Future<void> _confirmRespond(
+    String id,
+    String namaTim,
+    String posisi,
+    String status,
+  ) async {
     final isAccept = status == 'diterima';
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(isAccept ? 'Terima Undangan?' : 'Tolak Undangan?',
-            style: AppTextStyles.titleMd),
-        content: Text(
-          isAccept
-              ? 'Anda akan bergabung ke tim "$namaTim". Aksi ini tidak dapat dibatalkan.'
-              : 'Anda akan menolak undangan dari tim "$namaTim".',
-          style: AppTextStyles.bodyMd.copyWith(color: AppColors.textMuted),
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+        contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+        title: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: isAccept
+                    ? AppColors.primarySoft
+                    : AppColors.statusDangerBg,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(
+                isAccept ? Icons.group_add_rounded : Icons.person_off_rounded,
+                color: isAccept
+                    ? AppColors.primaryContainer
+                    : AppColors.statusDangerText,
+                size: 25,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isAccept ? 'Konfirmasi bergabung' : 'Tolak undangan',
+                    style: AppTextStyles.titleMd.copyWith(fontSize: 17),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    isAccept ? 'Satu langkah lagi!' : 'Pastikan pilihanmu',
+                    style: AppTextStyles.bodySm.copyWith(fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              isAccept
+                  ? 'Kamu akan bergabung sebagai anggota tim:'
+                  : 'Kamu akan menolak undangan bergabung ke:',
+              style: AppTextStyles.bodyMd.copyWith(color: AppColors.textMuted),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: isAccept
+                    ? AppColors.background
+                    : const Color(0xFFFFF7F7),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: isAccept ? AppColors.border : AppColors.statusDangerBg,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: isAccept
+                          ? AppColors.primarySoft
+                          : AppColors.statusDangerBg,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.groups_rounded,
+                      color: isAccept
+                          ? AppColors.primary
+                          : AppColors.statusDangerText,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          namaTim,
+                          style: AppTextStyles.bodyMd.copyWith(
+                            color: AppColors.text,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        if (posisi.isNotEmpty) ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            'Posisi: $posisi',
+                            style: AppTextStyles.bodySm.copyWith(fontSize: 12),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isAccept) ...[
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    color: AppColors.statusPendingText,
+                    size: 17,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Setelah diterima, kamu akan langsung tercatat sebagai anggota tim.',
+                      style: AppTextStyles.bodySm.copyWith(
+                        color: AppColors.textMuted,
+                        height: 1.45,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Batal',
-                style: AppTextStyles.labelLg.copyWith(color: AppColors.textMuted)),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isAccept
-                  ? AppColors.primaryContainer
-                  : AppColors.statusDangerText,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          SizedBox(
+            width: double.infinity,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                OutlinedButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.textMuted,
+                    side: const BorderSide(color: AppColors.border),
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    'Kembali',
+                    style: AppTextStyles.labelLg.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                ElevatedButton.icon(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  icon: Icon(
+                    isAccept
+                        ? Icons.check_circle_outline_rounded
+                        : Icons.close_rounded,
+                    size: 19,
+                  ),
+                  label: Text(
+                    isAccept ? 'Ya, Terima Undangan' : 'Ya, Tolak Undangan',
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isAccept
+                        ? AppColors.primaryContainer
+                        : AppColors.statusDangerText,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            child: Text(isAccept ? 'Terima' : 'Tolak',
-                style: AppTextStyles.labelLg.copyWith(fontSize: 13)),
           ),
         ],
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       ),
     );
     if (confirmed == true) await _respond(id, status);
@@ -155,8 +337,9 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
   // ─────────────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    final pendingCount =
-        _received.where((i) => i['status_pengajuan'] == 'menunggu').length;
+    final pendingCount = _received
+        .where((i) => i['status_pengajuan'] == 'menunggu')
+        .length;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -166,18 +349,25 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
         scrolledUnderElevation: 1,
         shadowColor: AppColors.border,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded,
-              color: AppColors.text, size: 22),
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: AppColors.text,
+            size: 22,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Notifikasi Undangan',
-                style: AppTextStyles.titleMd.copyWith(fontSize: 16)),
-            Text('Kelola undangan tim kamu',
-                style: AppTextStyles.bodySm.copyWith(fontSize: 11)),
+            Text(
+              'Notifikasi Undangan',
+              style: AppTextStyles.titleMd.copyWith(fontSize: 16),
+            ),
+            Text(
+              'Kelola undangan tim kamu',
+              style: AppTextStyles.bodySm.copyWith(fontSize: 11),
+            ),
           ],
         ),
         actions: [
@@ -192,8 +382,11 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
             ),
             child: IconButton(
               padding: EdgeInsets.zero,
-              icon: const Icon(Icons.refresh_rounded,
-                  color: AppColors.primary, size: 20),
+              icon: const Icon(
+                Icons.refresh_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
               onPressed: () => Future.wait([_loadReceived(), _loadSent()]),
               tooltip: 'Segarkan',
             ),
@@ -216,16 +409,21 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primaryContainer,
                         borderRadius: BorderRadius.circular(99),
                       ),
-                      child: Text('$pendingCount',
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700)),
+                      child: Text(
+                        '$pendingCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ],
                 ],
@@ -237,10 +435,7 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
       ),
       body: TabBarView(
         controller: _tabCtrl,
-        children: [
-          _buildReceivedTab(),
-          _buildSentTab(),
-        ],
+        children: [_buildReceivedTab(), _buildSentTab()],
       ),
     );
   }
@@ -262,10 +457,12 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
       );
     }
 
-    final menunggu =
-        _received.where((i) => i['status_pengajuan'] == 'menunggu').toList();
-    final selesai =
-        _received.where((i) => i['status_pengajuan'] != 'menunggu').toList();
+    final menunggu = _received
+        .where((i) => i['status_pengajuan'] == 'menunggu')
+        .toList();
+    final selesai = _received
+        .where((i) => i['status_pengajuan'] != 'menunggu')
+        .toList();
 
     return RefreshIndicator(
       color: AppColors.primaryContainer,
@@ -275,14 +472,20 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
         children: [
           if (menunggu.isNotEmpty) ...[
             _buildSectionHeader(
-                'Menunggu Keputusan', menunggu.length, Colors.amber),
+              'Menunggu Keputusan',
+              menunggu.length,
+              Colors.amber,
+            ),
             const SizedBox(height: 8),
             ...menunggu.map((inv) => _buildReceivedCard(inv, isPending: true)),
             const SizedBox(height: 16),
           ],
           if (selesai.isNotEmpty) ...[
             _buildSectionHeader(
-                'Riwayat Undangan', selesai.length, AppColors.textMuted),
+              'Riwayat Undangan',
+              selesai.length,
+              AppColors.textMuted,
+            ),
             const SizedBox(height: 8),
             ...selesai.map((inv) => _buildReceivedCard(inv, isPending: false)),
           ],
@@ -292,14 +495,17 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
     );
   }
 
-  Widget _buildReceivedCard(Map<String, dynamic> inv,
-      {required bool isPending}) {
+  Widget _buildReceivedCard(
+    Map<String, dynamic> inv, {
+    required bool isPending,
+  }) {
     final id = inv['id_pengajuan_anggota'] as String? ?? '';
     final idTim = inv['id_tim'] as String? ?? '';
     final namaTim = inv['nama_tim'] as String? ?? 'Tim';
     final namaKegiatan = inv['nama_kegiatan'] as String? ?? '';
     final kategori = inv['kategori_kegiatan'] as String? ?? '';
     final deskripsiTim = inv['deskripsi_tim'] as String? ?? '';
+    final posisi = inv['posisi'] as String? ?? '';
     final pesan = inv['pesan_pengajuan'] as String? ?? '';
     final waktu = inv['waktu_pengajuan'] as String? ?? '';
     final status = inv['status_pengajuan'] as String? ?? 'menunggu';
@@ -350,30 +556,42 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
                               color: AppColors.primarySoft,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(Icons.groups_rounded,
-                                color: AppColors.primary, size: 18),
+                            child: const Icon(
+                              Icons.groups_rounded,
+                              color: AppColors.primary,
+                              size: 18,
+                            ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(namaTim,
-                                    style: AppTextStyles.titleMd
-                                        .copyWith(fontSize: 14),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis),
+                                Text(
+                                  namaTim,
+                                  style: AppTextStyles.titleMd.copyWith(
+                                    fontSize: 14,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                                 if (namaKegiatan.isNotEmpty)
-                                  Text(namaKegiatan,
-                                      style: AppTextStyles.bodySm
-                                          .copyWith(fontSize: 11),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis),
+                                  Text(
+                                    namaKegiatan,
+                                    style: AppTextStyles.bodySm.copyWith(
+                                      fontSize: 11,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 if (kategori.isNotEmpty)
-                                  Text(kategori,
-                                      style: AppTextStyles.bodySm.copyWith(
-                                          fontSize: 10,
-                                          color: AppColors.textMuted)),
+                                  Text(
+                                    kategori,
+                                    style: AppTextStyles.bodySm.copyWith(
+                                      fontSize: 10,
+                                      color: AppColors.textMuted,
+                                    ),
+                                  ),
                               ],
                             ),
                           ),
@@ -384,28 +602,39 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => TeamDetailViewScreen(
-                                      idTim: idTim, namaTim: namaTim),
+                                    idTim: idTim,
+                                    namaTim: namaTim,
+                                  ),
                                 ),
                               ),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 6),
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
                                 decoration: BoxDecoration(
                                   color: AppColors.primarySoft,
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                      color: AppColors.primaryOutline),
+                                    color: AppColors.primaryOutline,
+                                  ),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(Icons.open_in_new_rounded,
-                                        size: 11, color: AppColors.primary),
+                                    const Icon(
+                                      Icons.open_in_new_rounded,
+                                      size: 11,
+                                      color: AppColors.primary,
+                                    ),
                                     const SizedBox(width: 4),
-                                    Text('Detail Tim',
-                                        style: AppTextStyles.labelSm.copyWith(
-                                            color: AppColors.primary,
-                                            fontSize: 10)),
+                                    Text(
+                                      'Detail Tim',
+                                      style: AppTextStyles.labelSm.copyWith(
+                                        color: AppColors.primary,
+                                        fontSize: 10,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -416,14 +645,38 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
                       // Deskripsi Tim
                       if (deskripsiTim.isNotEmpty) ...[
                         const SizedBox(height: 10),
-                        Text(deskripsiTim,
-                            style: AppTextStyles.bodySm.copyWith(
-                              color: AppColors.textMuted,
-                              fontSize: 12,
-                              height: 1.4,
+                        Text(
+                          deskripsiTim,
+                          style: AppTextStyles.bodySm.copyWith(
+                            color: AppColors.textMuted,
+                            fontSize: 12,
+                            height: 1.4,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+
+                      if (posisi.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primarySoft,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.primaryOutline),
+                          ),
+                          child: Text(
+                            'Posisi ditawarkan: $posisi',
+                            style: AppTextStyles.labelSm.copyWith(
+                              color: AppColors.primary,
+                              fontSize: 11,
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis),
+                          ),
+                        ),
                       ],
 
                       // Pesan Undangan
@@ -439,18 +692,23 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Icon(Icons.format_quote_rounded,
-                                  color: AppColors.primary, size: 16),
+                              const Icon(
+                                Icons.format_quote_rounded,
+                                color: AppColors.primary,
+                                size: 16,
+                              ),
                               const SizedBox(width: 6),
                               Expanded(
-                                child: Text(pesan,
-                                    style: AppTextStyles.bodySm.copyWith(
-                                      fontSize: 12,
-                                      color: AppColors.textMuted,
-                                      height: 1.4,
-                                    ),
-                                    maxLines: 3,
-                                    overflow: TextOverflow.ellipsis),
+                                child: Text(
+                                  pesan,
+                                  style: AppTextStyles.bodySm.copyWith(
+                                    fontSize: 12,
+                                    color: AppColors.textMuted,
+                                    height: 1.4,
+                                  ),
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                             ],
                           ),
@@ -464,15 +722,24 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
                       // Waktu + action buttons / status badge
                       Row(
                         children: [
-                          const Icon(Icons.access_time_rounded,
-                              size: 12, color: AppColors.textMuted),
+                          const Icon(
+                            Icons.access_time_rounded,
+                            size: 12,
+                            color: AppColors.textMuted,
+                          ),
                           const SizedBox(width: 4),
-                          Text(_formatDate(waktu),
-                              style:
-                                  AppTextStyles.bodySm.copyWith(fontSize: 11)),
+                          Text(
+                            _formatDate(waktu),
+                            style: AppTextStyles.bodySm.copyWith(fontSize: 11),
+                          ),
                           const Spacer(),
                           if (isPending)
-                            ..._buildActionButtons(id, namaTim, isProcessing)
+                            ..._buildActionButtons(
+                              id,
+                              namaTim,
+                              posisi,
+                              isProcessing,
+                            )
                           else
                             _buildStatusBadge(status),
                         ],
@@ -491,45 +758,58 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
   }
 
   List<Widget> _buildActionButtons(
-      String id, String namaTim, bool isProcessing) {
+    String id,
+    String namaTim,
+    String posisi,
+    bool isProcessing,
+  ) {
     if (isProcessing) {
       return [
         const SizedBox(
           width: 20,
           height: 20,
           child: CircularProgressIndicator(
-              color: AppColors.primaryContainer, strokeWidth: 2),
+            color: AppColors.primaryContainer,
+            strokeWidth: 2,
+          ),
         ),
       ];
     }
     return [
       GestureDetector(
-        onTap: () => _confirmRespond(id, namaTim, 'ditolak'),
+        onTap: () => _confirmRespond(id, namaTim, posisi, 'ditolak'),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
           decoration: BoxDecoration(
             color: AppColors.statusDangerBg,
             borderRadius: BorderRadius.circular(8),
-            border:
-                Border.all(color: AppColors.statusDangerText.withAlpha(60)),
+            border: Border.all(color: AppColors.statusDangerText.withAlpha(60)),
           ),
-          child: Text('Tolak',
-              style: AppTextStyles.labelMd
-                  .copyWith(color: AppColors.statusDangerText, fontSize: 12)),
+          child: Text(
+            'Tolak',
+            style: AppTextStyles.labelMd.copyWith(
+              color: AppColors.statusDangerText,
+              fontSize: 12,
+            ),
+          ),
         ),
       ),
       const SizedBox(width: 8),
       GestureDetector(
-        onTap: () => _confirmRespond(id, namaTim, 'diterima'),
+        onTap: () => _confirmRespond(id, namaTim, posisi, 'diterima'),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
           decoration: BoxDecoration(
             color: AppColors.primaryContainer,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Text('Terima',
-              style: AppTextStyles.labelMd
-                  .copyWith(color: Colors.white, fontSize: 12)),
+          child: Text(
+            'Terima',
+            style: AppTextStyles.labelMd.copyWith(
+              color: Colors.white,
+              fontSize: 12,
+            ),
+          ),
         ),
       ),
     ];
@@ -550,12 +830,15 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
       );
     }
 
-    final menunggu =
-        _sent.where((i) => i['status_pengajuan'] == 'menunggu').toList();
-    final diterima =
-        _sent.where((i) => i['status_pengajuan'] == 'diterima').toList();
-    final ditolak =
-        _sent.where((i) => i['status_pengajuan'] == 'ditolak').toList();
+    final menunggu = _sent
+        .where((i) => i['status_pengajuan'] == 'menunggu')
+        .toList();
+    final diterima = _sent
+        .where((i) => i['status_pengajuan'] == 'diterima')
+        .toList();
+    final ditolak = _sent
+        .where((i) => i['status_pengajuan'] == 'ditolak')
+        .toList();
 
     return RefreshIndicator(
       color: AppColors.primaryContainer,
@@ -569,21 +852,30 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
 
           if (menunggu.isNotEmpty) ...[
             _buildSectionHeader(
-                'Menunggu Respons', menunggu.length, Colors.amber),
+              'Menunggu Respons',
+              menunggu.length,
+              Colors.amber,
+            ),
             const SizedBox(height: 8),
             ...menunggu.map(_buildSentCard),
             const SizedBox(height: 16),
           ],
           if (diterima.isNotEmpty) ...[
             _buildSectionHeader(
-                'Diterima', diterima.length, AppColors.statusSuccessText),
+              'Diterima',
+              diterima.length,
+              AppColors.statusSuccessText,
+            ),
             const SizedBox(height: 8),
             ...diterima.map(_buildSentCard),
             const SizedBox(height: 16),
           ],
           if (ditolak.isNotEmpty) ...[
             _buildSectionHeader(
-                'Ditolak', ditolak.length, AppColors.statusDangerText),
+              'Ditolak',
+              ditolak.length,
+              AppColors.statusDangerText,
+            ),
             const SizedBox(height: 8),
             ...ditolak.map(_buildSentCard),
           ],
@@ -597,13 +889,25 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
     return Row(
       children: [
         _summaryChip(
-            'Menunggu', menunggu, Colors.amber.shade100, Colors.amber.shade700),
+          'Menunggu',
+          menunggu,
+          Colors.amber.shade100,
+          Colors.amber.shade700,
+        ),
         const SizedBox(width: 8),
-        _summaryChip('Diterima', diterima, AppColors.statusSuccessBg,
-            AppColors.statusSuccessText),
+        _summaryChip(
+          'Diterima',
+          diterima,
+          AppColors.statusSuccessBg,
+          AppColors.statusSuccessText,
+        ),
         const SizedBox(width: 8),
-        _summaryChip('Ditolak', ditolak, AppColors.statusDangerBg,
-            AppColors.statusDangerText),
+        _summaryChip(
+          'Ditolak',
+          ditolak,
+          AppColors.statusDangerBg,
+          AppColors.statusDangerText,
+        ),
       ],
     );
   }
@@ -619,12 +923,19 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
         ),
         child: Column(
           children: [
-            Text('$count',
-                style: AppTextStyles.headlineMd.copyWith(
-                    color: fg, fontWeight: FontWeight.w800, fontSize: 20)),
+            Text(
+              '$count',
+              style: AppTextStyles.headlineMd.copyWith(
+                color: fg,
+                fontWeight: FontWeight.w800,
+                fontSize: 20,
+              ),
+            ),
             const SizedBox(height: 2),
-            Text(label,
-                style: AppTextStyles.bodySm.copyWith(color: fg, fontSize: 10)),
+            Text(
+              label,
+              style: AppTextStyles.bodySm.copyWith(color: fg, fontSize: 10),
+            ),
           ],
         ),
       ),
@@ -637,6 +948,7 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
     final kategori = inv['kategori_kegiatan'] as String? ?? '';
     final namaCalon = inv['nama_calon'] as String? ?? 'Calon Anggota';
     final prodiCalon = inv['prodi_calon'] as String? ?? '';
+    final posisi = inv['posisi'] as String? ?? '';
     final pesan = inv['pesan_pengajuan'] as String? ?? '';
     final waktu = inv['waktu_pengajuan'] as String? ?? '';
     final status = inv['status_pengajuan'] as String? ?? 'menunggu';
@@ -654,9 +966,10 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
         border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withAlpha(5),
-              blurRadius: 8,
-              offset: const Offset(0, 2)),
+            color: Colors.black.withAlpha(5),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: ClipRRect(
@@ -678,26 +991,35 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
                           CircleAvatar(
                             radius: 18,
                             backgroundColor: AppColors.primarySoft,
-                            child: Text(inisial,
-                                style: AppTextStyles.bodyMd.copyWith(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 12)),
+                            child: Text(
+                              inisial,
+                              style: AppTextStyles.bodyMd.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                              ),
+                            ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(namaCalon,
-                                    style: AppTextStyles.titleMd
-                                        .copyWith(fontSize: 14),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis),
+                                Text(
+                                  namaCalon,
+                                  style: AppTextStyles.titleMd.copyWith(
+                                    fontSize: 14,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                                 if (prodiCalon.isNotEmpty)
-                                  Text(prodiCalon,
-                                      style: AppTextStyles.bodySm
-                                          .copyWith(fontSize: 11)),
+                                  Text(
+                                    prodiCalon,
+                                    style: AppTextStyles.bodySm.copyWith(
+                                      fontSize: 11,
+                                    ),
+                                  ),
                               ],
                             ),
                           ),
@@ -710,7 +1032,9 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
                       // Nama tim info
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 7),
+                          horizontal: 10,
+                          vertical: 7,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.background,
                           borderRadius: BorderRadius.circular(8),
@@ -718,26 +1042,38 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.groups_rounded,
-                                color: AppColors.primary, size: 14),
+                            const Icon(
+                              Icons.groups_rounded,
+                              color: AppColors.primary,
+                              size: 14,
+                            ),
                             const SizedBox(width: 6),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(namaTim,
-                                      style: AppTextStyles.bodyMd.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 12)),
+                                  Text(
+                                    namaTim,
+                                    style: AppTextStyles.bodyMd.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 12,
+                                    ),
+                                  ),
                                   if (namaKegiatan.isNotEmpty)
-                                    Text(namaKegiatan,
-                                        style: AppTextStyles.bodySm
-                                            .copyWith(fontSize: 11)),
+                                    Text(
+                                      namaKegiatan,
+                                      style: AppTextStyles.bodySm.copyWith(
+                                        fontSize: 11,
+                                      ),
+                                    ),
                                   if (kategori.isNotEmpty)
-                                    Text(kategori,
-                                        style: AppTextStyles.bodySm.copyWith(
-                                            fontSize: 10,
-                                            color: AppColors.textMuted)),
+                                    Text(
+                                      kategori,
+                                      style: AppTextStyles.bodySm.copyWith(
+                                        fontSize: 10,
+                                        color: AppColors.textMuted,
+                                      ),
+                                    ),
                                 ],
                               ),
                             ),
@@ -745,15 +1081,29 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
                         ),
                       ),
 
+                      if (posisi.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          'Posisi ditawarkan: $posisi',
+                          style: AppTextStyles.labelSm.copyWith(
+                            color: AppColors.primary,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+
                       if (pesan.isNotEmpty) ...[
                         const SizedBox(height: 8),
-                        Text('"$pesan"',
-                            style: AppTextStyles.bodySm.copyWith(
-                                fontSize: 11,
-                                color: AppColors.textMuted,
-                                fontStyle: FontStyle.italic),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis),
+                        Text(
+                          '"$pesan"',
+                          style: AppTextStyles.bodySm.copyWith(
+                            fontSize: 11,
+                            color: AppColors.textMuted,
+                            fontStyle: FontStyle.italic,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ],
 
                       const SizedBox(height: 10),
@@ -762,19 +1112,24 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
 
                       Row(
                         children: [
-                          const Icon(Icons.access_time_rounded,
-                              size: 12, color: AppColors.textMuted),
+                          const Icon(
+                            Icons.access_time_rounded,
+                            size: 12,
+                            color: AppColors.textMuted,
+                          ),
                           const SizedBox(width: 4),
-                          Text(_formatDate(waktu),
-                              style:
-                                  AppTextStyles.bodySm.copyWith(fontSize: 11)),
+                          Text(
+                            _formatDate(waktu),
+                            style: AppTextStyles.bodySm.copyWith(fontSize: 11),
+                          ),
                           const Spacer(),
                           Text(
                             _statusDescription(status, namaCalon),
                             style: AppTextStyles.bodySm.copyWith(
-                                fontSize: 10,
-                                color: _statusColor(status),
-                                fontStyle: FontStyle.italic),
+                              fontSize: 10,
+                              color: _statusColor(status),
+                              fontStyle: FontStyle.italic,
+                            ),
                           ),
                         ],
                       ),
@@ -810,7 +1165,9 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
           width: 4,
           height: 18,
           decoration: BoxDecoration(
-              color: accentColor, borderRadius: BorderRadius.circular(2)),
+            color: accentColor,
+            borderRadius: BorderRadius.circular(2),
+          ),
         ),
         const SizedBox(width: 8),
         Text(title, style: AppTextStyles.headlineMd.copyWith(fontSize: 15)),
@@ -818,11 +1175,16 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
           decoration: BoxDecoration(
-              color: AppColors.primarySoft,
-              borderRadius: BorderRadius.circular(99)),
-          child: Text('$count',
-              style: AppTextStyles.labelSm
-                  .copyWith(color: AppColors.primary, fontSize: 10)),
+            color: AppColors.primarySoft,
+            borderRadius: BorderRadius.circular(99),
+          ),
+          child: Text(
+            '$count',
+            style: AppTextStyles.labelSm.copyWith(
+              color: AppColors.primary,
+              fontSize: 10,
+            ),
+          ),
         ),
       ],
     );
@@ -853,15 +1215,19 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration:
-          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(99)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(99),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 11, color: fg),
           const SizedBox(width: 4),
-          Text(label,
-              style: AppTextStyles.labelSm.copyWith(color: fg, fontSize: 10)),
+          Text(
+            label,
+            style: AppTextStyles.labelSm.copyWith(color: fg, fontSize: 10),
+          ),
         ],
       ),
     );
@@ -924,16 +1290,22 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
             width: 90,
             height: 90,
             decoration: const BoxDecoration(
-                color: AppColors.primarySoft, shape: BoxShape.circle),
+              color: AppColors.primarySoft,
+              shape: BoxShape.circle,
+            ),
             child: Icon(icon, color: AppColors.primary, size: 44),
           ),
           const SizedBox(height: 16),
           Text(title, style: AppTextStyles.titleMd.copyWith(fontSize: 16)),
           const SizedBox(height: 6),
-          Text(subtitle,
-              style: AppTextStyles.bodySm
-                  .copyWith(color: AppColors.textMuted, height: 1.5),
-              textAlign: TextAlign.center),
+          Text(
+            subtitle,
+            style: AppTextStyles.bodySm.copyWith(
+              color: AppColors.textMuted,
+              height: 1.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );
@@ -946,13 +1318,17 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.wifi_off_rounded,
-                color: AppColors.textMuted, size: 48),
+            const Icon(
+              Icons.wifi_off_rounded,
+              color: AppColors.textMuted,
+              size: 48,
+            ),
             const SizedBox(height: 12),
-            Text(msg,
-                style:
-                    AppTextStyles.bodySm.copyWith(color: AppColors.textMuted),
-                textAlign: TextAlign.center),
+            Text(
+              msg,
+              style: AppTextStyles.bodySm.copyWith(color: AppColors.textMuted),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: onRetry,

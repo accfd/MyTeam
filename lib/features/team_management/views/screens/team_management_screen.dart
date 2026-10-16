@@ -64,11 +64,16 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 side: const BorderSide(color: AppColors.border),
               ),
-              child:
-                  Text('Batal', style: AppTextStyles.labelLg.copyWith(color: AppColors.textMuted)),
+              child: Text(
+                'Batal',
+                style: AppTextStyles.labelLg.copyWith(
+                  color: AppColors.textMuted,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -80,11 +85,16 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
                 backgroundColor: AppColors.statusDangerText,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              child: const Text('Hapus',
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.w700)),
+              child: const Text(
+                'Hapus',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ),
         ],
@@ -98,10 +108,13 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              success ? 'Tim berhasil dihapus.' : (_vm.saveError ?? 'Gagal menghapus tim.'),
+              success
+                  ? 'Tim berhasil dihapus.'
+                  : (_vm.saveError ?? 'Gagal menghapus tim.'),
             ),
-            backgroundColor:
-                success ? AppColors.statusSuccessText : AppColors.statusDangerText,
+            backgroundColor: success
+                ? AppColors.statusSuccessText
+                : AppColors.statusDangerText,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -153,15 +166,19 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
               border: Border.all(color: AppColors.primaryOutline),
               boxShadow: const [
                 BoxShadow(
-                    color: Color(0x0D000000), blurRadius: 4, offset: Offset(0, 1))
+                  color: Color(0x0D000000),
+                  blurRadius: 4,
+                  offset: Offset(0, 1),
+                ),
               ],
             ),
             child: Image.asset(
               'assets/images/logo-MyTeam.png',
               errorBuilder: (context, error, stackTrace) => const Icon(
-                  Icons.groups_rounded,
-                  color: AppColors.primary,
-                  size: 20),
+                Icons.groups_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -196,8 +213,11 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: AppColors.border),
             ),
-            child: const Icon(Icons.refresh_rounded,
-                color: AppColors.primary, size: 20),
+            child: const Icon(
+              Icons.refresh_rounded,
+              color: AppColors.primary,
+              size: 20,
+            ),
           ),
         ),
       ],
@@ -217,13 +237,19 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.wifi_off_rounded,
-                size: 56, color: AppColors.textMuted),
+            const Icon(
+              Icons.wifi_off_rounded,
+              size: 56,
+              color: AppColors.textMuted,
+            ),
             const SizedBox(height: 16),
             Text('Gagal memuat data', style: AppTextStyles.titleMd),
             const SizedBox(height: 8),
-            Text(message,
-                style: AppTextStyles.bodySm, textAlign: TextAlign.center),
+            Text(
+              message,
+              style: AppTextStyles.bodySm,
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 20),
             ElevatedButton.icon(
               onPressed: _vm.loadMyTeams,
@@ -233,7 +259,8 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ],
@@ -279,10 +306,13 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ],
@@ -318,8 +348,11 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
               color: const Color(0xFFDCFCE7),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.bookmark_rounded,
-                color: Color(0xFF008744), size: 20),
+            child: const Icon(
+              Icons.bookmark_rounded,
+              color: Color(0xFF008744),
+              size: 20,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -354,8 +387,7 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF008744),
               foregroundColor: Colors.white,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -363,8 +395,10 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            child: Text(count > 1 ? 'Lihat Draf' : 'Lanjutkan',
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+            child: Text(
+              count > 1 ? 'Lihat Draf' : 'Lanjutkan',
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+            ),
           ),
         ],
       ),
@@ -394,8 +428,10 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
                 return TeamCard(
                   team: team,
                   onTap: () => _navigateToDetail(team.idTim),
-                  onEdit: () => _openEditModal(team),
-                  onDelete: () => _confirmDelete(team.idTim, team.namaTim),
+                  onEdit: team.isOwner ? () => _openEditModal(team) : null,
+                  onDelete: team.isOwner
+                      ? () => _confirmDelete(team.idTim, team.namaTim)
+                      : null,
                 );
               },
             );
@@ -412,8 +448,10 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
                 child: TeamCard(
                   team: team,
                   onTap: () => _navigateToDetail(team.idTim),
-                  onEdit: () => _openEditModal(team),
-                  onDelete: () => _confirmDelete(team.idTim, team.namaTim),
+                  onEdit: team.isOwner ? () => _openEditModal(team) : null,
+                  onDelete: team.isOwner
+                      ? () => _confirmDelete(team.idTim, team.namaTim)
+                      : null,
                 ),
               );
             },
@@ -430,10 +468,7 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
       foregroundColor: Colors.white,
       elevation: 6,
       icon: const Icon(Icons.add_rounded),
-      label: Text(
-        'Buat Tim',
-        style: AppTextStyles.labelLg,
-      ),
+      label: Text('Buat Tim', style: AppTextStyles.labelLg),
     );
   }
 
@@ -474,7 +509,8 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => TeamManagementDetailScreen(idTim: idTim, viewModel: _vm),
+        builder: (_) =>
+            TeamManagementDetailScreen(idTim: idTim, viewModel: _vm),
       ),
     );
     _vm.loadMyTeams();

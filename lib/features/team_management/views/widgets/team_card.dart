@@ -12,14 +12,14 @@ import 'team_status_badge.dart';
 class TeamCard extends StatelessWidget {
   final TeamModel team;
   final VoidCallback onTap;
-  final VoidCallback onDelete;
+  final VoidCallback? onDelete;
   final VoidCallback? onEdit;
 
   const TeamCard({
     super.key,
     required this.team,
     required this.onTap,
-    required this.onDelete,
+    this.onDelete,
     this.onEdit,
   });
 
@@ -99,20 +99,24 @@ class TeamCard extends StatelessWidget {
                       Wrap(
                         spacing: 6,
                         runSpacing: 4,
-                        children: team.kebutuhanTim
-                            .take(2)
-                            .map((k) => _PosisiChip(label: k.posisiDibutuhkan))
-                            .toList()
-                          ..addAll(
-                            team.kebutuhanTim.length > 2
-                                ? [
-                                    _PosisiChip(
-                                      label: '+${team.kebutuhanTim.length - 2}',
-                                      isCount: true,
-                                    ),
-                                  ]
-                                : [],
-                          ),
+                        children:
+                            team.kebutuhanTim
+                                .take(2)
+                                .map(
+                                  (k) => _PosisiChip(label: k.posisiDibutuhkan),
+                                )
+                                .toList()
+                              ..addAll(
+                                team.kebutuhanTim.length > 2
+                                    ? [
+                                        _PosisiChip(
+                                          label:
+                                              '+${team.kebutuhanTim.length - 2}',
+                                          isCount: true,
+                                        ),
+                                      ]
+                                    : [],
+                              ),
                       ),
                       const SizedBox(height: 12),
                     ],
@@ -161,22 +165,23 @@ class TeamCard extends StatelessWidget {
                         ],
 
                         // Tombol Hapus
-                        InkWell(
-                          onTap: onDelete,
-                          borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            padding: const EdgeInsets.all(7),
-                            decoration: BoxDecoration(
-                              color: AppColors.statusDangerBg,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.delete_outline_rounded,
-                              size: 15,
-                              color: AppColors.statusDangerText,
+                        if (onDelete != null)
+                          InkWell(
+                            onTap: onDelete,
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              padding: const EdgeInsets.all(7),
+                              decoration: BoxDecoration(
+                                color: AppColors.statusDangerBg,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.delete_outline_rounded,
+                                size: 15,
+                                color: AppColors.statusDangerText,
+                              ),
                             ),
                           ),
-                        ),
                       ],
                     ),
                   ],
@@ -246,8 +251,11 @@ class TeamCard extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.picture_as_pdf_rounded,
-                  size: 30, color: Color(0xFFDC2626)),
+              const Icon(
+                Icons.picture_as_pdf_rounded,
+                size: 30,
+                color: Color(0xFFDC2626),
+              ),
               const SizedBox(height: 4),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -298,6 +306,25 @@ class TeamCard extends StatelessWidget {
           top: 10,
           right: 10,
           child: TeamCategoryBadge(kategori: team.kategoriKegiatan),
+        ),
+        Positioned(
+          bottom: 10,
+          left: 10,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.92),
+              borderRadius: BorderRadius.circular(99),
+            ),
+            child: Text(
+              team.isOwner ? 'Pemilik' : 'Anggota',
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
         ),
       ],
     );

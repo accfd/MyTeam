@@ -131,7 +131,8 @@ INSERT INTO Data_Pengalaman (id_pengalaman, id_pengguna, nama_kegiatan, peran, t
 
 
 -- =============================================================================
--- 7. TABEL DATA_TIM (2 Tim yang Dibentuk Mahasiswa: Rafa & Nayla)
+-- 7. TABEL DATA_TIM
+-- Distribusi tim per pemilik: Fuadi 1, Rafa 2, Diva 3, Nayla 1.
 -- =============================================================================
 INSERT INTO Data_Tim (id_tim, id_pengguna, nama_tim, nama_kegiatan, kategori_kegiatan, deskripsi, status_tim, created_at) VALUES
 ('tim_gemastik_01', 'usr_rafa_02', 
@@ -146,7 +147,42 @@ INSERT INTO Data_Tim (id_tim, id_pengguna, nama_tim, nama_kegiatan, kategori_keg
  'Program Kreativitas Mahasiswa Riset Eksakta (PKM-RE) 2026', 
  'Penelitian', 
  'Proyek riset interdisipliner untuk membangun model kecerdasan buatan dan aplikasi mobile pemantau kestabilan pasokan komoditas pangan lokal Sumatera Barat.', 
- 'terbuka', '2026-10-06 10:00:00');
+ 'terbuka', '2026-10-06 10:00:00'),
+
+('tim_fuadi_03', 'usr_fuadi_01',
+ 'Aplikasi Jelajah Kampus',
+ 'Unand Digital Innovation Challenge 2026',
+ 'Proyek',
+ 'Mengembangkan aplikasi Flutter untuk membantu mahasiswa menemukan fasilitas dan layanan kampus.',
+ 'terbuka', '2026-10-07 09:00:00'),
+
+('tim_rafa_04', 'usr_rafa_02',
+ 'Sistem Irigasi Cerdas',
+ 'Kompetisi Inovasi Teknologi Pertanian 2026',
+ 'Lomba',
+ 'Merancang sistem IoT dan backend untuk pemantauan irigasi lahan pertanian.',
+ 'terbuka', '2026-10-07 10:00:00'),
+
+('tim_diva_05', 'usr_diva_03',
+ 'Ruang Belajar Inklusif',
+ 'Program Kreativitas Mahasiswa Pengabdian 2026',
+ 'Penelitian',
+ 'Mendesain pengalaman belajar digital yang mudah diakses oleh mahasiswa dengan beragam kebutuhan.',
+ 'terbuka', '2026-10-07 11:00:00'),
+
+('tim_diva_06', 'usr_diva_03',
+ 'Dashboard Data Kampus',
+ 'Unand Data Visualization Project 2026',
+ 'Proyek',
+ 'Membuat dashboard interaktif untuk menyajikan data layanan dan aktivitas kampus.',
+ 'terbuka', '2026-10-07 12:00:00'),
+
+('tim_diva_07', 'usr_diva_03',
+ 'Kampanye Literasi Digital',
+ 'Kompetisi Konten Edukasi Digital 2026',
+ 'Lomba',
+ 'Menyusun kampanye konten edukasi keamanan dan literasi digital bagi mahasiswa.',
+ 'terbuka', '2026-10-07 13:00:00');
 
 
 -- =============================================================================
@@ -159,7 +195,12 @@ INSERT INTO Kebutuhan_Anggota_Tim (id_kebutuhan, id_tim, posisi_dibutuhkan, keah
 
 -- Kebutuhan Tim Nayla (PKM-RE)
 ('keb_03', 'tim_pkm_02',      'Mobile App Developer', 'Flutter / Android Native, SQLite / Local Cache',  1, '2026-10-06 10:15:00'),
-('keb_04', 'tim_pkm_02',      'Data Analyst',         'Python, Data Modeling, Descriptive Statistics',   1, '2026-10-06 10:18:00');
+('keb_04', 'tim_pkm_02',      'Data Analyst',         'Python, Data Modeling, Descriptive Statistics',   1, '2026-10-06 10:18:00'),
+('keb_05', 'tim_fuadi_03',    'Flutter Developer',    'Flutter, Dart, REST API',                           1, '2026-10-07 09:10:00'),
+('keb_06', 'tim_rafa_04',     'IoT Engineer',         'ESP32, sensor, MQTT',                               1, '2026-10-07 10:10:00'),
+('keb_07', 'tim_diva_05',     'UI/UX Designer',       'Figma, accessibility, user research',               1, '2026-10-07 11:10:00'),
+('keb_08', 'tim_diva_06',     'Data Visualization Designer', 'Figma, dashboard design, data storytelling', 1, '2026-10-07 12:10:00'),
+('keb_09', 'tim_diva_07',     'Content Designer',     'Copywriting, visual design, social media',          1, '2026-10-07 13:10:00');
 
 
 -- =============================================================================
@@ -195,21 +236,9 @@ INSERT INTO Anggota_Tim (id_anggota_tim, id_tim, id_pengguna, posisi, joined_at)
 
 
 -- =============================================================================
--- 12. TABEL PENGAJUAN_ANGGOTA (Nayla Menemukan Fuadi & Mengajak Bergabung Tim PKM)
--- Skenario:
--- Nayla mencari Fuadi lewat fitur cari anggota, melihat profilnya yang kuat di Flutter,
--- lalu mengirim ajakan bergabung -> status: menunggu respon Fuadi.
--- =============================================================================
-INSERT INTO Pengajuan_Anggota (id_pengajuan_anggota, id_tim, id_pengguna, pesan_pengajuan, waktu_pengajuan, status_pengajuan) VALUES
-('pga_01', 'tim_pkm_02', 'usr_fuadi_01', 
- 'Halo Fuadi, kami melihat portofolio dan riwayat pengalaman mobile development Anda di MyTeam. Tim riset PKM Pangan kami sangat membutuhkan keahlian Anda untuk modul mobile data collection. Apakah Anda bersedia bergabung?', 
- '2026-10-09 11:00:00', 'menunggu');
-
-
--- =============================================================================
 -- 13. TABEL NOTIFIKASI (Sinkron Penuh dengan Seluruh Aktivitas di Atas)
 -- Distribusi Notifikasi Modul 1 s/d Modul 4:
--- - Fuadi (M1): Notifikasi update profil (FR-07) & notifikasi ajakan masuk dari tim
+-- - Fuadi (M1): Notifikasi update profil (FR-07)
 -- - Nayla (M2): Notifikasi lamaran baru yang masuk ke tim buatan pengguna (FR-12)
 -- - Rafa (M3): Notifikasi status lamaran yang diajukan pelamar (FR-20)
 -- - Diva (M4): Notifikasi konfirmasi respon ajakan calon anggota (FR-25)
@@ -237,13 +266,7 @@ INSERT INTO Notifikasi (id_notifikasi, id_pengguna, id_pengajuan_bergabung_tim, 
 ('notif_04', 'usr_rafa_02', 'pbg_02', NULL, 
  'pengajuan_masuk', 
  'Fuadi Dhiyaulhaq mengajukan diri untuk bergabung pada posisi Frontend Flutter di tim Anda (Tim Robotik Cerdas Unand).', 
- '2026-10-08 14:31:00', FALSE),
-
--- 5. Notifikasi Fuadi: Undangan bergabung tim PKM dari Nayla (Ajakan Calon Anggota)
-('notif_05', 'usr_fuadi_01', NULL, 'pga_01', 
- 'undangan_masuk', 
- 'Nayla Puspita Sari mengundang Anda untuk bergabung ke "Inovator Pangan Unand" untuk kegiatan PKM-RE 2026.', 
- '2026-10-09 11:01:00', FALSE);
+ '2026-10-08 14:31:00', FALSE);
 
 -- =============================================================================
 -- SELESAI: Seluruh Data Dummy Berhasil Di-generate

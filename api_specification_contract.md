@@ -44,7 +44,7 @@ Matriks berikut memetakan 25 Kebutuhan Fungsional (*Functional Requirements*) da
 | **FR-06** | Melihat informasi tim yang diikuti (nama tim, kegiatan, kategori, posisi) | `GET` | `/profile/detail/{id_pengguna}` | Fuadi (M1) |
 | **FR-07** | Sistem mengirim notifikasi aktivitas data riwayat diri | *Auto-event* | `/notifications` | Fuadi (M1) |
 | **FR-08** | Membuat tim baru & mengunggah dokumen pendukung (poster/panduan) | `POST` | `/teams` | Nayla (M2) |
-| **FR-09** | Melihat daftar dan detail tim yang dibuat | `GET` | `/teams/my-teams`, `/teams/{id}` | Nayla (M2) |
+| **FR-09** | Melihat daftar tim yang dibuat atau diikuti sebagai anggota dan detailnya | `GET` | `/teams/my-teams`, `/teams/{id}` | Nayla (M2) |
 | **FR-10** | Mengubah informasi & dokumen tim (kategori kegiatan dikunci) | `PUT` | `/teams/{id}` | Nayla (M2) |
 | **FR-11** | Menghapus tim yang telah dibuat | `DELETE` | `/teams/{id}` | Nayla (M2) |
 | **FR-12** | Menerima notifikasi saat ada pengajuan bergabung ke tim | *Auto-event* | `/notifications` | Nayla (M2) |
@@ -56,12 +56,12 @@ Matriks berikut memetakan 25 Kebutuhan Fungsional (*Functional Requirements*) da
 | **FR-18** | Pembuat tim melihat detail pengajuan (posisi dilamar & profil pelamar) | `GET` | `/applications/join-team/{id}` | Rafa (M3) |
 | **FR-19** | Pembuat tim menerima atau menolak pengajuan bergabung | `PATCH` | `/applications/join-team/{id}/status` | Rafa (M3) |
 | **FR-20** | Melihat status pengajuan & notifikasi pembaruan status | `GET`, *Event* | `/applications/my-applications` | Rafa (M3) |
-| **FR-21** | Mencari calon anggota berdasarkan nama, keahlian, pengalaman, minat | `GET` | `/members/search` | Diva (M4) |
+| **FR-21** | Mencari calon anggota dengan kata kunci nama/program studi/NIM, filter keahlian/minat, dan jumlah pengalaman pada hasil | `GET` | `/members/search` | Diva (M4) |
 | **FR-22** | Melihat detail profil calon anggota dari hasil pencarian | `GET` | `/profile/detail/{id_pengguna}` | Diva (M4) |
 | **FR-23** | Pembuat tim mengajukan permintaan (undangan) ke calon anggota | `POST` | `/applications/invite-member` | Diva (M4) |
-| **FR-24** | Calon anggota melihat detail tim & menerima/menolak undangan | `GET`, `PATCH` | `/applications/received-invitations`, status | Diva (M4) |
+| **FR-24** | Calon anggota melihat detail tim & menerima/menolak undangan | `GET`, `PATCH` | `/applications/received-invitations`, `/applications/received-invitations/{id}/status` | Diva (M4) |
 | **FR-24b** | Pembuat tim melihat status undangan terkirim (menunggu/diterima/ditolak) | `GET` | `/applications/sent-invitations` | Diva (M4) |
-| **FR-25** | Notifikasi respon undangan tim (calon anggota terima/tolak → pembuat tim notif) | *Auto-event* | `/notifications` | Diva (M4) |
+| **FR-25** | Notifikasi otomatis ketika undangan dikirim atau direspons | *Auto-event* | Dibuat pada alur FR-23 dan FR-24; bukan endpoint pengelolaan notifikasi | Diva (M4) |
 
 ---
 
@@ -423,14 +423,42 @@ Authorization: Bearer <jwt_access_token>
 }
 ```
 
-#### 4.2.2 Daftar Tim yang Dibuat Pengguna (FR-09)
+#### 4.2.2 Daftar Tim Saya (FR-09)
 * **Endpoint:** `GET /teams/my-teams`
 * **Akses:** Terautentikasi
-* **Respon Sukses (200 OK):** Mengembalikan daftar seluruh tim yang diinisiasi oleh pengguna yang sedang login.
+* **Respon Sukses (200 OK):** Mengembalikan tim yang dibuat pengguna dan tim yang diikuti sebagai anggota aktif pada `Anggota_Tim`. Setiap tim memuat `peran` bernilai `"pemilik"` atau `"anggota"`. Aksi ubah dan hapus hanya dapat dilakukan oleh pemilik.
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id_tim": "tim_gemastik_01",
+      "id_pengguna": "usr_rafa_02",
+      "nama_tim": "Tim Robotik Cerdas Unand",
+      "nama_kegiatan": "GEMASTIK XVII Divisi Software Development",
+      "kategori_kegiatan": "Lomba",
+      "status_tim": "terbuka",
+      "peran": "anggota",
+      "anggota_tim": [
+        {
+          "id_pengguna": "usr_diva_03",
+          "nama_pengguna": "Diva Ramadhani",
+          "posisi": "UI/UX Designer"
+        },
+        {
+          "id_pengguna": "usr_fuadi_01",
+          "nama_pengguna": "Fuadi Dhiyaulhaq",
+          "posisi": "Frontend Flutter"
+        }
+      ]
+    }
+  ]
+}
+```
 
-#### 4.2.3 Detail Tim Pembuat (FR-09)
+#### 4.2.3 Detail Tim (FR-09)
 * **Endpoint:** `GET /teams/{id_tim}`
-* **Akses:** Terautentikasi (khusus pemilik tim)
+* **Akses:** Terautentikasi (pemilik tim atau anggota aktif)
 * **Respon Sukses (200 OK):** Mengembalikan informasi tim, dokumen pendukung, kebutuhan tim, dan daftar anggota aktif saat ini.
 
 #### 4.2.4 Pembaruan Informasi Tim (FR-10)
@@ -612,8 +640,8 @@ Authorization: Bearer <jwt_access_token>
 * **Endpoint:** `GET /members/search`
 * **Akses:** Terautentikasi
 * **Query Parameters:**
-  * `q` (string, optional): Nama mahasiswa atau program studi.
-  * `keahlian` (string, optional): Filter keahlian spesifik (misal: `UI Design`).
+  * `q` (string, optional): Kata kunci yang dicocokkan dengan nama mahasiswa, program studi, atau NIM.
+  * `keahlian` (string, optional): Filter keahlian spesifik (misal: `Python`).
   * `minat` (string, optional): Filter minat spesifik.
   * `page`, `limit` (pagination).
 * **Respon Sukses (200 OK):**
@@ -623,53 +651,105 @@ Authorization: Bearer <jwt_access_token>
   "message": "Pencarian calon anggota berhasil",
   "data": [
     {
-      "id_pengguna": "usr_2411521007",
+      "id_pengguna": "usr_nayla_04",
+      "nim": "2411521007",
       "nama_pengguna": "Nayla Puspita Sari",
       "program_studi": "Sistem Informasi",
       "fakultas": "Teknologi Informasi",
-      "foto_profil": "http://10.0.2.2:8000/storage/profiles/nayla.jpg",
+      "foto_profil": "profiles/usr_nayla_04.jpg",
       "keahlian": [
-        "UI Design",
-        "Figma Prototyping"
+        "Python & Pandas",
+        "Scientific Writing"
       ],
       "minat": [
-        "UI/UX Design",
-        "Product Management"
+        "Data Science & Analytics",
+        "Riset Ilmiah & PKM"
       ],
-      "total_pengalaman": 3
+      "total_pengalaman": 1
     }
-  ]
+  ],
+  "pagination": {
+    "current_page": 1,
+    "per_page": 20,
+    "total_records": 1,
+    "total_pages": 1
+  }
 }
 ```
 
-#### 4.4.2 Undangan Rekrutmen ke Calon Anggota (FR-23)
+#### 4.4.2 Detail Profil Calon Anggota (FR-22)
+* **Endpoint:** `GET /profile/detail/{id_pengguna}`
+* **Respon Sukses (200 OK):** Data dikembalikan di dalam objek `data`, dengan `pengguna`, `data_diri`, `media_sosial`, `minat`, `keahlian`, `pengalaman`, dan `tim_yang_diikuti`. Nilai `data_diri` dapat `null` jika belum tersedia.
+```json
+{
+  "success": true,
+  "message": "Detail profil pengguna berhasil diambil",
+  "data": {
+    "pengguna": {
+      "id_pengguna": "usr_nayla_04",
+      "nim": "2411521007",
+      "nama_pengguna": "Nayla Puspita Sari",
+      "foto_profil": "profiles/usr_nayla_04.jpg"
+    },
+    "data_diri": {
+      "id_pengguna": "usr_nayla_04",
+      "deskripsi_singkat": "Peneliti muda di bidang Data Science dan Analisis Sistem. Memiliki minat kuat dalam penulisan proposal hibah kompetitif (PKM) dan pengolahan data analitik.",
+      "kontak": "081267891014",
+      "program_studi": "Sistem Informasi",
+      "fakultas": "Teknologi Informasi",
+      "ipk": 3.88
+    },
+    "media_sosial": [
+      {"id_media_sosial": "soc_10", "nama_media_sosial": "LinkedIn", "link_media_sosial": "https://linkedin.com/in/nayla-puspita-sari"},
+      {"id_media_sosial": "soc_11", "nama_media_sosial": "GitHub", "link_media_sosial": "https://github.com/naylapuspita"},
+      {"id_media_sosial": "soc_12", "nama_media_sosial": "Instagram", "link_media_sosial": "https://instagram.com/naylapuspita"}
+    ],
+    "minat": [
+      {"id_minat": "mnt_07", "minat": "Data Science & Analytics", "deskripsi_minat": "Eksplorasi data, pemodelan statistik, dan pembuatan dashboard insight."},
+      {"id_minat": "mnt_08", "minat": "Riset Ilmiah & PKM", "deskripsi_minat": "Penulisan proposal Program Kreativitas Mahasiswa bidang Riset Eksakta (PKM-RE)."}
+    ],
+    "keahlian": [
+      {"id_keahlian": "khl_07", "keahlian": "Python & Pandas", "deskripsi_keahlian": "Analisis data tabular, visualisasi Matplotlib/Seaborn, dan pemodelan prediktif."},
+      {"id_keahlian": "khl_08", "keahlian": "Scientific Writing", "deskripsi_keahlian": "Penyusunan metodologi penelitian kuantitatif dan kepatuhan format pedoman Dikti."}
+    ],
+    "pengalaman": [
+      {"id_pengalaman": "exp_05", "nama_kegiatan": "Program Kreativitas Mahasiswa (PKM-AI) Lolos Pendanaan 2025", "peran": "Peneliti Utama", "tahun": 2025, "deskripsi_pengalaman": "Menganalisis sentimen media sosial terhadap kebijakan transportasi publik dan mempublikasikan artikel ilmiah di jurnal terakreditasi SINTA."}
+    ],
+    "tim_yang_diikuti": []
+  }
+}
+```
+
+#### 4.4.3 Undangan Rekrutmen ke Calon Anggota (FR-23)
 * **Endpoint:** `POST /applications/invite-member`
-* **Akses:** Terautentikasi (Pembuat Tim)
+* **Validasi:** `id_tim`, `id_pengguna`, `posisi`, dan `pesan_pengajuan` wajib diisi. Posisi harus sesuai kebutuhan tim dan kuotanya belum terpenuhi. Calon anggota yang sudah menjadi anggota tim yang sama tidak dapat diundang lagi.
 * **Request Body:**
 ```json
 {
-  "id_tim": "tim_77189a",
-  "id_pengguna": "usr_2411521007",
-  "pesan_pengajuan": "Halo Nayla, kami melihat keahlian UI/UX Anda sangat cocok untuk kebutuhan tim Kontes Robotik kami."
+  "id_tim": "tim_pkm_02",
+  "id_pengguna": "usr_fuadi_01",
+  "posisi": "Mobile App Developer",
+  "pesan_pengajuan": "Halo Fuadi, kami melihat keahlian Anda sesuai dengan kebutuhan tim."
 }
 ```
 * **Respon Sukses (201 Created):**
 ```json
 {
   "success": true,
-  "message": "Undangan bergabung berhasil dikirimkan ke calon anggota",
+  "message": "Undangan berhasil dikirim ke calon anggota",
   "data": {
-    "id_pengajuan_anggota": "und_3310a",
-    "id_tim": "tim_77189a",
-    "id_pengguna": "usr_2411521007",
-    "pesan_pengajuan": "Halo Nayla...",
-    "waktu_pengajuan": "2026-10-11T15:05:00Z",
+    "id_pengajuan_anggota": "pga_1728800001",
+    "id_tim": "tim_pkm_02",
+    "id_pengguna": "usr_fuadi_01",
+    "posisi": "Mobile App Developer",
     "status_pengajuan": "menunggu"
   }
 }
 ```
+* **Kesalahan validasi:** field wajib yang tidak lengkap menghasilkan `422 Unprocessable Entity`.
+* **Konflik (409 Conflict) saat mengirim undangan:** terjadi jika calon anggota sudah menjadi anggota tim atau posisi tidak tersedia/kuotanya sudah penuh. Dalam kondisi ini undangan tidak dibuat. Ini berbeda dari kuota yang baru penuh setelah undangan terkirim: jika calon anggota memilih menerima undangan tersebut, backend mengubah status undangan menjadi `"ditolak"` dan mengembalikan `200 OK` dengan pesan kuota penuh (lihat FR-24).
 
-#### 4.4.3 Respon Calon Anggota terhadap Undangan (FR-24 — Tab Undangan Masuk)
+#### 4.4.4 Respon Calon Anggota terhadap Undangan (FR-24 — Tab Undangan Masuk)
 Pada antarmuka pengguna **Notifikasi Undangan**, calon anggota dapat membuka tab **"Undangan Masuk"** untuk melihat tim-tim yang mengajak mereka bergabung dan memberikan keputusan (*Terima* / *Tolak*).
 
 * **Daftar Undangan Masuk:** `GET /applications/received-invitations?id_pengguna={id_pengguna}`
@@ -680,16 +760,17 @@ Pada antarmuka pengguna **Notifikasi Undangan**, calon anggota dapat membuka tab
   "success": true,
   "data": [
     {
-      "id_pengajuan_anggota": "pga_1728800001",
-      "id_tim": "tim_77189a",
-      "id_pengguna": "usr_2411522001",
-      "pesan_pengajuan": "Ayo bergabung ke tim kami!",
+      "id_pengajuan_anggota": "pga_01",
+      "id_tim": "tim_pkm_02",
+      "id_pengguna": "usr_fuadi_01",
+      "posisi": "Mobile App Developer",
+      "pesan_pengajuan": "Halo Fuadi, kami melihat portofolio dan riwayat pengalaman mobile development Anda di MyTeam. Tim riset PKM Pangan kami sangat membutuhkan keahlian Anda untuk modul mobile data collection. Apakah Anda bersedia bergabung?",
       "status_pengajuan": "menunggu",
-      "waktu_pengajuan": "2026-10-13T10:00:00.000Z",
-      "nama_tim": "PKM-KC Inovasi Pertanian",
-      "nama_kegiatan": "PKM Karsa Cipta - Smart Farming IoT",
+      "waktu_pengajuan": "2026-10-09T11:00:00.000Z",
+      "nama_tim": "Inovator Pangan Unand",
+      "nama_kegiatan": "Program Kreativitas Mahasiswa Riset Eksakta (PKM-RE) 2026",
       "kategori_kegiatan": "Penelitian",
-      "deskripsi_tim": "Tim PKM Karsa Cipta yang mengembangkan sistem monitoring kebun cerdas berbasis IoT dan dashboard real-time untuk petani Sumatera Barat."
+      "deskripsi_tim": "Proyek riset interdisipliner untuk membangun model kecerdasan buatan dan aplikasi mobile pemantau kestabilan pasokan komoditas pangan lokal Sumatera Barat."
     }
   ]
 }
@@ -703,106 +784,61 @@ Pada antarmuka pengguna **Notifikasi Undangan**, calon anggota dapat membuka tab
 }
 ```
 *(Nilai valid: `"diterima"` atau `"ditolak"`)*
+* Saat status `"diterima"` dan kuota posisi masih tersedia, backend menambahkan calon anggota ke `Anggota_Tim` menggunakan posisi yang ditawarkan, lalu menyimpan status `"diterima"`.
+* Jika kuota posisi telah penuh saat undangan dijawab, backend tetap menyelesaikan respons dengan HTTP `200 OK`, mengubah status undangan menjadi `"ditolak"`, dan mengembalikan pesan yang menyebutkan posisi tersebut. Calon anggota tidak dimasukkan ke `Anggota_Tim`.
+* Pembaruan status, penambahan anggota (jika diterima), dan notifikasi kepada pembuat tim diproses dalam satu transaksi.
+* Aplikasi menampilkan pesan respons dari backend dan memuat ulang daftar undangan agar status akhir, termasuk status `"ditolak"` otomatis, terlihat pada kartu undangan.
 * **Respon Sukses (200 OK):**
 ```json
 {
   "success": true,
-  "message": "Undangan berhasil di-diterima."
-}
-```
-
-#### 4.4.4 Pemantauan Undangan Terkirim (FR-24b), Notifikasi Respon (FR-25), & Endpoint Kotak Masuk Notifikasi
-
-Fitur ini menyediakan antarmuka terpadu pada halaman **Notifikasi Undangan** dan **Pusat Notifikasi Aplikasi**:
-1. **Tab "Undangan Terkirim" (FR-24b):** Memungkinkan pembuat/ketua tim memantau seluruh undangan yang pernah mereka kirim ke calon anggota beserta status terkininya.
-2. **Auto-Event Notifikasi Respon (FR-25):** Saat calon anggota menerima atau menolak undangan pada FR-24, backend secara otomatis membuat notifikasi respon untuk ketua tim.
-3. **Pusat Kotak Masuk Notifikasi (In-App Notification Center):** Mengelola seluruh notifikasi dari seluruh modul aplikasi.
-
----
-
-##### A. Pemantauan Status Undangan Terkirim (FR-24b — Tab Undangan Terkirim)
-* **Endpoint:** `GET /applications/sent-invitations?id_pengguna={id_pengguna}`
-* **Akses:** Terautentikasi (Pembuat / Ketua Tim)
-* **Deskripsi:** Menampilkan status seluruh undangan yang dikirim oleh tim milik pengguna. Nilai `status_pengajuan` dapat berupa `"menunggu"`, `"diterima"`, atau `"ditolak"`.
-* **Respon Sukses (200 OK):**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id_pengajuan_anggota": "pga_1728800002",
-      "id_tim": "tim_77189b",
-      "id_calon": "usr_2411521007",
-      "pesan_pengajuan": "Halo Nayla, kami melihat keahlian UI/UX Anda sangat cocok untuk kebutuhan tim kami.",
-      "status_pengajuan": "menunggu",
-      "waktu_pengajuan": "2026-10-13T10:05:00.000Z",
-      "nama_tim": "Inovator Pangan Unand",
-      "nama_kegiatan": "Program Kreativitas Mahasiswa Riset Eksakta (PKM-RE) 2026",
-      "kategori_kegiatan": "Penelitian",
-      "nama_calon": "Nayla Puspita Sari",
-      "foto_calon": "profiles/usr_nayla_04.jpg",
-      "nim_calon": "2411521007",
-      "prodi_calon": "Sistem Informasi"
-    }
-  ]
-}
-```
-
----
-
-##### B. Mekanisme Notifikasi Otomatis Respon Calon Anggota (FR-25 Auto-Event)
-> **Distribusi Event Notifikasi Lintas Modul:**
-> Setiap modul bertanggung jawab atas pembuatan (*trigger & event dispatch*) notifikasi masing-masing ke tabel basis data `Notifikasi`:
-> - **Modul 1 (Fuadi):** FR-07 (Pembaruan data profil & rekam akademik)
-> - **Modul 2 (Nayla):** FR-12 (Pengajuan baru yang masuk ke tim buatan pengguna: `jenis_notifikasi = 'pengajuan_masuk'`)
-> - **Modul 3 (Rafa):** FR-20 (Pembaruan status pelamar bergabung ke tim: `jenis_notifikasi = 'pengajuan_diterima'` / `'pengajuan_ditolak'`)
-> - **Modul 4 (Diva):** 
->   - FR-23: Calon anggota menerima ajakan bergabung (`jenis_notifikasi = 'undangan_masuk'`)
->   - FR-25: Ketua tim menerima notifikasi atas keputusan calon anggota (`jenis_notifikasi = 'respon_undangan'`)
-
----
-
-##### C. Endpoint Terpusat Kotak Masuk Notifikasi
-Endpoint universal untuk menampilkan feed notifikasi dan mengelola lencana belum dibaca (*unread badge counter*):
-
-* **Ambil Seluruh Daftar Notifikasi:** `GET /notifications?id_pengguna={id_pengguna}`
-* **Respon Sukses (200 OK):**
-```json
-{
-  "success": true,
-  "message": "Daftar notifikasi berhasil diambil",
-  "data": [
-    {
-      "id_notifikasi": "notif_502",
-      "id_pengguna": "usr_2411521017",
-      "jenis_notifikasi": "respon_undangan",
-      "pesan_notifikasi": "Fuadi Dhiyaulhaq telah menerima undangan bergabung ke tim \"PKM-KC Inovasi Pertanian\".",
-      "id_pengajuan_bergabung_tim": null,
-      "id_pengajuan_anggota": "pga_1728800001",
-      "status_dibaca": false,
-      "waktu_notifikasi": "2026-10-13T10:15:00.000Z"
-    }
-  ]
-}
-```
-
-* **Hitung Notifikasi Belum Dibaca (Unread Counter Badge):** `GET /notifications/unread-count?id_pengguna={id_pengguna}`
-* **Respon Sukses (200 OK):**
-```json
-{
-  "success": true,
+  "message": "Undangan berhasil di-diterima.",
   "data": {
-    "unread_count": 2
+    "id_pengajuan_anggota": "pga_01",
+    "status_pengajuan": "diterima"
   }
 }
 ```
+* **Respon ketika kuota penuh (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Kuota untuk posisi \"Mobile App Developer\" sudah penuh. Undangan otomatis ditolak.",
+  "data": {
+    "id_pengajuan_anggota": "pga_01",
+    "status_pengajuan": "ditolak"
+  }
+}
+```
+* Status selain `"diterima"` atau `"ditolak"` menghasilkan `400`; undangan tidak ditemukan menghasilkan `404`; undangan yang sudah pernah direspons menghasilkan `409`.
+* Pada kedua respons keputusan tersebut, backend membuat notifikasi untuk pemilik tim dengan `jenis_notifikasi: "respon_undangan"`. Jika kuota penuh, isi notifikasi menyebut respons `"ditolak"`.
 
-* **Tandai Notifikasi Telah Dibaca:** `PATCH /notifications/{id_notifikasi}/read`
+#### 4.4.5 Pemantauan Undangan Terkirim dan Notifikasi Respons (FR-25)
+* **Endpoint:** `GET /applications/sent-invitations?id_pengguna={id_pengguna}`
+* **Akses:** Pembuat tim.
+* **Deskripsi:** Mengambil undangan yang dikirim oleh tim milik pengguna tersebut, termasuk posisi, calon anggota, dan status (`menunggu`, `diterima`, atau `ditolak`). Pada alur yang sama, sistem membuat notifikasi secara otomatis: `undangan_masuk` untuk calon anggota setelah undangan dikirim melalui FR-23, dan `respon_undangan` untuk pembuat tim setelah calon anggota merespons melalui FR-24. Jika kuota posisi penuh ketika undangan diterima, status akhir menjadi `ditolak` dan notifikasi kepada pembuat tim mengikuti status tersebut.
 * **Respon Sukses (200 OK):**
 ```json
 {
   "success": true,
-  "message": "Notifikasi ditandai telah dibaca."
+  "data": [
+    {
+      "id_pengajuan_anggota": "pga_01",
+      "id_tim": "tim_pkm_02",
+      "id_calon": "usr_fuadi_01",
+      "posisi": "Mobile App Developer",
+      "pesan_pengajuan": "Halo Fuadi, kami mengajak Anda bergabung ke tim riset PKM Pangan.",
+      "status_pengajuan": "menunggu",
+      "waktu_pengajuan": "2026-10-09T11:00:00.000Z",
+      "nama_tim": "Inovator Pangan Unand",
+      "nama_kegiatan": "Program Kreativitas Mahasiswa Riset Eksakta (PKM-RE) 2026",
+      "kategori_kegiatan": "Penelitian",
+      "nama_calon": "Fuadi Dhiyaulhaq",
+      "foto_calon": "profiles/usr_fuadi_01.jpg",
+      "nim_calon": "2411522001",
+      "prodi_calon": "Sistem Informasi"
+    }
+  ]
 }
 ```
 
@@ -884,8 +920,8 @@ CREATE TABLE Data_Tim (
     FOREIGN KEY (id_pengguna) REFERENCES Pengguna(id_pengguna) ON DELETE RESTRICT
 );
 
--- 8. Kebutuhan_Tim
-CREATE TABLE Kebutuhan_Tim (
+-- 8. Kebutuhan_Anggota_Tim
+CREATE TABLE Kebutuhan_Anggota_Tim (
     id_kebutuhan VARCHAR(36) PRIMARY KEY,
     id_tim VARCHAR(36) NOT NULL,
     posisi_dibutuhkan VARCHAR(100) NOT NULL,
@@ -912,6 +948,7 @@ CREATE TABLE Anggota_Tim (
     id_pengguna VARCHAR(36) NOT NULL,
     posisi VARCHAR(100) NOT NULL,
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_tim_anggota (id_tim, id_pengguna),
     FOREIGN KEY (id_tim) REFERENCES Data_Tim(id_tim) ON DELETE CASCADE,
     FOREIGN KEY (id_pengguna) REFERENCES Pengguna(id_pengguna) ON DELETE CASCADE
 );
@@ -934,6 +971,7 @@ CREATE TABLE Pengajuan_Anggota (
     id_pengajuan_anggota VARCHAR(36) PRIMARY KEY,
     id_tim VARCHAR(36) NOT NULL,
     id_pengguna VARCHAR(36) NOT NULL, -- Calon Anggota yang diundang
+    posisi VARCHAR(100) NOT NULL, -- Posisi yang ditawarkan oleh pembuat tim
     pesan_pengajuan TEXT NOT NULL,
     waktu_pengajuan TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status_pengajuan ENUM('menunggu', 'diterima', 'ditolak') DEFAULT 'menunggu',

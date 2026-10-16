@@ -7,6 +7,7 @@ class TeamModel {
   final String kategoriKegiatan;
   final String deskripsi;
   final String statusTim;
+  final bool isOwner;
   final String? createdAt;
   final List<KebutuhanTimModel> kebutuhanTim;
   final List<DokumenPendukungModel> dokumenPendukung;
@@ -20,6 +21,7 @@ class TeamModel {
     required this.kategoriKegiatan,
     required this.deskripsi,
     required this.statusTim,
+    this.isOwner = false,
     this.createdAt,
     this.kebutuhanTim = const [],
     this.dokumenPendukung = const [],
@@ -35,6 +37,7 @@ class TeamModel {
       kategoriKegiatan: json['kategori_kegiatan']?.toString() ?? '',
       deskripsi: json['deskripsi']?.toString() ?? '',
       statusTim: json['status_tim']?.toString() ?? 'terbuka',
+      isOwner: json['peran']?.toString() == 'pemilik',
       createdAt: json['created_at']?.toString(),
       kebutuhanTim: (json['kebutuhan_tim'] as List<dynamic>? ?? [])
           .map((e) => KebutuhanTimModel.fromJson(e as Map<String, dynamic>))
@@ -49,17 +52,18 @@ class TeamModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'id_tim': idTim,
-        'id_pengguna': idPengguna,
-        'nama_tim': namaTim,
-        'nama_kegiatan': namaKegiatan,
-        'kategori_kegiatan': kategoriKegiatan,
-        'deskripsi': deskripsi,
-        'status_tim': statusTim,
-        'kebutuhan_tim': kebutuhanTim.map((e) => e.toJson()).toList(),
-        'dokumen_pendukung': dokumenPendukung.map((e) => e.toJson()).toList(),
-        'anggota_tim': anggotaTim.map((e) => e.toJson()).toList(),
-      };
+    'id_tim': idTim,
+    'id_pengguna': idPengguna,
+    'nama_tim': namaTim,
+    'nama_kegiatan': namaKegiatan,
+    'kategori_kegiatan': kategoriKegiatan,
+    'deskripsi': deskripsi,
+    'status_tim': statusTim,
+    'peran': isOwner ? 'pemilik' : 'anggota',
+    'kebutuhan_tim': kebutuhanTim.map((e) => e.toJson()).toList(),
+    'dokumen_pendukung': dokumenPendukung.map((e) => e.toJson()).toList(),
+    'anggota_tim': anggotaTim.map((e) => e.toJson()).toList(),
+  };
 
   TeamModel copyWith({
     String? idTim,
@@ -69,6 +73,7 @@ class TeamModel {
     String? kategoriKegiatan,
     String? deskripsi,
     String? statusTim,
+    bool? isOwner,
     String? createdAt,
     List<KebutuhanTimModel>? kebutuhanTim,
     List<DokumenPendukungModel>? dokumenPendukung,
@@ -82,6 +87,7 @@ class TeamModel {
       kategoriKegiatan: kategoriKegiatan ?? this.kategoriKegiatan,
       deskripsi: deskripsi ?? this.deskripsi,
       statusTim: statusTim ?? this.statusTim,
+      isOwner: isOwner ?? this.isOwner,
       createdAt: createdAt ?? this.createdAt,
       kebutuhanTim: kebutuhanTim ?? this.kebutuhanTim,
       dokumenPendukung: dokumenPendukung ?? this.dokumenPendukung,
@@ -115,11 +121,11 @@ class KebutuhanTimModel {
   }
 
   Map<String, dynamic> toJson() => {
-        if (idKebutuhan != null) 'id_kebutuhan': idKebutuhan,
-        'posisi_dibutuhkan': posisiDibutuhkan,
-        'keahlian_dibutuhkan': keahlianDibutuhkan,
-        'jumlah_anggota_dibutuhkan': jumlahAnggotaDibutuhkan,
-      };
+    if (idKebutuhan != null) 'id_kebutuhan': idKebutuhan,
+    'posisi_dibutuhkan': posisiDibutuhkan,
+    'keahlian_dibutuhkan': keahlianDibutuhkan,
+    'jumlah_anggota_dibutuhkan': jumlahAnggotaDibutuhkan,
+  };
 
   KebutuhanTimModel copyWith({
     String? idKebutuhan,
@@ -164,12 +170,12 @@ class DokumenPendukungModel {
   }
 
   Map<String, dynamic> toJson() => {
-        if (idDokumen != null) 'id_dokumen': idDokumen,
-        'jenis_dokumen': jenisDokumen,
-        'nama_file': namaFile,
-        'path_file': pathFile,
-        'urutan': urutan,
-      };
+    if (idDokumen != null) 'id_dokumen': idDokumen,
+    'jenis_dokumen': jenisDokumen,
+    'nama_file': namaFile,
+    'path_file': pathFile,
+    'urutan': urutan,
+  };
 }
 
 /// Model anggota yang sudah bergabung ke tim
@@ -202,8 +208,8 @@ class AnggotaTimModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'id_anggota_tim': idAnggotaTim,
-        'id_pengguna': idPengguna,
-        'posisi': posisi,
-      };
+    'id_anggota_tim': idAnggotaTim,
+    'id_pengguna': idPengguna,
+    'posisi': posisi,
+  };
 }

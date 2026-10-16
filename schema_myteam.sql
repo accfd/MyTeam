@@ -218,6 +218,7 @@ CREATE TABLE Pengajuan_Anggota (
     id_pengajuan_anggota VARCHAR(36) NOT NULL,
     id_tim VARCHAR(36) NOT NULL,
     id_pengguna VARCHAR(36) NOT NULL, -- Calon Anggota yang diundang
+    posisi VARCHAR(100) NOT NULL,     -- Posisi yang ditawarkan pembuat tim
     pesan_pengajuan TEXT NOT NULL,
     waktu_pengajuan TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status_pengajuan ENUM('menunggu', 'diterima', 'ditolak') NOT NULL DEFAULT 'menunggu',

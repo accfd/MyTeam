@@ -42,13 +42,15 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
       _detailError = null;
     });
     try {
-      final data =
-          await TalentSearchService.getMemberDetail(widget.member.idPengguna);
+      final data = await TalentSearchService.getMemberDetail(
+        widget.member.idPengguna,
+      );
       if (mounted) setState(() => _detail = data);
     } catch (e) {
       if (mounted) {
-        setState(() =>
-            _detailError = e.toString().replaceFirst('Exception: ', ''));
+        setState(
+          () => _detailError = e.toString().replaceFirst('Exception: ', ''),
+        );
       }
     } finally {
       if (mounted) setState(() => _loadingDetail = false);
@@ -74,10 +76,8 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _InviteBottomSheet(
-        member: widget.member,
-        myUserId: myId,
-      ),
+      builder: (ctx) =>
+          _InviteBottomSheet(member: widget.member, myUserId: myId),
     );
   }
 
@@ -95,7 +95,9 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
             const SliverFillRemaining(
               child: Center(
                 child: CircularProgressIndicator(
-                    color: AppColors.primaryContainer, strokeWidth: 2.5),
+                  color: AppColors.primaryContainer,
+                  strokeWidth: 2.5,
+                ),
               ),
             )
           else if (_detailError != null)
@@ -122,8 +124,11 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
             shape: BoxShape.circle,
           ),
           child: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded,
-                color: AppColors.text, size: 20),
+            icon: const Icon(
+              Icons.arrow_back_rounded,
+              color: AppColors.text,
+              size: 20,
+            ),
             onPressed: () => Navigator.pop(context),
           ),
         ),
@@ -147,19 +152,23 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
                     CircleAvatar(
                       radius: 44,
                       backgroundColor: Colors.white.withAlpha(40),
-                      backgroundImage: (widget.member.fotoProfil != null &&
+                      backgroundImage:
+                          (widget.member.fotoProfil != null &&
                               widget.member.fotoProfil!.isNotEmpty)
                           ? NetworkImage(widget.member.fotoProfil!)
-                              as ImageProvider
+                                as ImageProvider
                           : null,
-                      child: (widget.member.fotoProfil == null ||
+                      child:
+                          (widget.member.fotoProfil == null ||
                               widget.member.fotoProfil!.isEmpty)
-                          ? Text(widget.member.inisial,
+                          ? Text(
+                              widget.member.inisial,
                               style: AppTextStyles.headlineLg.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w700,
                                 fontSize: 32,
-                              ))
+                              ),
+                            )
                           : null,
                     ),
                     Positioned(
@@ -172,20 +181,23 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
                           color: Color(0xFF22C55E),
                           shape: BoxShape.circle,
                           border: Border.fromBorderSide(
-                              BorderSide(color: Colors.white, width: 2.5)),
+                            BorderSide(color: Colors.white, width: 2.5),
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 10),
-                Text(widget.member.namaPengguna,
-                    style: AppTextStyles.headlineMd.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 18,
-                    ),
-                    textAlign: TextAlign.center),
+                Text(
+                  widget.member.namaPengguna,
+                  style: AppTextStyles.headlineMd.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 4),
                 Text(
                   '${widget.member.programStudi} • ${widget.member.angkatan}',
@@ -196,18 +208,22 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
                 ),
                 const SizedBox(height: 6),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withAlpha(30),
                     borderRadius: BorderRadius.circular(99),
                     border: Border.all(color: Colors.white.withAlpha(60)),
                   ),
-                  child: Text('Mahasiswa Aktif',
-                      style: AppTextStyles.labelSm.copyWith(
-                        color: Colors.white,
-                        fontSize: 10,
-                      )),
+                  child: Text(
+                    'Mahasiswa Aktif',
+                    style: AppTextStyles.labelSm.copyWith(
+                      color: Colors.white,
+                      fontSize: 10,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -225,19 +241,23 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
             ?.map((e) => e as Map<String, dynamic>)
             .toList() ??
         [];
-    final minat = (_detail?['minat'] as List<dynamic>?)
+    final minat =
+        (_detail?['minat'] as List<dynamic>?)
             ?.map((e) => e as Map<String, dynamic>)
             .toList() ??
         [];
-    final keahlian = (_detail?['keahlian'] as List<dynamic>?)
+    final keahlian =
+        (_detail?['keahlian'] as List<dynamic>?)
             ?.map((e) => e as Map<String, dynamic>)
             .toList() ??
         [];
-    final pengalaman = (_detail?['pengalaman'] as List<dynamic>?)
+    final pengalaman =
+        (_detail?['pengalaman'] as List<dynamic>?)
             ?.map((e) => e as Map<String, dynamic>)
             .toList() ??
         [];
-    final timDiikuti = (_detail?['tim_yang_diikuti'] as List<dynamic>?)
+    final timDiikuti =
+        (_detail?['tim_yang_diikuti'] as List<dynamic>?)
             ?.map((e) => e as Map<String, dynamic>)
             .toList() ??
         [];
@@ -266,16 +286,24 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
                     ),
                   ),
                 const SizedBox(height: 10),
-                _buildInfoRow(Icons.school_rounded,
-                    dataDiri['program_studi'] as String? ?? '-'),
-                _buildInfoRow(Icons.business_rounded,
-                    dataDiri['fakultas'] as String? ?? '-'),
+                _buildInfoRow(
+                  Icons.school_rounded,
+                  dataDiri['program_studi'] as String? ?? '-',
+                ),
+                _buildInfoRow(
+                  Icons.business_rounded,
+                  dataDiri['fakultas'] as String? ?? '-',
+                ),
                 if (dataDiri['ipk'] != null)
-                  _buildInfoRow(Icons.grade_rounded,
-                      'IPK ${(double.tryParse(dataDiri['ipk'].toString()) ?? 0).toStringAsFixed(2)}'),
+                  _buildInfoRow(
+                    Icons.grade_rounded,
+                    'IPK ${(double.tryParse(dataDiri['ipk'].toString()) ?? 0).toStringAsFixed(2)}',
+                  ),
                 if ((dataDiri['kontak'] as String?)?.isNotEmpty ?? false)
                   _buildInfoRow(
-                      Icons.phone_rounded, dataDiri['kontak'] as String),
+                    Icons.phone_rounded,
+                    dataDiri['kontak'] as String,
+                  ),
               ],
             ),
             const SizedBox(height: 12),
@@ -286,10 +314,12 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
               title: 'Media Sosial & Portofolio',
               icon: Icons.share_rounded,
               children: mediaSosial
-                  .map((s) => _buildSocialRow(
-                        s['nama_media_sosial'] as String? ?? '',
-                        s['link_media_sosial'] as String? ?? '',
-                      ))
+                  .map(
+                    (s) => _buildSocialRow(
+                      s['nama_media_sosial'] as String? ?? '',
+                      s['link_media_sosial'] as String? ?? '',
+                    ),
+                  )
                   .toList(),
             ),
             const SizedBox(height: 12),
@@ -304,10 +334,12 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
                   spacing: 8,
                   runSpacing: 6,
                   children: keahlian
-                      .map((k) => _buildSkillPill(
-                            k['keahlian'] as String? ?? '',
-                            k['deskripsi_keahlian'] as String?,
-                          ))
+                      .map(
+                        (k) => _buildSkillPill(
+                          k['keahlian'] as String? ?? '',
+                          k['deskripsi_keahlian'] as String?,
+                        ),
+                      )
                       .toList(),
                 ),
               ],
@@ -324,7 +356,9 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
                   spacing: 8,
                   runSpacing: 6,
                   children: minat
-                      .map((m) => _buildInterestPill(m['minat'] as String? ?? ''))
+                      .map(
+                        (m) => _buildInterestPill(m['minat'] as String? ?? ''),
+                      )
                       .toList(),
                 ),
               ],
@@ -336,8 +370,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
             _buildCard(
               title: 'Riwayat Pengalaman',
               icon: Icons.workspace_premium_rounded,
-              children:
-                  pengalaman.map((e) => _buildExperienceItem(e)).toList(),
+              children: pengalaman.map((e) => _buildExperienceItem(e)).toList(),
             ),
             const SizedBox(height: 12),
           ],
@@ -380,9 +413,13 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
         ),
         child: Column(
           children: [
-            Text(value,
-                style: AppTextStyles.headlineMd.copyWith(
-                    color: AppColors.primary, fontWeight: FontWeight.w800)),
+            Text(
+              value,
+              style: AppTextStyles.headlineMd.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
             const SizedBox(height: 2),
             Text(label, style: AppTextStyles.bodySm.copyWith(fontSize: 11)),
           ],
@@ -446,8 +483,11 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
           Icon(icon, size: 15, color: AppColors.textMuted),
           const SizedBox(width: 8),
           Expanded(
-              child: Text(text,
-                  style: AppTextStyles.bodyMd.copyWith(fontSize: 13))),
+            child: Text(
+              text,
+              style: AppTextStyles.bodyMd.copyWith(fontSize: 13),
+            ),
+          ),
         ],
       ),
     );
@@ -465,23 +505,29 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
               color: AppColors.primarySoft,
               borderRadius: BorderRadius.circular(6),
             ),
-            child:
-                Icon(_socialIcon(nama), color: AppColors.primary, size: 14),
+            child: Icon(_socialIcon(nama), color: AppColors.primary, size: 14),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(nama,
-                    style: AppTextStyles.bodyMd.copyWith(
-                        fontWeight: FontWeight.w600, fontSize: 13)),
-                Text(link,
-                    style: AppTextStyles.bodySm.copyWith(
-                        fontSize: 11,
-                        color: AppColors.categoryResearchText),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  nama,
+                  style: AppTextStyles.bodyMd.copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                Text(
+                  link,
+                  style: AppTextStyles.bodySm.copyWith(
+                    fontSize: 11,
+                    color: AppColors.categoryResearchText,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),
@@ -510,9 +556,13 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
           borderRadius: BorderRadius.circular(99),
           border: Border.all(color: AppColors.primaryOutline),
         ),
-        child: Text(keahlian,
-            style: AppTextStyles.labelSm
-                .copyWith(color: AppColors.primary, fontSize: 11)),
+        child: Text(
+          keahlian,
+          style: AppTextStyles.labelSm.copyWith(
+            color: AppColors.primary,
+            fontSize: 11,
+          ),
+        ),
       ),
     );
   }
@@ -523,12 +573,15 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
       decoration: BoxDecoration(
         color: AppColors.categoryResearchBg,
         borderRadius: BorderRadius.circular(99),
-        border:
-            Border.all(color: AppColors.categoryResearchText.withAlpha(60)),
+        border: Border.all(color: AppColors.categoryResearchText.withAlpha(60)),
       ),
-      child: Text(minat,
-          style: AppTextStyles.labelSm
-              .copyWith(color: AppColors.categoryResearchText, fontSize: 11)),
+      child: Text(
+        minat,
+        style: AppTextStyles.labelSm.copyWith(
+          color: AppColors.categoryResearchText,
+          fontSize: 11,
+        ),
+      ),
     );
   }
 
@@ -558,37 +611,51 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
                       child: Text(
                         exp['nama_kegiatan'] as String? ?? '-',
                         style: AppTextStyles.bodyMd.copyWith(
-                            fontWeight: FontWeight.w600, fontSize: 13),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.categoryCompetitionBg,
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: Text('${exp['tahun'] ?? ''}',
-                          style: AppTextStyles.labelSm.copyWith(
-                              color: AppColors.categoryCompetitionText,
-                              fontSize: 10)),
+                      child: Text(
+                        '${exp['tahun'] ?? ''}',
+                        style: AppTextStyles.labelSm.copyWith(
+                          color: AppColors.categoryCompetitionText,
+                          fontSize: 10,
+                        ),
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 2),
-                Text(exp['peran'] as String? ?? '',
-                    style: AppTextStyles.bodySm.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 12)),
+                Text(
+                  exp['peran'] as String? ?? '',
+                  style: AppTextStyles.bodySm.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 12,
+                  ),
+                ),
                 if ((exp['deskripsi_pengalaman'] as String?)?.isNotEmpty ??
                     false) ...[
                   const SizedBox(height: 4),
-                  Text(exp['deskripsi_pengalaman'] as String,
-                      style: AppTextStyles.bodySm
-                          .copyWith(color: AppColors.textMuted, fontSize: 12),
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis),
+                  Text(
+                    exp['deskripsi_pengalaman'] as String,
+                    style: AppTextStyles.bodySm.copyWith(
+                      color: AppColors.textMuted,
+                      fontSize: 12,
+                    ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ],
             ),
@@ -610,17 +677,24 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
               color: AppColors.primarySoft,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.groups_rounded,
-                color: AppColors.primary, size: 18),
+            child: const Icon(
+              Icons.groups_rounded,
+              color: AppColors.primary,
+              size: 18,
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(tim['nama_tim'] as String? ?? '-',
-                    style: AppTextStyles.bodyMd.copyWith(
-                        fontWeight: FontWeight.w600, fontSize: 13)),
+                Text(
+                  tim['nama_tim'] as String? ?? '-',
+                  style: AppTextStyles.bodyMd.copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
                 Text(
                   '${tim['posisi'] ?? ''} • ${tim['nama_kegiatan'] ?? ''}',
                   style: AppTextStyles.bodySm.copyWith(fontSize: 11),
@@ -653,10 +727,14 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration:
-          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)),
-      child: Text(kategori,
-          style: AppTextStyles.labelSm.copyWith(color: fg, fontSize: 10)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        kategori,
+        style: AppTextStyles.labelSm.copyWith(color: fg, fontSize: 10),
+      ),
     );
   }
 
@@ -667,13 +745,17 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.wifi_off_rounded,
-                color: AppColors.textMuted, size: 48),
+            const Icon(
+              Icons.wifi_off_rounded,
+              color: AppColors.textMuted,
+              size: 48,
+            ),
             const SizedBox(height: 12),
-            Text(_detailError ?? 'Gagal memuat profil.',
-                style: AppTextStyles.bodySm
-                    .copyWith(color: AppColors.textMuted),
-                textAlign: TextAlign.center),
+            Text(
+              _detailError ?? 'Gagal memuat profil.',
+              style: AppTextStyles.bodySm.copyWith(color: AppColors.textMuted),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: _loadDetail,
@@ -706,13 +788,16 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
         child: ElevatedButton.icon(
           onPressed: _showInviteSheet,
           icon: const Icon(Icons.send_rounded, size: 18),
-          label: Text('Ajak Bergabung ke Tim',
-              style: AppTextStyles.labelLg.copyWith(fontSize: 14)),
+          label: Text(
+            'Ajak Bergabung ke Tim',
+            style: AppTextStyles.labelLg.copyWith(fontSize: 14),
+          ),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primaryContainer,
             foregroundColor: Colors.white,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             elevation: 0,
           ),
         ),
@@ -729,10 +814,7 @@ class _InviteBottomSheet extends StatefulWidget {
   final TalentMemberModel member;
   final String myUserId;
 
-  const _InviteBottomSheet({
-    required this.member,
-    required this.myUserId,
-  });
+  const _InviteBottomSheet({required this.member, required this.myUserId});
 
   @override
   State<_InviteBottomSheet> createState() => _InviteBottomSheetState();
@@ -747,6 +829,61 @@ class _InviteBottomSheetState extends State<_InviteBottomSheet> {
   bool _loadingTeams = true;
   String? _selectedTeamId;
   String? _selectedTeamName;
+  String? _selectedPosition;
+  String? _teamsErrorMsg;
+
+  Map<String, int> get _availablePositions {
+    final team = _myTeams.where(
+      (item) => item['id_tim']?.toString() == _selectedTeamId,
+    );
+    if (team.isEmpty) return {};
+
+    final teamData = team.first;
+    final needs = teamData['kebutuhan_tim'];
+    if (needs is! List) return {};
+
+    final requiredByPosition = <String, int>{};
+    final positionNames = <String, String>{};
+    for (final raw in needs) {
+      if (raw is! Map) continue;
+      final item = Map<String, dynamic>.from(raw);
+      final position = item['posisi_dibutuhkan']?.toString().trim() ?? '';
+      if (position.isEmpty) continue;
+      final key = position.toLowerCase();
+      positionNames.putIfAbsent(key, () => position);
+      requiredByPosition.update(
+        key,
+        (count) =>
+            count +
+            (int.tryParse(
+                  item['jumlah_anggota_dibutuhkan']?.toString() ?? '',
+                ) ??
+                1),
+        ifAbsent: () =>
+            int.tryParse(item['jumlah_anggota_dibutuhkan']?.toString() ?? '') ??
+            1,
+      );
+    }
+
+    final currentByPosition = <String, int>{};
+    final members = teamData['anggota_tim'];
+    if (members is List) {
+      for (final raw in members) {
+        if (raw is! Map) continue;
+        final position = raw['posisi']?.toString().trim() ?? '';
+        if (position.isEmpty) continue;
+        final key = position.toLowerCase();
+        currentByPosition.update(key, (count) => count + 1, ifAbsent: () => 1);
+      }
+    }
+
+    return {
+      for (final entry in requiredByPosition.entries)
+        if (entry.value > (currentByPosition[entry.key] ?? 0))
+          positionNames[entry.key]!:
+              entry.value - (currentByPosition[entry.key] ?? 0),
+    };
+  }
 
   @override
   void initState() {
@@ -766,17 +903,29 @@ class _InviteBottomSheetState extends State<_InviteBottomSheet> {
           setState(() {
             _myTeams = teams;
             _loadingTeams = false;
+            _teamsErrorMsg = null;
             if (teams.length == 1) {
-              _selectedTeamId = teams[0]['id_tim'] as String?;
-              _selectedTeamName = teams[0]['nama_tim'] as String?;
+              _selectedTeamId = teams[0]['id_tim']?.toString();
+              _selectedTeamName = teams[0]['nama_tim']?.toString();
             }
           });
         }
       } else {
-        if (mounted) setState(() => _loadingTeams = false);
+        if (mounted) {
+          setState(() {
+            _loadingTeams = false;
+            _teamsErrorMsg =
+                json['message']?.toString() ?? 'Gagal memuat daftar tim.';
+          });
+        }
       }
-    } catch (_) {
-      if (mounted) setState(() => _loadingTeams = false);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loadingTeams = false;
+          _teamsErrorMsg = e.toString().replaceFirst('Exception: ', '');
+        });
+      }
     }
   }
 
@@ -792,6 +941,11 @@ class _InviteBottomSheetState extends State<_InviteBottomSheet> {
       setState(() => _errorMsg = 'Pilih tim terlebih dahulu.');
       return;
     }
+    if (_selectedPosition == null ||
+        !_availablePositions.containsKey(_selectedPosition)) {
+      setState(() => _errorMsg = 'Pilih posisi yang masih dibutuhkan tim.');
+      return;
+    }
     if (pesan.isEmpty) {
       setState(() => _errorMsg = 'Pesan undangan wajib diisi.');
       return;
@@ -804,6 +958,7 @@ class _InviteBottomSheetState extends State<_InviteBottomSheet> {
       await TalentSearchService.inviteMember(
         idTim: _selectedTeamId!,
         idPengguna: widget.member.idPengguna,
+        posisi: _selectedPosition!,
         pesanPengajuan: pesan,
       );
       if (mounted) {
@@ -811,7 +966,8 @@ class _InviteBottomSheetState extends State<_InviteBottomSheet> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-                'Undangan berhasil dikirim ke ${widget.member.namaPengguna}!'),
+              'Undangan berhasil dikirim ke ${widget.member.namaPengguna}!',
+            ),
             backgroundColor: AppColors.statusSuccessText,
             behavior: SnackBarBehavior.floating,
           ),
@@ -829,273 +985,402 @@ class _InviteBottomSheetState extends State<_InviteBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin:
-          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 180),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Handle
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: AppColors.border,
-                borderRadius: BorderRadius.circular(99),
-              ),
-            ),
+      child: SingleChildScrollView(
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
-
-          // Header
-          Row(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: AppColors.primarySoft,
-                child: Text(widget.member.inisial,
-                    style: AppTextStyles.bodyMd.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w700)),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Ajak ${widget.member.namaPengguna}',
-                        style:
-                            AppTextStyles.titleMd.copyWith(fontSize: 15)),
-                    Text('Kirim undangan bergabung ke timmu',
-                        style:
-                            AppTextStyles.bodySm.copyWith(fontSize: 12)),
-                  ],
+              // Handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          const Divider(height: 1, color: AppColors.border),
-          const SizedBox(height: 16),
-
-          // ── Pilih Tim ─────────────────────────────────────────────────────
-          Text('Pilih Tim',
-              style: AppTextStyles.labelMd.copyWith(color: AppColors.text)),
-          const SizedBox(height: 6),
-
-          if (_loadingTeams)
-            Container(
-              height: 48,
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: const Center(
-                child: SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                      color: AppColors.primaryContainer, strokeWidth: 2),
-                ),
-              ),
-            )
-          else if (_myTeams.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.statusPendingBg,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                    color: AppColors.statusPendingText.withAlpha(60)),
-              ),
-              child: Row(
+              // Header
+              Row(
                 children: [
-                  const Icon(Icons.info_outline_rounded,
-                      color: AppColors.statusPendingText, size: 18),
-                  const SizedBox(width: 8),
-                  Expanded(
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundColor: AppColors.primarySoft,
                     child: Text(
-                      'Kamu belum memiliki tim. Buat tim terlebih dahulu di tab MyTeam.',
-                      style: AppTextStyles.bodySm.copyWith(
-                          color: AppColors.statusPendingText, fontSize: 12),
+                      widget.member.inisial,
+                      style: AppTextStyles.bodyMd.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Ajak ${widget.member.namaPengguna}',
+                          style: AppTextStyles.titleMd.copyWith(fontSize: 15),
+                        ),
+                        Text(
+                          'Kirim undangan bergabung ke timmu',
+                          style: AppTextStyles.bodySm.copyWith(fontSize: 12),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-            )
-          else
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: _selectedTeamId != null
-                      ? AppColors.borderFocused
-                      : AppColors.border,
-                  width: _selectedTeamId != null ? 1.5 : 1,
-                ),
+              const SizedBox(height: 20),
+              const Divider(height: 1, color: AppColors.border),
+              const SizedBox(height: 16),
+              // ── Pilih Tim ─────────────────────────────────────────────────────
+              Text(
+                'Pilih Tim',
+                style: AppTextStyles.labelMd.copyWith(color: AppColors.text),
               ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _selectedTeamId,
-                  isExpanded: true,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  borderRadius: BorderRadius.circular(10),
-                  hint: Text('Pilih tim yang ingin kamu ajak...',
-                      style: AppTextStyles.bodySm.copyWith(fontSize: 13)),
-                  items: _myTeams.map((team) {
-                    final id = team['id_tim'] as String? ?? '';
-                    final nama = team['nama_tim'] as String? ?? 'Tim';
-                    final kegiatan =
-                        team['nama_kegiatan'] as String? ?? '';
-                    return DropdownMenuItem<String>(
-                      value: id,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(nama,
-                              style: AppTextStyles.bodyMd.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13)),
-                          if (kegiatan.isNotEmpty)
-                            Text(kegiatan,
-                                style: AppTextStyles.bodySm.copyWith(
-                                    fontSize: 11,
-                                    color: AppColors.textMuted)),
-                        ],
+              const SizedBox(height: 6),
+              if (_loadingTeams)
+                Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: const Center(
+                    child: SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryContainer,
+                        strokeWidth: 2,
                       ),
-                    );
-                  }).toList(),
-                  onChanged: (val) {
-                    final team = _myTeams.firstWhere(
-                        (t) => t['id_tim'] == val,
-                        orElse: () => {});
-                    setState(() {
-                      _selectedTeamId = val;
-                      _selectedTeamName = team['nama_tim'] as String?;
-                    });
-                  },
-                ),
-              ),
-            ),
-
-          if (_selectedTeamId != null) ...[
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                const Icon(Icons.check_circle_rounded,
-                    color: AppColors.statusSuccessText, size: 14),
-                const SizedBox(width: 4),
-                Text('Tim "$_selectedTeamName" dipilih',
+                    ),
+                  ),
+                )
+              else if (_teamsErrorMsg != null)
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.statusDangerBg,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    _teamsErrorMsg!,
                     style: AppTextStyles.bodySm.copyWith(
-                        color: AppColors.statusSuccessText, fontSize: 11)),
+                      color: AppColors.statusDangerText,
+                    ),
+                  ),
+                )
+              else if (_myTeams.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.statusPendingBg,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: AppColors.statusPendingText.withAlpha(60),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.info_outline_rounded,
+                        color: AppColors.statusPendingText,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Kamu belum memiliki tim. Buat tim terlebih dahulu di tab MyTeam.',
+                          style: AppTextStyles.bodySm.copyWith(
+                            color: AppColors.statusPendingText,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: _selectedTeamId != null
+                          ? AppColors.borderFocused
+                          : AppColors.border,
+                      width: _selectedTeamId != null ? 1.5 : 1,
+                    ),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedTeamId,
+                      isExpanded: true,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      borderRadius: BorderRadius.circular(10),
+                      hint: Text(
+                        'Pilih tim yang ingin kamu ajak...',
+                        style: AppTextStyles.bodySm.copyWith(fontSize: 13),
+                      ),
+                      items: _myTeams.map((team) {
+                        final id = team['id_tim'] as String? ?? '';
+                        final nama = team['nama_tim'] as String? ?? 'Tim';
+                        final kegiatan = team['nama_kegiatan'] as String? ?? '';
+                        return DropdownMenuItem<String>(
+                          value: id,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                nama,
+                                style: AppTextStyles.bodyMd.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (kegiatan.isNotEmpty)
+                                Text(
+                                  kegiatan,
+                                  style: AppTextStyles.bodySm.copyWith(
+                                    fontSize: 11,
+                                    color: AppColors.textMuted,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        final team = _myTeams.firstWhere(
+                          (t) => t['id_tim'] == val,
+                          orElse: () => {},
+                        );
+                        setState(() {
+                          _selectedTeamId = val;
+                          _selectedTeamName = team['nama_tim']?.toString();
+                          _selectedPosition = null;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+              if (_selectedTeamId != null) ...[
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.check_circle_rounded,
+                      color: AppColors.statusSuccessText,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Tim "$_selectedTeamName" dipilih',
+                      style: AppTextStyles.bodySm.copyWith(
+                        color: AppColors.statusSuccessText,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
               ],
-            ),
-          ],
-
-          const SizedBox(height: 14),
-
-          // ── Pesan Undangan ────────────────────────────────────────────────
-          Text('Pesan Undangan',
-              style: AppTextStyles.labelMd.copyWith(color: AppColors.text)),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _msgCtrl,
-            style: AppTextStyles.bodyMd,
-            maxLines: 3,
-            decoration: InputDecoration(
-              hintText:
-                  'Halo ${widget.member.namaPengguna}, kami melihat keahlian Anda sangat cocok untuk tim kami...',
-              hintStyle: AppTextStyles.bodySm,
-              filled: true,
-              fillColor: AppColors.background,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.border),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.border),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(
-                    color: AppColors.borderFocused, width: 1.5),
-              ),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            ),
-          ),
-
-          if (_errorMsg != null) ...[
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.statusDangerBg,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(_errorMsg!,
-                  style: AppTextStyles.bodySm
-                      .copyWith(color: AppColors.statusDangerText)),
-            ),
-          ],
-
-          const SizedBox(height: 20),
-
-          // Buttons
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.border),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+              if (_selectedTeamId != null &&
+                  _availablePositions.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Text(
+                  'Posisi yang Ditawarkan',
+                  style: AppTextStyles.labelMd.copyWith(color: AppColors.text),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: _selectedPosition != null
+                          ? AppColors.borderFocused
+                          : AppColors.border,
+                      width: _selectedPosition != null ? 1.5 : 1,
+                    ),
                   ),
-                  child: Text('Batal',
-                      style: AppTextStyles.labelLg
-                          .copyWith(color: AppColors.textMuted)),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _selectedPosition,
+                      isExpanded: true,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      borderRadius: BorderRadius.circular(10),
+                      hint: Text(
+                        'Pilih posisi yang masih dibutuhkan...',
+                        style: AppTextStyles.bodySm.copyWith(fontSize: 13),
+                      ),
+                      items: _availablePositions.entries
+                          .map(
+                            (entry) => DropdownMenuItem<String>(
+                              value: entry.key,
+                              child: Text(
+                                '${entry.key} (sisa ${entry.value})',
+                                style: AppTextStyles.bodySm.copyWith(
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) =>
+                          setState(() => _selectedPosition = value),
+                    ),
+                  ),
+                ),
+              ] else if (_selectedTeamId != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Tim ini tidak memiliki posisi dengan kuota yang masih tersedia.',
+                  style: AppTextStyles.bodySm.copyWith(
+                    color: AppColors.statusPendingText,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 14),
+              // ── Pesan Undangan ────────────────────────────────────────────────
+              Text(
+                'Pesan Undangan',
+                style: AppTextStyles.labelMd.copyWith(color: AppColors.text),
+              ),
+              const SizedBox(height: 6),
+              TextField(
+                controller: _msgCtrl,
+                style: AppTextStyles.bodyMd,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText:
+                      'Halo ${widget.member.namaPengguna}, kami melihat keahlian Anda sangat cocok untuk tim kami...',
+                  hintStyle: AppTextStyles.bodySm,
+                  filled: true,
+                  fillColor: AppColors.background,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(
+                      color: AppColors.borderFocused,
+                      width: 1.5,
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed:
-                      (_isSending || _myTeams.isEmpty) ? null : _sendInvite,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryContainer,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+              if (_errorMsg != null) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.statusDangerBg,
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: _isSending
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2),
-                        )
-                      : Text('Kirim Undangan',
-                          style: AppTextStyles.labelLg
-                              .copyWith(fontSize: 13)),
+                  child: Text(
+                    _errorMsg!,
+                    style: AppTextStyles.bodySm.copyWith(
+                      color: AppColors.statusDangerText,
+                    ),
+                  ),
                 ),
+              ],
+              const SizedBox(height: 20),
+              // Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.border),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: Text(
+                        'Batal',
+                        style: AppTextStyles.labelLg.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed:
+                          (_isSending ||
+                              _myTeams.isEmpty ||
+                              _selectedPosition == null ||
+                              !_availablePositions.containsKey(
+                                _selectedPosition,
+                              ))
+                          ? null
+                          : _sendInvite,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryContainer,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: _isSending
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Text(
+                              'Kirim Undangan',
+                              style: AppTextStyles.labelLg.copyWith(
+                                fontSize: 13,
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

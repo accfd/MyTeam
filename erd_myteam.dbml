@@ -155,11 +155,12 @@ Table Pengajuan_Anggota {
   id_pengajuan_anggota varchar(36) [primary key]
   id_tim varchar(36) [not null, note: 'Tim yang mengajak']
   id_pengguna varchar(36) [not null, note: 'Calon anggota yang diajak']
+  posisi varchar(100) [not null, note: 'Posisi yang ditawarkan pembuat tim; wajib sesuai kebutuhan tim yang masih tersedia']
   pesan_pengajuan text [not null, note: 'Pesan ajakan dari pembuat tim']
   waktu_pengajuan timestamp [default: `now()`]
-  status_pengajuan varchar(20) [not null, default: 'menunggu', note: 'menunggu | diterima | ditolak']
+  status_pengajuan varchar(20) [not null, default: 'menunggu', note: 'menunggu | diterima | ditolak; kuota penuh saat diterima menyebabkan status ditolak']
 
-  Note: 'Undangan rekrutmen dari pembuat tim ke kandidat (FR-24)'
+  Note: 'Undangan rekrutmen dari pembuat tim ke kandidat; saat diterima, anggota ditambahkan ke Anggota_Tim jika kuota posisi tersedia (FR-23, FR-24)'
 }
 
 Table Notifikasi {
@@ -167,7 +168,7 @@ Table Notifikasi {
   id_pengguna varchar(36) [not null, note: 'Penerima notifikasi']
   id_pengajuan_bergabung_tim varchar(36) [null, note: 'Relasi opsional jika terkait lamaran tim']
   id_pengajuan_anggota varchar(36) [null, note: 'Relasi opsional jika terkait undangan rekrutmen']
-  jenis_notifikasi varchar(50) [not null, note: 'aktivitas_profil | pengajuan_masuk | pengajuan_diterima | undangan_masuk | dll']
+  jenis_notifikasi varchar(50) [not null, note: 'aktivitas_profil | pengajuan_masuk | pengajuan_diterima | undangan_masuk | respon_undangan | dll']
   pesan_notifikasi text [not null, note: 'Isi teks notifikasi']
   waktu_notifikasi timestamp [default: `now()`]
   status_dibaca boolean [default: false, note: 'Status sudah dibaca / belum']
@@ -229,29 +230,37 @@ Records Data_Diri(id_pengguna, deskripsi_singkat, kontak, program_studi, fakulta
 Records Data_Tim(id_tim, id_pengguna, nama_tim, nama_kegiatan, kategori_kegiatan, deskripsi, status_tim) {
   'tim_gemastik_01', 'usr_rafa_02', 'Tim Robotik Cerdas Unand', 'GEMASTIK XVII Divisi Software Development', 'Lomba', 'Membangun aplikasi mobile pemantau dan pengendali robot otonom berbasis computer vision.', 'terbuka'
   'tim_pkm_02',      'usr_nayla_04', 'Inovator Pangan Unand', 'PKM Riset Eksakta (PKM-RE) 2026', 'Penelitian', 'Riset komputasi dan pemodelan kecerdasan buatan untuk optimasi rantai pasok pangan lokal.', 'terbuka'
+  'tim_fuadi_03',    'usr_fuadi_01', 'Aplikasi Jelajah Kampus', 'Unand Digital Innovation Challenge 2026', 'Proyek', 'Mengembangkan aplikasi Flutter untuk membantu mahasiswa menemukan fasilitas dan layanan kampus.', 'terbuka'
+  'tim_rafa_04',     'usr_rafa_02', 'Sistem Irigasi Cerdas', 'Kompetisi Inovasi Teknologi Pertanian 2026', 'Lomba', 'Merancang sistem IoT dan backend untuk pemantauan irigasi lahan pertanian.', 'terbuka'
+  'tim_diva_05',     'usr_diva_03', 'Ruang Belajar Inklusif', 'Program Kreativitas Mahasiswa Pengabdian 2026', 'Penelitian', 'Mendesain pengalaman belajar digital yang mudah diakses oleh mahasiswa dengan beragam kebutuhan.', 'terbuka'
+  'tim_diva_06',     'usr_diva_03', 'Dashboard Data Kampus', 'Unand Data Visualization Project 2026', 'Proyek', 'Membuat dashboard interaktif untuk menyajikan data layanan dan aktivitas kampus.', 'terbuka'
+  'tim_diva_07',     'usr_diva_03', 'Kampanye Literasi Digital', 'Kompetisi Konten Edukasi Digital 2026', 'Lomba', 'Menyusun kampanye konten edukasi keamanan dan literasi digital bagi mahasiswa.', 'terbuka'
 }
 
 Records Kebutuhan_Anggota_Tim(id_kebutuhan, id_tim, posisi_dibutuhkan, keahlian_dibutuhkan, jumlah_anggota_dibutuhkan) {
-  'keb_01', 'tim_gemastik_01', 'Mobile App Developer', 'Flutter, REST API, State Management', 1
-  'keb_02', 'tim_gemastik_01', 'UI/UX Designer', 'Figma, Prototyping, Wireframing', 1
-  'keb_03', 'tim_pkm_02',      'Data Engineer', 'Python, Data Cleansing, Machine Learning', 1
+  'keb_01', 'tim_gemastik_01', 'Frontend Flutter', 'Flutter, Dart, REST API Integration, Responsive UI', 1
+  'keb_02', 'tim_gemastik_01', 'UI/UX Designer', 'Figma, Wireframing, User Testing, Design System', 1
+  'keb_03', 'tim_pkm_02', 'Mobile App Developer', 'Flutter / Android Native, SQLite / Local Cache', 1
+  'keb_04', 'tim_pkm_02', 'Data Analyst', 'Python, Data Modeling, Descriptive Statistics', 1
+  'keb_05', 'tim_fuadi_03', 'Flutter Developer', 'Flutter, Dart, REST API', 1
+  'keb_06', 'tim_rafa_04', 'IoT Engineer', 'ESP32, sensor, MQTT', 1
+  'keb_07', 'tim_diva_05', 'UI/UX Designer', 'Figma, accessibility, user research', 1
+  'keb_08', 'tim_diva_06', 'Data Visualization Designer', 'Figma, dashboard design, data storytelling', 1
+  'keb_09', 'tim_diva_07', 'Content Designer', 'Copywriting, visual design, social media', 1
 }
 
 Records Pengajuan_Bergabung_Tim(id_pengajuan_bergabung_tim, id_tim, id_pengguna, posisi, pesan_pengajuan, status_pengajuan) {
-  'pbg_01', 'tim_gemastik_01', 'usr_fuadi_01', 'Mobile App Developer', 'Halo Rafa, saya sangat tertarik bergabung sebagai Mobile App Developer untuk implementasi antarmuka Flutter.', 'menunggu'
-  'pbg_02', 'tim_gemastik_01', 'usr_diva_03',  'UI/UX Designer', 'Halo Rafa, saya ingin berkontribusi mendesain flow aplikasi robotik ini agar intuitif bagi juri.', 'diterima'
+  'pbg_01', 'tim_gemastik_01', 'usr_diva_03', 'UI/UX Designer', 'Halo Rafa! Saya sangat tertarik bergabung dengan Tim Robotik Cerdas. Portofolio saya di Figma berfokus pada dashboard interaktif yang cocok untuk telemetri robot tim Anda.', 'diterima'
+  'pbg_02', 'tim_gemastik_01', 'usr_fuadi_01', 'Frontend Flutter', 'Halo Rafa, perkenalkan saya Fuadi. Saya memiliki keahlian mendalam di Flutter dan konsumsi REST API. Saya siap mendedikasikan waktu untuk membangun aplikasi telemetri tim GEMASTIK ini.', 'menunggu'
 }
 
 Records Anggota_Tim(id_anggota_tim, id_tim, id_pengguna, posisi) {
   'ang_01', 'tim_gemastik_01', 'usr_diva_03', 'UI/UX Designer'
 }
 
-Records Pengajuan_Anggota(id_pengajuan_anggota, id_tim, id_pengguna, pesan_pengajuan, status_pengajuan) {
-  'pga_01', 'tim_pkm_02', 'usr_fuadi_01', 'Halo Fuadi, kami melihat portofolio Anda di MyTeam dan ingin mengajak Anda bergabung ke tim riset PKM kami.', 'menunggu'
-}
-
 Records Notifikasi(id_notifikasi, id_pengguna, id_pengajuan_bergabung_tim, id_pengajuan_anggota, jenis_notifikasi, pesan_notifikasi, status_dibaca) {
-  'notif_01', 'usr_rafa_02',  'pbg_01', null,     'pengajuan_masuk',     'Fuadi Dhiyaulhaq mengajukan diri untuk bergabung pada posisi Mobile App Developer di tim Anda.', false
-  'notif_02', 'usr_diva_03',  'pbg_02', null,     'pengajuan_diterima',  'Selamat! Pengajuan Anda sebagai UI/UX Designer pada Tim Robotik Cerdas Unand telah diterima.', true
-  'notif_03', 'usr_fuadi_01', null,     'pga_01', 'undangan_masuk',      'Nayla Puspita Sari mengundang Anda untuk bergabung ke Tim Inovator Pangan Unand.', false
+  'notif_01', 'usr_fuadi_01', null, null,     'aktivitas_profil',    'Data riwayat diri dan portofolio Anda berhasil diperbarui di sistem MyTeam.', true
+  'notif_02', 'usr_rafa_02',  'pbg_01', null, 'pengajuan_masuk',     'Diva Ramadhani mengajukan diri untuk bergabung pada posisi UI/UX Designer di tim Anda (Tim Robotik Cerdas Unand).', true
+  'notif_03', 'usr_diva_03',  'pbg_01', null, 'pengajuan_diterima',  'Selamat! Pengajuan bergabung Anda untuk posisi UI/UX Designer pada Tim Robotik Cerdas Unand telah diterima oleh Rafa Gian Atthari.', true
+  'notif_04', 'usr_rafa_02',  'pbg_02', null, 'pengajuan_masuk',     'Fuadi Dhiyaulhaq mengajukan diri untuk bergabung pada posisi Frontend Flutter di tim Anda (Tim Robotik Cerdas Unand).', false
 }

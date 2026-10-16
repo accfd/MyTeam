@@ -22,7 +22,9 @@ class TalentSearchService {
     final json = jsonDecode(resp.body) as Map<String, dynamic>;
     if (resp.statusCode == 200 && json['success'] == true) {
       final data = json['data'] as List<dynamic>;
-      return data.map((e) => TalentMemberModel.fromJson(e as Map<String, dynamic>)).toList();
+      return data
+          .map((e) => TalentMemberModel.fromJson(e as Map<String, dynamic>))
+          .toList();
     }
     throw Exception(json['message'] ?? 'Gagal memuat data anggota.');
   }
@@ -41,33 +43,45 @@ class TalentSearchService {
   static Future<Map<String, dynamic>> inviteMember({
     required String idTim,
     required String idPengguna,
+    required String posisi,
     required String pesanPengajuan,
   }) async {
-    final resp = await ApiClient.post('/applications/invite-member', body: {
-      'id_tim': idTim,
-      'id_pengguna': idPengguna,
-      'pesan_pengajuan': pesanPengajuan,
-    });
+    final resp = await ApiClient.post(
+      '/applications/invite-member',
+      body: {
+        'id_tim': idTim,
+        'id_pengguna': idPengguna,
+        'posisi': posisi,
+        'pesan_pengajuan': pesanPengajuan,
+      },
+    );
     final json = jsonDecode(resp.body) as Map<String, dynamic>;
-    if ((resp.statusCode == 200 || resp.statusCode == 201) && json['success'] == true) {
+    if ((resp.statusCode == 200 || resp.statusCode == 201) &&
+        json['success'] == true) {
       return json['data'] as Map<String, dynamic>;
     }
     throw Exception(json['message'] ?? 'Gagal mengirim undangan.');
   }
 
   // FR-24: GET /api/v1/applications/received-invitations
-  static Future<List<Map<String, dynamic>>> getReceivedInvitations(String idPengguna) async {
-    final resp = await ApiClient.get('/applications/received-invitations',
-        queryParams: {'id_pengguna': idPengguna});
+  static Future<List<Map<String, dynamic>>> getReceivedInvitations(
+    String idPengguna,
+  ) async {
+    final resp = await ApiClient.get(
+      '/applications/received-invitations',
+      queryParams: {'id_pengguna': idPengguna},
+    );
     final json = jsonDecode(resp.body) as Map<String, dynamic>;
     if (resp.statusCode == 200 && json['success'] == true) {
-      return (json['data'] as List<dynamic>).map((e) => e as Map<String, dynamic>).toList();
+      return (json['data'] as List<dynamic>)
+          .map((e) => e as Map<String, dynamic>)
+          .toList();
     }
     throw Exception(json['message'] ?? 'Gagal memuat daftar undangan.');
   }
 
   // FR-24 + FR-25: PATCH /api/v1/applications/received-invitations/{id}/status
-  static Future<void> respondInvitation({
+  static Future<Map<String, dynamic>> respondInvitation({
     required String idPengajuanAnggota,
     required String status,
   }) async {
@@ -79,17 +93,37 @@ class TalentSearchService {
     if (resp.statusCode != 200 || json['success'] != true) {
       throw Exception(json['message'] ?? 'Gagal memperbarui status undangan.');
     }
+
+    final data = json['data'];
+    if (data is! Map<String, dynamic> ||
+        !['diterima', 'ditolak'].contains(data['status_pengajuan'])) {
+      throw Exception('Respons status undangan dari server tidak valid.');
+    }
+    final message = json['message'];
+    if (message is! String || message.isEmpty) {
+      throw Exception('Pesan respons undangan dari server tidak tersedia.');
+    }
+
+    return {'status_pengajuan': data['status_pengajuan'], 'message': message};
   }
 
   // FR-25: GET /api/v1/applications/sent-invitations
   // Undangan yang sudah dikirim oleh user (sebagai ketua tim) + statusnya
-  static Future<List<Map<String, dynamic>>> getSentInvitations(String idPengguna) async {
-    final resp = await ApiClient.get('/applications/sent-invitations',
-        queryParams: {'id_pengguna': idPengguna});
+  static Future<List<Map<String, dynamic>>> getSentInvitations(
+    String idPengguna,
+  ) async {
+    final resp = await ApiClient.get(
+      '/applications/sent-invitations',
+      queryParams: {'id_pengguna': idPengguna},
+    );
     final json = jsonDecode(resp.body) as Map<String, dynamic>;
     if (resp.statusCode == 200 && json['success'] == true) {
-      return (json['data'] as List<dynamic>).map((e) => e as Map<String, dynamic>).toList();
+      return (json['data'] as List<dynamic>)
+          .map((e) => e as Map<String, dynamic>)
+          .toList();
     }
-    throw Exception(json['message'] ?? 'Gagal memuat daftar undangan terkirim.');
+    throw Exception(
+      json['message'] ?? 'Gagal memuat daftar undangan terkirim.',
+    );
   }
 }

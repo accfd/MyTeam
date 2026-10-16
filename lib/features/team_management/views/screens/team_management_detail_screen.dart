@@ -20,10 +20,12 @@ class TeamManagementDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<TeamManagementDetailScreen> createState() => _TeamManagementDetailScreenState();
+  State<TeamManagementDetailScreen> createState() =>
+      _TeamManagementDetailScreenState();
 }
 
-class _TeamManagementDetailScreenState extends State<TeamManagementDetailScreen> {
+class _TeamManagementDetailScreenState
+    extends State<TeamManagementDetailScreen> {
   @override
   void initState() {
     super.initState();
@@ -43,7 +45,8 @@ class _TeamManagementDetailScreenState extends State<TeamManagementDetailScreen>
         builder: (context, _) {
           if (widget.viewModel.isLoadingDetail) {
             return const Center(
-                child: CircularProgressIndicator(color: AppColors.primary));
+              child: CircularProgressIndicator(color: AppColors.primary),
+            );
           }
           if (widget.viewModel.detailError != null) {
             return _buildError(widget.viewModel.detailError!);
@@ -84,8 +87,7 @@ class _TeamManagementDetailScreenState extends State<TeamManagementDetailScreen>
                     children: [
                       Row(
                         children: [
-                          TeamCategoryBadge(
-                              kategori: team.kategoriKegiatan),
+                          TeamCategoryBadge(kategori: team.kategoriKegiatan),
                           const SizedBox(width: 8),
                           TeamStatusBadge(status: team.statusTim),
                         ],
@@ -93,14 +95,16 @@ class _TeamManagementDetailScreenState extends State<TeamManagementDetailScreen>
                       const SizedBox(height: 8),
                       Text(
                         team.namaTim,
-                        style: AppTextStyles.headlineLg
-                            .copyWith(color: Colors.white),
+                        style: AppTextStyles.headlineLg.copyWith(
+                          color: Colors.white,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         team.namaKegiatan,
-                        style: AppTextStyles.bodySm
-                            .copyWith(color: Colors.white70),
+                        style: AppTextStyles.bodySm.copyWith(
+                          color: Colors.white70,
+                        ),
                       ),
                     ],
                   ),
@@ -109,11 +113,12 @@ class _TeamManagementDetailScreenState extends State<TeamManagementDetailScreen>
             ),
           ),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.edit_outlined, color: Colors.white),
-              onPressed: () => _navigateToEdit(team),
-              tooltip: 'Edit Tim',
-            ),
+            if (team.isOwner)
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, color: Colors.white),
+                onPressed: () => _navigateToEdit(team),
+                tooltip: 'Edit Tim',
+              ),
           ],
         ),
 
@@ -129,7 +134,9 @@ class _TeamManagementDetailScreenState extends State<TeamManagementDetailScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildCardHeader(
-                          Icons.description_outlined, 'Deskripsi Tim'),
+                        Icons.description_outlined,
+                        'Deskripsi Tim',
+                      ),
                       const SizedBox(height: 10),
                       Text(team.deskripsi, style: AppTextStyles.bodyMd),
                     ],
@@ -143,7 +150,9 @@ class _TeamManagementDetailScreenState extends State<TeamManagementDetailScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildCardHeader(
-                          Icons.checklist_rounded, 'Kebutuhan Anggota'),
+                        Icons.checklist_rounded,
+                        'Kebutuhan Anggota',
+                      ),
                       const SizedBox(height: 12),
                       ...team.kebutuhanTim.map((k) => _buildKebutuhanRow(k)),
                     ],
@@ -158,13 +167,13 @@ class _TeamManagementDetailScreenState extends State<TeamManagementDetailScreen>
                     children: [
                       Row(
                         children: [
-                          _buildCardHeader(
-                              Icons.group_outlined, 'Anggota Tim'),
+                          _buildCardHeader(Icons.group_outlined, 'Anggota Tim'),
                           const Spacer(),
                           Text(
                             '${team.anggotaTim.length} Anggota',
                             style: AppTextStyles.labelSm.copyWith(
-                                color: AppColors.primary),
+                              color: AppColors.primary,
+                            ),
                           ),
                         ],
                       ),
@@ -175,8 +184,7 @@ class _TeamManagementDetailScreenState extends State<TeamManagementDetailScreen>
                           style: AppTextStyles.bodySm,
                         )
                       else
-                        ...team.anggotaTim
-                            .map((a) => _buildAnggotaRow(a)),
+                        ...team.anggotaTim.map((a) => _buildAnggotaRow(a)),
                     ],
                   ),
                 ),
@@ -189,10 +197,13 @@ class _TeamManagementDetailScreenState extends State<TeamManagementDetailScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildCardHeader(
-                            Icons.attach_file_rounded, 'Dokumen Pendukung'),
+                          Icons.attach_file_rounded,
+                          'Dokumen Pendukung',
+                        ),
                         const SizedBox(height: 12),
-                        ...team.dokumenPendukung
-                            .map((d) => _buildDokumenRow(d)),
+                        ...team.dokumenPendukung.map(
+                          (d) => _buildDokumenRow(d),
+                        ),
                       ],
                     ),
                   ),
@@ -213,11 +224,17 @@ class _TeamManagementDetailScreenState extends State<TeamManagementDetailScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline_rounded,
-              size: 56, color: AppColors.textMuted),
+          const Icon(
+            Icons.error_outline_rounded,
+            size: 56,
+            color: AppColors.textMuted,
+          ),
           const SizedBox(height: 12),
-          Text(message,
-              style: AppTextStyles.bodySm, textAlign: TextAlign.center),
+          Text(
+            message,
+            style: AppTextStyles.bodySm,
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 16),
           TextButton(
             onPressed: () => widget.viewModel.loadTeamDetail(widget.idTim),
@@ -238,7 +255,10 @@ class _TeamManagementDetailScreenState extends State<TeamManagementDetailScreen>
         border: Border.all(color: AppColors.border),
         boxShadow: const [
           BoxShadow(
-              color: Color(0x0A000000), blurRadius: 4, offset: Offset(0, 2))
+            color: Color(0x0A000000),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
         ],
       ),
       child: child,
@@ -261,8 +281,11 @@ class _TeamManagementDetailScreenState extends State<TeamManagementDetailScreen>
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.radio_button_checked_rounded,
-              size: 14, color: AppColors.primary),
+          const Icon(
+            Icons.radio_button_checked_rounded,
+            size: 14,
+            color: AppColors.primary,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -274,8 +297,9 @@ class _TeamManagementDetailScreenState extends State<TeamManagementDetailScreen>
                 const SizedBox(height: 4),
                 Text(
                   'Kuota: ${k.jumlahAnggotaDibutuhkan} orang',
-                  style: AppTextStyles.labelSm
-                      .copyWith(color: AppColors.primary),
+                  style: AppTextStyles.labelSm.copyWith(
+                    color: AppColors.primary,
+                  ),
                 ),
               ],
             ),
@@ -300,8 +324,9 @@ class _TeamManagementDetailScreenState extends State<TeamManagementDetailScreen>
                     a.namaPengguna?.isNotEmpty == true
                         ? a.namaPengguna![0].toUpperCase()
                         : '?',
-                    style: AppTextStyles.titleMd
-                        .copyWith(color: AppColors.primary),
+                    style: AppTextStyles.titleMd.copyWith(
+                      color: AppColors.primary,
+                    ),
                   )
                 : null,
           ),
@@ -310,8 +335,7 @@ class _TeamManagementDetailScreenState extends State<TeamManagementDetailScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(a.namaPengguna ?? 'Anggota',
-                    style: AppTextStyles.titleMd),
+                Text(a.namaPengguna ?? 'Anggota', style: AppTextStyles.titleMd),
                 if (a.programStudi != null)
                   Text(a.programStudi!, style: AppTextStyles.bodySm),
               ],
@@ -356,20 +380,26 @@ class _TeamManagementDetailScreenState extends State<TeamManagementDetailScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(d.namaFile,
-                    style: AppTextStyles.bodyMd,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  d.namaFile,
+                  style: AppTextStyles.bodyMd,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 Text(
                   d.jenisDokumen.toUpperCase(),
-                  style: AppTextStyles.labelSm
-                      .copyWith(color: AppColors.textMuted),
+                  style: AppTextStyles.labelSm.copyWith(
+                    color: AppColors.textMuted,
+                  ),
                 ),
               ],
             ),
           ),
-          const Icon(Icons.open_in_new_rounded,
-              size: 16, color: AppColors.textMuted),
+          const Icon(
+            Icons.open_in_new_rounded,
+            size: 16,
+            color: AppColors.textMuted,
+          ),
         ],
       ),
     );
@@ -396,7 +426,9 @@ class _TeamManagementDetailScreenState extends State<TeamManagementDetailScreen>
       return NetworkImage(trimmed);
     }
     if (trimmed.startsWith('profiles/') || trimmed.startsWith('storage/')) {
-      final cleanPath = trimmed.startsWith('storage/') ? trimmed : 'storage/$trimmed';
+      final cleanPath = trimmed.startsWith('storage/')
+          ? trimmed
+          : 'storage/$trimmed';
       final rootUrl = AppConfig.baseUrl.replaceAll('/api/v1', '');
       return NetworkImage('$rootUrl/$cleanPath');
     }
