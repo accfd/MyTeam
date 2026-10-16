@@ -1,6 +1,22 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
+const jwt = require('jsonwebtoken');
+
+// Helper Modul 4: ambil id pengguna HANYA dari token JWT (bukan dari query/body)
+// supaya pengguna tidak bisa membaca atau merespons undangan milik orang lain.
+const getTokenUserId = (req) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const decoded = jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET || 'myteam_secret');
+      return decoded?.id_pengguna || null;
+    }
+  } catch (err) {
+    // token tidak valid / kedaluwarsa
+  }
+  return null;
+};
 
 // POST /api/v1/applications/join-team (FR-16: Lamar Tim dengan Posisi Wajib)
 router.post('/join-team', async (req, res) => {
@@ -140,16 +156,58 @@ router.post('/invite-member', async (req, res) => {
   let transactionStarted = false;
   try {
     const { id_tim, id_pengguna, posisi, pesan_pengajuan } = req.body;
+    const pengundang = getTokenUserId(req);
+    if (!pengundang) {
+      return res.status(401).json({ success: false, message: 'Sesi tidak valid. Silakan login kembali.' });
+    }
     if (!id_tim || !id_pengguna || !posisi || !pesan_pengajuan) {
       return res.status(422).json({
         success: false,
         message: 'id_tim, id_pengguna, posisi, dan pesan_pengajuan wajib diisi.'
       });
     }
+    if (id_pengguna === pengundang) {
+      return res.status(422).json({ success: false, message: 'Anda tidak dapat mengundang diri sendiri.' });
+    }
 
     connection = await db.getConnection();
     await connection.beginTransaction();
     transactionStarted = true;
+
+    // Hanya PEMBUAT (pemilik) tim yang boleh mengirim undangan
+    const [timRows] = await connection.query('SELECT id_pengguna FROM Data_Tim WHERE id_tim = ?', [id_tim]);
+    if (timRows.length === 0) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(404).json({ success: false, message: 'Tim tidak ditemukan.' });
+    }
+    if (timRows[0].id_pengguna !== pengundang) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(403).json({ success: false, message: 'Hanya pembuat tim yang dapat mengirim undangan.' });
+    }
+
+    // Calon anggota harus terdaftar
+    const [calonRows] = await connection.query('SELECT id_pengguna FROM Pengguna WHERE id_pengguna = ?', [id_pengguna]);
+    if (calonRows.length === 0) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(404).json({ success: false, message: 'Calon anggota tidak ditemukan.' });
+    }
+
+    // Cegah undangan ganda yang masih menunggu untuk tim & calon yang sama
+    const [pending] = await connection.query(
+      "SELECT id_pengajuan_anggota FROM Pengajuan_Anggota WHERE id_tim = ? AND id_pengguna = ? AND status_pengajuan = 'menunggu'",
+      [id_tim, id_pengguna]
+    );
+    if (pending.length > 0) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(409).json({
+        success: false,
+        message: 'Undangan untuk calon anggota ini masih menunggu respons.'
+      });
+    }
 
     const [existingMembers] = await connection.query(
       'SELECT id_anggota_tim FROM Anggota_Tim WHERE id_tim = ? AND id_pengguna = ?',
@@ -226,7 +284,13 @@ router.post('/invite-member', async (req, res) => {
 // GET /api/v1/applications/received-invitations (FR-24: Undangan yang Diterima Calon Anggota)
 router.get('/received-invitations', async (req, res) => {
   try {
-    const id_pengguna = req.query.id_pengguna || 'usr_fuadi_01';
+    const id_pengguna = getTokenUserId(req);
+    if (!id_pengguna) {
+      return res.status(401).json({ success: false, message: 'Sesi tidak valid. Silakan login kembali.' });
+    }
+    if (req.query.id_pengguna && req.query.id_pengguna !== id_pengguna) {
+      return res.status(403).json({ success: false, message: 'Anda hanya dapat melihat undangan milik sendiri.' });
+    }
     const [rows] = await db.query(`
       SELECT pa.*, dt.nama_tim, dt.nama_kegiatan, dt.kategori_kegiatan, dt.deskripsi AS deskripsi_tim
       FROM Pengajuan_Anggota pa
@@ -248,6 +312,10 @@ router.patch('/received-invitations/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
     const { status_pengajuan } = req.body; // 'diterima' | 'ditolak'
+    const responder = getTokenUserId(req);
+    if (!responder) {
+      return res.status(401).json({ success: false, message: 'Sesi tidak valid. Silakan login kembali.' });
+    }
 
     if (!['diterima', 'ditolak'].includes(status_pengajuan)) {
       return res.status(400).json({ success: false, message: 'Status undangan harus "diterima" atau "ditolak".' });
@@ -267,6 +335,12 @@ router.patch('/received-invitations/:id/status', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Undangan tidak ditemukan.' });
     }
     const inv = rows[0];
+    // Hanya calon anggota yang diundang yang boleh merespons
+    if (inv.id_pengguna !== responder) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(403).json({ success: false, message: 'Anda tidak berhak merespons undangan ini.' });
+    }
     if (inv.status_pengajuan !== 'menunggu') {
       await connection.rollback();
       transactionStarted = false;
@@ -363,7 +437,13 @@ router.patch('/received-invitations/:id/status', async (req, res) => {
 // Digunakan oleh ketua tim untuk melihat status semua undangan yang pernah dikirim
 router.get('/sent-invitations', async (req, res) => {
   try {
-    const id_pengguna = req.query.id_pengguna || 'usr_fuadi_01';
+    const id_pengguna = getTokenUserId(req);
+    if (!id_pengguna) {
+      return res.status(401).json({ success: false, message: 'Sesi tidak valid. Silakan login kembali.' });
+    }
+    if (req.query.id_pengguna && req.query.id_pengguna !== id_pengguna) {
+      return res.status(403).json({ success: false, message: 'Anda hanya dapat melihat undangan terkirim milik sendiri.' });
+    }
 
     // Ambil semua undangan dari tim yang dimiliki user
     const [rows] = await db.query(`

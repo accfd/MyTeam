@@ -896,8 +896,10 @@ class _InviteBottomSheetState extends State<_InviteBottomSheet> {
       final resp = await ApiClient.get('/teams/my-teams');
       final json = jsonDecode(resp.body) as Map<String, dynamic>;
       if (resp.statusCode == 200 && json['success'] == true) {
+        // Hanya tim yang DIBUAT pengguna (peran 'pemilik') yang boleh dipakai mengundang
         final teams = (json['data'] as List<dynamic>)
             .map((e) => e as Map<String, dynamic>)
+            .where((t) => t['peran']?.toString() == 'pemilik')
             .toList();
         if (mounted) {
           setState(() {

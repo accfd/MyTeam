@@ -126,4 +126,27 @@ class TalentSearchService {
       json['message'] ?? 'Gagal memuat daftar undangan terkirim.',
     );
   }
+
+  // FR-25: GET /api/v1/notifications/unread-count
+  // Jumlah notifikasi belum dibaca untuk badge ikon Notifikasi.
+  // Tidak pernah melempar error: jika gagal, badge cukup dianggap 0.
+  static Future<int> getUnreadNotificationCount() async {
+    try {
+      final resp = await ApiClient.get('/notifications/unread-count');
+      final json = jsonDecode(resp.body) as Map<String, dynamic>;
+      if (resp.statusCode == 200 && json['success'] == true) {
+        final data = json['data'] as Map<String, dynamic>?;
+        return int.tryParse(data?['unread_count']?.toString() ?? '') ?? 0;
+      }
+    } catch (_) {}
+    return 0;
+  }
+
+  // FR-25: PATCH /api/v1/notifications/read-all
+  // Menandai semua notifikasi sudah dibaca saat tab Notifikasi dibuka.
+  static Future<void> markAllNotificationsRead() async {
+    try {
+      await ApiClient.patch('/notifications/read-all');
+    } catch (_) {}
+  }
 }

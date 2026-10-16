@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -10,6 +11,7 @@ import '../../../profile/views/screens/profile_screen.dart';
 import '../../../team_management/views/screens/team_management_screen.dart';
 import '../../../talent_search/views/screens/talent_search_screen.dart';
 import '../../../talent_search/views/screens/received_invitations_screen.dart';
+import '../../../talent_search/services/talent_search_service.dart';
 
 /// Home Screen — MyTeam
 /// Feed utama: Rekomendasi Tim, Talenta Mahasiswa, CTA Buat Tim
@@ -27,6 +29,10 @@ class _HomeScreenState extends State<HomeScreen> {
   String _token = '';
   int _currentTab = 0;
 
+  // ── Badge Notifikasi (FR-25) ──────────────────────────────────────────────
+  int _unreadNotif = 0; // jumlah notifikasi belum dibaca
+  Timer? _notifTimer; // penyegar badge berkala
+
   // ── Data ──────────────────────────────────────────────────────────────────
   List<TeamModel> _teams = [];
   List<MemberModel> _members = [];
@@ -43,6 +49,30 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _initSession();
+    _loadUnreadNotif();
+    // Segarkan badge tiap 30 detik agar notifikasi baru muncul tanpa membuka ulang aplikasi
+    _notifTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (_currentTab != 3) _loadUnreadNotif();
+    });
+  }
+
+  // Ambil jumlah notifikasi belum dibaca untuk badge
+  Future<void> _loadUnreadNotif() async {
+    final jumlah = await TalentSearchService.getUnreadNotificationCount();
+    if (mounted) setState(() => _unreadNotif = jumlah);
+  }
+
+  // Dipanggil saat ikon navigasi bawah ditekan
+  Future<void> _onNavTap(int idx) async {
+    final sebelumnya = _currentTab;
+    setState(() => _currentTab = idx);
+    if (idx == 3 || sebelumnya == 3) {
+      // Membuka (atau meninggalkan) tab Notifikasi: semua dianggap sudah dibaca
+      await TalentSearchService.markAllNotificationsRead();
+      if (mounted) setState(() => _unreadNotif = 0);
+    } else {
+      await _loadUnreadNotif();
+    }
   }
 
   Future<void> _initSession() async {
@@ -81,6 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    _notifTimer?.cancel();
     _searchCtrl.dispose();
     super.dispose();
   }
@@ -986,17 +1017,47 @@ class _HomeScreenState extends State<HomeScreen> {
     final isActive = _currentTab == idx;
     return Expanded(
       child: InkWell(
-        onTap: () => setState(() => _currentTab = idx),
+        onTap: () => _onNavTap(idx),
         splashColor: Colors.transparent,
         highlightColor: Colors.transparent,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              isActive ? activeIcon : icon,
-              color: isActive ? AppColors.primary : AppColors.textMuted,
-              size: 24,
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  isActive ? activeIcon : icon,
+                  color: isActive ? AppColors.primary : AppColors.textMuted,
+                  size: 24,
+                ),
+                // Badge jumlah notifikasi belum dibaca (hanya di ikon Notifikasi)
+                if (idx == 3 && _unreadNotif > 0 && !isActive)
+                  Positioned(
+                    right: -8,
+                    top: -4,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                      constraints: const BoxConstraints(minWidth: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.white, width: 1),
+                      ),
+                      child: Text(
+                        _unreadNotif > 99 ? '99+' : '$_unreadNotif',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          height: 1.2,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 3),
             Text(
