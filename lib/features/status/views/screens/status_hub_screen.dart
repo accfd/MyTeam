@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/storage/storage_service.dart';
-import '../../../talent_search/services/talent_search_service.dart';
-import '../../../team_feed/models/my_application_model.dart';
-import '../../../team_feed/services/team_feed_service.dart';
 import '../../../team_feed/views/screens/application_detail_screen.dart';
+import '../../models/invitation_model.dart';
+import '../../viewmodels/status_viewmodel.dart';
 
-/// Layar Hub Status Terpadu (Tab ke-4: Status)
+/// Layar Hub Status Terpadu (Tab ke-4: Status) — Arsitektur MVVM
 /// Menggabungkan:
 /// - Sub-Tab 1: Undangan Masuk (Alur D - Fuadi, FR-24 & FR-25)
 /// - Sub-Tab 2: Lamaran Saya (Alur A - Rafa, FR-19 & FR-20)
@@ -20,20 +18,10 @@ class StatusHubScreen extends StatefulWidget {
   State<StatusHubScreen> createState() => _StatusHubScreenState();
 }
 
-class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProviderStateMixin {
+class _StatusHubScreenState extends State<StatusHubScreen>
+    with SingleTickerProviderStateMixin {
   late final TabController _subTabCtrl;
-
-  // ── Alur D: Undangan Masuk State ──────────────────────────────────────────
-  List<Map<String, dynamic>> _receivedInvitations = [];
-  bool _loadingInvitations = true;
-  String? _errorInvitations;
-  final Set<String> _processingIds = {};
-
-  // ── Alur A: Lamaran Saya State ────────────────────────────────────────────
-  List<MyApplicationModel> _myApplications = [];
-  bool _loadingApplications = true;
-  String? _errorApplications;
-  String _activeAppFilter = 'semua'; // 'semua', 'menunggu', 'diterima', 'ditolak'
+  final StatusViewModel _viewModel = StatusViewModel();
 
   @override
   void initState() {
@@ -46,79 +34,21 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
     _subTabCtrl.addListener(() {
       if (mounted) setState(() {});
     });
-    _loadAll();
+    _viewModel.loadAll();
   }
 
   @override
   void dispose() {
     _subTabCtrl.dispose();
+    _viewModel.dispose();
     super.dispose();
   }
 
-  Future<void> _loadAll() async {
-    await Future.wait([
-      _loadInvitations(),
-      _loadApplications(),
-    ]);
-  }
-
-  // ── 1. Load Undangan Masuk (Alur D) ───────────────────────────────────────
-  Future<void> _loadInvitations() async {
-    if (!mounted) return;
-    setState(() {
-      _loadingInvitations = true;
-      _errorInvitations = null;
-    });
-
-    try {
-      final myUserId = await StorageService.getUserId() ?? '';
-      final list = await TalentSearchService.getReceivedInvitations(myUserId);
-      if (mounted) {
-        setState(() {
-          _receivedInvitations = list;
-          _loadingInvitations = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorInvitations = e.toString().replaceFirst('Exception: ', '');
-          _loadingInvitations = false;
-        });
-      }
-    }
-  }
-
-  // ── 2. Load Lamaran Saya (Alur A) ─────────────────────────────────────────
-  Future<void> _loadApplications() async {
-    if (!mounted) return;
-    setState(() {
-      _loadingApplications = true;
-      _errorApplications = null;
-    });
-
-    try {
-      final result = await TeamFeedService.getMyApplications();
-      if (mounted) {
-        setState(() {
-          _myApplications = result.applications;
-          _loadingApplications = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorApplications = e.toString().replaceFirst('Exception: ', '');
-          _loadingApplications = false;
-        });
-      }
-    }
-  }
-
-  // ── Respon Undangan (Alur D - Fuadi) ───────────────────────────────────────
-  Future<void> _respondInvitation(String idUndangan, String status, String teamName) async {
-    if (_processingIds.contains(idUndangan)) return;
-
+  // ── Dialog Respon Undangan (Alur D - Fuadi) ────────────────────────────────
+  Future<void> _handleRespondInvitation(
+    InvitationModel invitation,
+    String status,
+  ) async {
     final actionLabel = status == 'diterima' ? 'menerima' : 'menolak';
     final confirmed = await showDialog<bool>(
       context: context,
@@ -126,10 +56,13 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           status == 'diterima' ? 'Terima Undangan?' : 'Tolak Undangan?',
-          style: AppTextStyles.titleMd.copyWith(fontSize: 18, fontWeight: FontWeight.bold),
+          style: AppTextStyles.titleMd.copyWith(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         content: Text(
-          'Apakah Anda yakin ingin $actionLabel undangan bergabung ke tim "$teamName"?',
+          'Apakah Anda yakin ingin $actionLabel undangan bergabung ke tim "${invitation.namaTim}"?',
           style: AppTextStyles.bodyMd,
         ),
         actions: [
@@ -139,7 +72,9 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: status == 'diterima' ? AppColors.primary : AppColors.statusDangerText,
+              backgroundColor: status == 'diterima'
+                  ? AppColors.primary
+                  : AppColors.statusDangerText,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             onPressed: () => Navigator.pop(ctx, true),
@@ -154,24 +89,22 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
 
     if (confirmed != true) return;
 
-    setState(() => _processingIds.add(idUndangan));
-
     try {
-      final res = await TalentSearchService.respondInvitation(
-        idPengajuanAnggota: idUndangan,
+      final msg = await _viewModel.respondInvitation(
+        idUndangan: invitation.idUndangan,
         status: status,
       );
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(res['message'] ?? 'Respons undangan berhasil disimpan.'),
-          backgroundColor: status == 'diterima' ? AppColors.statusSuccessText : AppColors.statusDangerText,
+          content: Text(msg),
+          backgroundColor: status == 'diterima'
+              ? AppColors.statusSuccessText
+              : AppColors.statusDangerText,
           behavior: SnackBarBehavior.floating,
         ),
       );
-
-      _loadInvitations();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -181,59 +114,62 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
           behavior: SnackBarBehavior.floating,
         ),
       );
-    } finally {
-      if (mounted) setState(() => _processingIds.remove(idUndangan));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // ── Segmented Switcher Pill ─────────────────────────────────────────
-        Container(
-          color: Colors.white,
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-          child: Container(
-            height: 46,
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainer,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Row(
-              children: [
-                _buildSegmentButton(
-                  index: 0,
-                  icon: Icons.mail_outline_rounded,
-                  label: 'Undangan Masuk',
-                  badgeCount: _receivedInvitations.where((i) => (i['status'] ?? 'menunggu') == 'menunggu').length,
+    return ListenableBuilder(
+      listenable: _viewModel,
+      builder: (context, _) {
+        return Column(
+          children: [
+            // ── Segmented Switcher Pill ─────────────────────────────────────
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: Container(
+                height: 46,
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainer,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
                 ),
-                const SizedBox(width: 6),
-                _buildSegmentButton(
-                  index: 1,
-                  icon: Icons.send_rounded,
-                  label: 'Lamaran Saya',
-                  badgeCount: _myApplications.where((a) => a.isMenunggu).length,
+                child: Row(
+                  children: [
+                    _buildSegmentButton(
+                      index: 0,
+                      icon: Icons.mail_outline_rounded,
+                      label: 'Undangan Masuk',
+                      badgeCount: _viewModel.pendingInvitationsCount,
+                    ),
+                    const SizedBox(width: 6),
+                    _buildSegmentButton(
+                      index: 1,
+                      icon: Icons.send_rounded,
+                      label: 'Lamaran Saya',
+                      badgeCount: _viewModel.pendingApplicationsCount,
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
-        const Divider(height: 1, color: AppColors.border),
+            const Divider(height: 1, color: AppColors.border),
 
-        // ── Sub-Tab Views ───────────────────────────────────────────────────
-        Expanded(
-          child: TabBarView(
-            controller: _subTabCtrl,
-            children: [
-              _buildInvitationsTab(),
-              _buildApplicationsTab(),
-            ],
-          ),
-        ),
-      ],
+            // ── Sub-Tab Views ───────────────────────────────────────────────
+            Expanded(
+              child: TabBarView(
+                controller: _subTabCtrl,
+                children: [
+                  _buildInvitationsTab(),
+                  _buildApplicationsTab(),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -309,27 +245,29 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
   // SUB-TAB 1: UNDANGAN MASUK (ALUR D - FUADI: FR-24 & FR-25)
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildInvitationsTab() {
-    if (_loadingInvitations) {
+    if (_viewModel.isLoadingInvitations) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
 
-    if (_errorInvitations != null) {
+    if (_viewModel.errorInvitations != null) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline_rounded, color: AppColors.statusDangerText, size: 48),
+              const Icon(Icons.error_outline_rounded,
+                  color: AppColors.statusDangerText, size: 48),
               const SizedBox(height: 12),
               Text('Gagal memuat undangan', style: AppTextStyles.titleMd),
               const SizedBox(height: 6),
-              Text(_errorInvitations!, style: AppTextStyles.bodySm, textAlign: TextAlign.center),
+              Text(_viewModel.errorInvitations!,
+                  style: AppTextStyles.bodySm, textAlign: TextAlign.center),
               const SizedBox(height: 16),
               ElevatedButton.icon(
-                onPressed: _loadInvitations,
+                onPressed: _viewModel.loadInvitations,
                 icon: const Icon(Icons.refresh_rounded, size: 18),
                 label: const Text('Coba Lagi'),
                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
@@ -340,7 +278,8 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
       );
     }
 
-    if (_receivedInvitations.isEmpty) {
+    final invitations = _viewModel.invitations;
+    if (invitations.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -378,24 +317,16 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
     }
 
     return RefreshIndicator(
-      onRefresh: _loadInvitations,
+      onRefresh: _viewModel.loadInvitations,
       color: AppColors.primary,
       child: ListView.separated(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-        itemCount: _receivedInvitations.length,
+        itemCount: invitations.length,
         separatorBuilder: (context, index) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
-          final item = _receivedInvitations[index];
-          final idUndangan = item['id_undangan']?.toString() ?? '';
-          final teamName = item['nama_tim']?.toString() ?? 'Tim';
-          final activityName = item['nama_kegiatan']?.toString() ?? item['judul_kegiatan']?.toString() ?? '-';
-          final inviterName = item['nama_pembuat']?.toString() ?? 'Ketua Tim';
-          final position = item['posisi_tawaran']?.toString() ?? item['posisi']?.toString() ?? 'Anggota';
-          final message = item['pesan_ajakan']?.toString() ?? '';
-          final status = (item['status']?.toString() ?? 'menunggu').toLowerCase();
-          final isPending = status == 'menunggu';
-          final isProcessing = _processingIds.contains(idUndangan);
-          final createdAt = item['created_at']?.toString() ?? '';
+          final item = invitations[index];
+          final isPending = item.isMenunggu;
+          final isProcessing = _viewModel.isProcessing(item.idUndangan);
 
           return Container(
             decoration: BoxDecoration(
@@ -431,7 +362,8 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
                           color: AppColors.primarySoft,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(Icons.groups_rounded, color: AppColors.primary, size: 22),
+                        child: const Icon(Icons.groups_rounded,
+                            color: AppColors.primary, size: 22),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -439,7 +371,7 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              teamName,
+                              item.namaTim,
                               style: AppTextStyles.titleMd.copyWith(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 15,
@@ -447,7 +379,7 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              activityName,
+                              item.namaKegiatan,
                               style: AppTextStyles.bodySm.copyWith(
                                 color: AppColors.textMuted,
                                 fontSize: 11.5,
@@ -458,7 +390,7 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
                           ],
                         ),
                       ),
-                      _buildStatusBadge(status),
+                      _buildStatusBadge(item.status),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -486,7 +418,7 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
                                 ),
                               ),
                               Text(
-                                position,
+                                item.posisiTawaran,
                                 style: AppTextStyles.labelLg.copyWith(
                                   color: AppColors.primary,
                                   fontWeight: FontWeight.bold,
@@ -510,7 +442,7 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
                                 ),
                               ),
                               Text(
-                                inviterName,
+                                item.namaPembuat,
                                 style: AppTextStyles.bodySm.copyWith(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 12,
@@ -526,7 +458,7 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
                   ),
 
                   // Pesan Ajakan
-                  if (message.isNotEmpty) ...[
+                  if (item.pesanAjakan.isNotEmpty) ...[
                     const SizedBox(height: 10),
                     Container(
                       width: double.infinity,
@@ -537,7 +469,7 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
                         border: Border.all(color: Colors.grey.shade200),
                       ),
                       child: Text(
-                        '"$message"',
+                        '"${item.pesanAjakan}"',
                         style: AppTextStyles.bodySm.copyWith(
                           fontStyle: FontStyle.italic,
                           fontSize: 11.5,
@@ -554,7 +486,8 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
                       const Center(
                         child: Padding(
                           padding: EdgeInsets.symmetric(vertical: 8),
-                          child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                              color: AppColors.primary, strokeWidth: 2),
                         ),
                       )
                     else
@@ -563,11 +496,13 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
                           Expanded(
                             child: OutlinedButton(
                               style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: AppColors.statusDangerText),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                side: const BorderSide(
+                                    color: AppColors.statusDangerText),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
                                 padding: const EdgeInsets.symmetric(vertical: 11),
                               ),
-                              onPressed: () => _respondInvitation(idUndangan, 'ditolak', teamName),
+                              onPressed: () => _handleRespondInvitation(item, 'ditolak'),
                               child: const Text(
                                 'Tolak',
                                 style: TextStyle(
@@ -578,18 +513,18 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
                               ),
                             ),
                           ),
-                          const SizedBox(width: 10),
+                          const SizedBox(width: 12),
                           Expanded(
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primary,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
                                 padding: const EdgeInsets.symmetric(vertical: 11),
-                                elevation: 0,
                               ),
-                              onPressed: () => _respondInvitation(idUndangan, 'diterima', teamName),
+                              onPressed: () => _handleRespondInvitation(item, 'diterima'),
                               child: const Text(
-                                'Terima Undangan',
+                                'Terima',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
@@ -600,20 +535,6 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
                           ),
                         ],
                       ),
-                  ],
-
-                  if (createdAt.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        createdAt.length >= 16 ? createdAt.substring(0, 16) : createdAt,
-                        style: AppTextStyles.labelSm.copyWith(
-                          color: AppColors.textMuted,
-                          fontSize: 10,
-                        ),
-                      ),
-                    ),
                   ],
                 ],
               ),
@@ -628,27 +549,29 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
   // SUB-TAB 2: LAMARAN SAYA (ALUR A - RAFA: FR-19 & FR-20)
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildApplicationsTab() {
-    if (_loadingApplications) {
+    if (_viewModel.isLoadingApplications) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
 
-    if (_errorApplications != null) {
+    if (_viewModel.errorApplications != null) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline_rounded, color: AppColors.statusDangerText, size: 48),
+              const Icon(Icons.error_outline_rounded,
+                  color: AppColors.statusDangerText, size: 48),
               const SizedBox(height: 12),
-              Text('Gagal memuat lamaran', style: AppTextStyles.titleMd),
+              Text('Gagal memuat status pengajuan', style: AppTextStyles.titleMd),
               const SizedBox(height: 6),
-              Text(_errorApplications!, style: AppTextStyles.bodySm, textAlign: TextAlign.center),
+              Text(_viewModel.errorApplications!,
+                  style: AppTextStyles.bodySm, textAlign: TextAlign.center),
               const SizedBox(height: 16),
               ElevatedButton.icon(
-                onPressed: _loadApplications,
+                onPressed: _viewModel.loadApplications,
                 icon: const Icon(Icons.refresh_rounded, size: 18),
                 label: const Text('Coba Lagi'),
                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
@@ -659,18 +582,14 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
       );
     }
 
-    // Filter list
-    final filtered = _activeAppFilter == 'semua'
-        ? _myApplications
-        : _myApplications.where((a) => a.statusPengajuan.toLowerCase() == _activeAppFilter).toList();
-
-    final total = _myApplications.length;
-    final pending = _myApplications.where((a) => a.isMenunggu).length;
-    final accepted = _myApplications.where((a) => a.isDiterima).length;
-    final rejected = _myApplications.where((a) => a.isDitolak).length;
+    final filtered = _viewModel.filteredApplications;
+    final total = _viewModel.applications.length;
+    final pending = _viewModel.pendingApplicationsCount;
+    final accepted = _viewModel.acceptedApplicationsCount;
+    final rejected = _viewModel.rejectedApplicationsCount;
 
     return RefreshIndicator(
-      onRefresh: _loadApplications,
+      onRefresh: _viewModel.loadApplications,
       color: AppColors.primary,
       child: Column(
         children: [
@@ -680,13 +599,17 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
             child: Row(
               children: [
-                _buildStatPill('Total', '$total', AppColors.surfaceContainer, AppColors.text),
+                _buildStatPill('Total', '$total', AppColors.surfaceContainer,
+                    AppColors.text),
                 const SizedBox(width: 8),
-                _buildStatPill('Menunggu', '$pending', AppColors.statusPendingBg, AppColors.statusPendingText),
+                _buildStatPill('Menunggu', '$pending', AppColors.statusPendingBg,
+                    AppColors.statusPendingText),
                 const SizedBox(width: 8),
-                _buildStatPill('Diterima', '$accepted', AppColors.statusSuccessBg, AppColors.statusSuccessText),
+                _buildStatPill('Diterima', '$accepted', AppColors.statusSuccessBg,
+                    AppColors.statusSuccessText),
                 const SizedBox(width: 8),
-                _buildStatPill('Ditolak', '$rejected', AppColors.statusDangerBg, AppColors.statusDangerText),
+                _buildStatPill('Ditolak', '$rejected', AppColors.statusDangerBg,
+                    AppColors.statusDangerText),
               ],
             ),
           ),
@@ -734,12 +657,14 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
                           const SizedBox(height: 16),
                           Text(
                             'Belum Ada Pengajuan Terkirim',
-                            style: AppTextStyles.titleMd.copyWith(fontWeight: FontWeight.w700),
+                            style: AppTextStyles.titleMd
+                                .copyWith(fontWeight: FontWeight.w700),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             'Lamaran yang Anda kirimkan ke tim-tim di Beranda (Alur A) akan terpantau statusnya di sini.',
-                            style: AppTextStyles.bodySm.copyWith(color: AppColors.textMuted),
+                            style: AppTextStyles.bodySm
+                                .copyWith(color: AppColors.textMuted),
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -749,7 +674,8 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 6, 16, 32),
                     itemCount: filtered.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 12),
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final app = filtered[index];
                       return InkWell(
@@ -757,7 +683,8 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => ApplicationDetailScreen(idPengajuan: app.idPengajuanBergabungTim),
+                              builder: (_) => ApplicationDetailScreen(
+                                  idPengajuan: app.idPengajuanBergabungTim),
                             ),
                           );
                         },
@@ -788,7 +715,8 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
                                       children: [
                                         Text(
                                           app.namaTim,
-                                          style: AppTextStyles.titleMd.copyWith(fontWeight: FontWeight.bold),
+                                          style: AppTextStyles.titleMd.copyWith(
+                                              fontWeight: FontWeight.bold),
                                         ),
                                         const SizedBox(height: 2),
                                         Text(
@@ -808,7 +736,8 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
                               ),
                               const SizedBox(height: 10),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 6),
                                 decoration: BoxDecoration(
                                   color: AppColors.primarySoft,
                                   borderRadius: BorderRadius.circular(8),
@@ -837,7 +766,8 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
                               ],
                               const SizedBox(height: 8),
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     app.formattedDate,
@@ -856,7 +786,8 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
                                           fontSize: 11.5,
                                         ),
                                       ),
-                                      const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.primary),
+                                      const Icon(Icons.chevron_right_rounded,
+                                          size: 16, color: AppColors.primary),
                                     ],
                                   ),
                                 ],
@@ -905,9 +836,9 @@ class _StatusHubScreenState extends State<StatusHubScreen> with SingleTickerProv
   }
 
   Widget _buildFilterChip(String key, String label) {
-    final isSelected = _activeAppFilter == key;
+    final isSelected = _viewModel.activeAppFilter == key;
     return GestureDetector(
-      onTap: () => setState(() => _activeAppFilter = key),
+      onTap: () => _viewModel.setAppFilter(key),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
