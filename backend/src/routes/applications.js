@@ -588,7 +588,21 @@ router.post('/invite-member', async (req, res) => {
       transactionStarted = false;
       return res.status(409).json({
         success: false,
-        message: 'Anggota tersebut sudah bergabung dengan tim ini.'
+        message: 'Mahasiswa ini sudah resmi menjadi anggota di tim ini.'
+      });
+    }
+
+    // Cek apakah sudah pernah dikirim undangan dan statusnya masih menunggu (Cegah spam!)
+    const [pendingInvites] = await connection.query(
+      "SELECT id_pengajuan_anggota FROM Pengajuan_Anggota WHERE id_tim = ? AND id_pengguna = ? AND status_pengajuan = 'menunggu'",
+      [id_tim, id_pengguna]
+    );
+    if (pendingInvites.length > 0) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(409).json({
+        success: false,
+        message: 'Anda sudah pernah mengirimkan undangan ke mahasiswa ini dan statusnya masih menunggu konfirmasi.'
       });
     }
 
