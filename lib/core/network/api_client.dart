@@ -7,10 +7,12 @@ import '../storage/storage_service.dart';
 class ApiClient {
   static Future<Map<String, String>> _headers() async {
     final token = await StorageService.getToken();
+    final userId = await StorageService.getUserId();
     return {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
       if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+      if (userId != null && userId.isNotEmpty) 'x-user-id': userId,
     };
   }
 

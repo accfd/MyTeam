@@ -2,8 +2,15 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/storage/storage_service.dart';
+import '../../../../core/config/app_config.dart';
 import '../../services/talent_search_service.dart';
+import '../../../team_feed/models/team_application_model.dart';
+import '../../../team_feed/services/team_feed_service.dart';
+import '../../../team_feed/views/screens/team_applications_screen.dart';
+import '../../../team_management/services/team_management_service.dart';
+import '../../../team_management/views/widgets/team_status_badge.dart';
 import 'team_detail_view_screen.dart';
+import '../../../team_feed/views/screens/my_applications_screen.dart';
 
 /// Halaman Notifikasi Undangan (FR-24 + FR-24b + FR-25)
 /// Tab 1 — Undangan Masuk (FR-24): GET /applications/received-invitations
@@ -35,16 +42,38 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
   bool _loadingSent = true;
   String? _errorSent;
 
+  // ── Tab 3: Lamaran Masuk ke Tim Milik Pengguna (FR-17) ─────────────────────
+  List<TeamApplicationsResult> _teamApplicationsResults = [];
+  bool _loadingTeamApps = true;
+  String? _errorTeamApps;
+
+  // ── Notifikasi Sistem (FR-20) ─────────────────────────────────────────────
+  List<Map<String, dynamic>> _systemNotifications = [];
+
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 2, vsync: this);
+    _tabCtrl = TabController(length: 3, vsync: this);
     _init();
   }
 
   Future<void> _init() async {
     _myUserId = await StorageService.getUserId() ?? '';
-    await Future.wait([_loadReceived(), _loadSent()]);
+    await Future.wait([
+      _loadReceived(),
+      _loadSent(),
+      _loadTeamApplications(),
+      _loadNotifications(),
+    ]);
+  }
+
+  Future<void> _loadNotifications() async {
+    try {
+      final notifs = await TeamFeedService.fetchNotifications();
+      if (mounted) {
+        setState(() => _systemNotifications = notifs);
+      }
+    } catch (_) {}
   }
 
   @override
@@ -64,10 +93,11 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
       final data = await TalentSearchService.getReceivedInvitations(_myUserId);
       if (mounted) setState(() => _received = data);
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(
           () => _errorReceived = e.toString().replaceFirst('Exception: ', ''),
         );
+      }
     } finally {
       if (mounted) setState(() => _loadingReceived = false);
     }
@@ -84,12 +114,53 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
       final data = await TalentSearchService.getSentInvitations(_myUserId);
       if (mounted) setState(() => _sent = data);
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(
           () => _errorSent = e.toString().replaceFirst('Exception: ', ''),
         );
+      }
     } finally {
       if (mounted) setState(() => _loadingSent = false);
+    }
+  }
+
+  // ── Load Lamaran Masuk ke Tim (FR-17) ─────────────────────────────────────
+  Future<void> _loadTeamApplications() async {
+    if (!mounted) return;
+    setState(() {
+      _loadingTeamApps = true;
+      _errorTeamApps = null;
+    });
+
+    try {
+      final myTeams = await TeamManagementService.getMyTeams();
+      final List<TeamApplicationsResult> results = [];
+
+      for (final team in myTeams) {
+        if (team.isOwner) {
+          try {
+            final appResult =
+                await TeamFeedService.fetchTeamApplications(team.idTim);
+            results.add(appResult);
+          } catch (_) {
+            // Abaikan error per tim
+          }
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _teamApplicationsResults = results;
+          _loadingTeamApps = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorTeamApps = e.toString().replaceFirst('Exception: ', '');
+          _loadingTeamApps = false;
+        });
+      }
     }
   }
 
@@ -340,6 +411,10 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
     final pendingCount = _received
         .where((i) => i['status_pengajuan'] == 'menunggu')
         .length;
+    final pendingTeamAppsCount = _teamApplicationsResults.fold<int>(
+      0,
+      (sum, res) => sum + res.summary.menunggu,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -348,29 +423,57 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
         elevation: 0,
         scrolledUnderElevation: 1,
         shadowColor: AppColors.border,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_rounded,
-            color: AppColors.text,
-            size: 22,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: Navigator.canPop(context)
+            ? IconButton(
+                icon: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: AppColors.text,
+                  size: 22,
+                ),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
+        automaticallyImplyLeading: false,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Notifikasi Undangan',
+              'Pusat Notifikasi & Lamaran',
               style: AppTextStyles.titleMd.copyWith(fontSize: 16),
             ),
             Text(
-              'Kelola undangan tim kamu',
+              'Kelola undangan tim dan lamaran masuk',
               style: AppTextStyles.bodySm.copyWith(fontSize: 11),
             ),
           ],
         ),
         actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              icon: const Icon(
+                Icons.assignment_outlined,
+                color: AppColors.primary,
+                size: 20,
+              ),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const MyApplicationsScreen(),
+                ),
+              ),
+              tooltip: 'Status Pengajuan Saya (FR-20)',
+            ),
+          ),
           Container(
             margin: const EdgeInsets.only(right: 16),
             width: 38,
@@ -387,7 +490,12 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
                 color: AppColors.primary,
                 size: 20,
               ),
-              onPressed: () => Future.wait([_loadReceived(), _loadSent()]),
+              onPressed: () => Future.wait([
+                _loadReceived(),
+                _loadSent(),
+                _loadTeamApplications(),
+                _loadNotifications(),
+              ]),
               tooltip: 'Segarkan',
             ),
           ),
@@ -398,7 +506,7 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
           indicatorWeight: 2.5,
           labelColor: AppColors.primaryContainer,
           unselectedLabelColor: AppColors.textMuted,
-          labelStyle: AppTextStyles.labelMd.copyWith(fontSize: 13),
+          labelStyle: AppTextStyles.labelMd.copyWith(fontSize: 12.5),
           tabs: [
             Tab(
               child: Row(
@@ -406,7 +514,7 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
                 children: [
                   const Text('Undangan Masuk'),
                   if (pendingCount > 0) ...[
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 5),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 6,
@@ -430,12 +538,45 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
               ),
             ),
             const Tab(text: 'Undangan Terkirim'),
+            Tab(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Lamaran Masuk'),
+                  if (pendingTeamAppsCount > 0) ...[
+                    const SizedBox(width: 5),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD97706),
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                      child: Text(
+                        '$pendingTeamAppsCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ],
         ),
       ),
       body: TabBarView(
         controller: _tabCtrl,
-        children: [_buildReceivedTab(), _buildSentTab()],
+        children: [
+          _buildReceivedTab(pendingTeamAppsCount),
+          _buildSentTab(),
+          _buildTeamApplicationsTab(),
+        ],
       ),
     );
   }
@@ -443,17 +584,40 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
   // ─────────────────────────────────────────────────────────────────────────
   // TAB 1: UNDANGAN MASUK
   // ─────────────────────────────────────────────────────────────────────────
-  Widget _buildReceivedTab() {
+  Widget _buildReceivedTab(int pendingTeamAppsCount) {
     if (_loadingReceived) return _buildLoadingList();
     if (_errorReceived != null) {
       return _buildErrorState(_errorReceived!, _loadReceived);
     }
     if (_received.isEmpty) {
-      return _buildEmptyState(
-        icon: Icons.mail_outline_rounded,
-        title: 'Belum ada undangan masuk',
-        subtitle:
-            'Ketika pembuat tim mengundang Anda bergabung,\nundangan akan muncul di sini.',
+      return RefreshIndicator(
+        color: AppColors.primaryContainer,
+        onRefresh: () => Future.wait([
+          _loadReceived(),
+          _loadNotifications(),
+        ]),
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            if (_systemNotifications.isNotEmpty) ...[
+              _buildNotificationSection(),
+              const SizedBox(height: 14),
+            ],
+            if (pendingTeamAppsCount > 0) ...[
+              _buildIncomingApplicationsAlertBanner(pendingTeamAppsCount),
+              const SizedBox(height: 24),
+            ],
+            const SizedBox(height: 32),
+            Center(
+              child: _buildEmptyState(
+                icon: Icons.mail_outline_rounded,
+                title: 'Belum ada undangan masuk',
+                subtitle:
+                    'Ketika pembuat tim mengundang Anda bergabung,\nundangan akan muncul di sini.',
+              ),
+            ),
+          ],
+        ),
       );
     }
 
@@ -466,10 +630,21 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
 
     return RefreshIndicator(
       color: AppColors.primaryContainer,
-      onRefresh: _loadReceived,
+      onRefresh: () => Future.wait([
+        _loadReceived(),
+        _loadNotifications(),
+      ]),
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          if (_systemNotifications.isNotEmpty) ...[
+            _buildNotificationSection(),
+            const SizedBox(height: 14),
+          ],
+          if (pendingTeamAppsCount > 0) ...[
+            _buildIncomingApplicationsAlertBanner(pendingTeamAppsCount),
+            const SizedBox(height: 12),
+          ],
           if (menunggu.isNotEmpty) ...[
             _buildSectionHeader(
               'Menunggu Keputusan',
@@ -1344,4 +1519,613 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
       ),
     );
   }
+
+  // ── Notifikasi Sistem Status Pengajuan (FR-20) ───────────────────────────
+  Widget _buildNotificationSection() {
+    final statusNotifs = _systemNotifications.where((n) {
+      final type = n['jenis_notifikasi']?.toString() ?? '';
+      return type == 'pengajuan_diterima' || type == 'pengajuan_ditolak';
+    }).toList();
+
+    if (statusNotifs.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader(
+          'Pemberitahuan Status Pengajuan',
+          statusNotifs.length,
+          AppColors.primary,
+        ),
+        const SizedBox(height: 8),
+        ...statusNotifs.map((notif) => _buildNotificationCard(notif)),
+      ],
+    );
+  }
+
+  Widget _buildNotificationCard(Map<String, dynamic> notif) {
+    final type = notif['jenis_notifikasi']?.toString() ?? '';
+    final message = notif['pesan_notifikasi']?.toString() ?? '';
+    final isDiterima = type == 'pengajuan_diterima';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: isDiterima ? const Color(0xFFF0FDF4) : const Color(0xFFFEF2F2),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isDiterima ? const Color(0xFFBBF7D0) : const Color(0xFFFECACA),
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x06000000),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const MyApplicationsScreen(),
+              ),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: isDiterima
+                        ? const Color(0xFFDCFCE7)
+                        : const Color(0xFFFEE2E2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isDiterima
+                        ? Icons.check_circle_rounded
+                        : Icons.cancel_rounded,
+                    color: isDiterima
+                        ? const Color(0xFF15803D)
+                        : const Color(0xFFDC2626),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              isDiterima
+                                  ? 'Pengajuan Bergabung Diterima! 🎉'
+                                  : 'Pengajuan Bergabung Ditolak',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                                color: isDiterima
+                                    ? const Color(0xFF15803D)
+                                    : const Color(0xFFDC2626),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isDiterima
+                                  ? const Color(0xFFBBF7D0)
+                                  : const Color(0xFFFECACA),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'Lihat Status',
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        message,
+                        style: AppTextStyles.bodySm.copyWith(
+                          fontSize: 11.5,
+                          color: AppColors.text,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 13,
+                  color: AppColors.textMuted,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // TAB 3: LAMARAN MASUK KE TIM MILIK PENGGUNA (FR-17)
+  // ─────────────────────────────────────────────────────────────────────────
+  Widget _buildIncomingApplicationsAlertBanner(int count) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFFDE68A)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x06000000),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () => _tabCtrl.animateTo(2),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFEF3C7),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.mark_email_unread_rounded,
+                    color: Color(0xFFD97706),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Lamaran Masuk ke Tim Anda',
+                            style: AppTextStyles.labelMd.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF92400E),
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 1.5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFD97706),
+                              borderRadius: BorderRadius.circular(99),
+                            ),
+                            child: Text(
+                              '$count Menunggu',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Ada $count mahasiswa menunggu konfirmasi bergabung pada tim Anda.',
+                        style: AppTextStyles.bodySm.copyWith(
+                          color: const Color(0xFFB45309),
+                          fontSize: 11.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: Color(0xFFD97706),
+                  size: 14,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTeamApplicationsTab() {
+    if (_loadingTeamApps) return _buildLoadingList();
+    if (_errorTeamApps != null) {
+      return _buildErrorState(_errorTeamApps!, _loadTeamApplications);
+    }
+    if (_teamApplicationsResults.isEmpty) {
+      return _buildEmptyState(
+        icon: Icons.group_work_outlined,
+        title: 'Belum ada tim yang Anda buat',
+        subtitle:
+            'Buat tim baru di menu MyTeam untuk mulai menerima pendaftaran calon anggota.',
+      );
+    }
+
+    final totalApps = _teamApplicationsResults.fold<int>(
+      0,
+      (sum, res) => sum + res.summary.total,
+    );
+
+    if (totalApps == 0) {
+      return RefreshIndicator(
+        color: AppColors.primaryContainer,
+        onRefresh: _loadTeamApplications,
+        child: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            const SizedBox(height: 40),
+            Center(
+              child: Container(
+                width: 76,
+                height: 76,
+                decoration: const BoxDecoration(
+                  color: AppColors.primarySoft,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.assignment_ind_outlined,
+                  size: 38,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              'Belum Ada Pelamar Masuk',
+              style: AppTextStyles.headlineMd.copyWith(
+                fontWeight: FontWeight.w700,
+                fontSize: 17,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Ketika ada mahasiswa yang mengajukan diri untuk bergabung ke tim milik Anda, pengajuan mereka akan ditampilkan di sini.',
+              style: AppTextStyles.bodySm.copyWith(
+                color: AppColors.textMuted,
+                height: 1.45,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            Center(
+              child: OutlinedButton.icon(
+                onPressed: _loadTeamApplications,
+                icon: const Icon(Icons.refresh_rounded, size: 16),
+                label: const Text('Segarkan'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primaryOutline),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      color: AppColors.primaryContainer,
+      onRefresh: _loadTeamApplications,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _teamApplicationsResults.length,
+        itemBuilder: (context, index) {
+          final res = _teamApplicationsResults[index];
+          return _buildTeamApplicationGroupCard(res);
+        },
+      ),
+    );
+  }
+
+  Widget _buildTeamApplicationGroupCard(TeamApplicationsResult res) {
+    final pendingCount = res.summary.menunggu;
+    final totalCount = res.summary.total;
+    final hasPending = pendingCount > 0;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: hasPending ? AppColors.primaryOutline : AppColors.border,
+          width: hasPending ? 1.5 : 1.0,
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header Tim
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        res.namaTim,
+                        style: AppTextStyles.titleMd.copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    if (hasPending)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 3.5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: Text(
+                          '$pendingCount Menunggu',
+                          style: const TextStyle(
+                            color: Color(0xFFB45309),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: Text(
+                          '$totalCount Lamaran',
+                          style: AppTextStyles.labelSm.copyWith(
+                            color: AppColors.textMuted,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                if (res.namaKegiatan.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    res.namaKegiatan,
+                    style: AppTextStyles.bodySm.copyWith(
+                      color: AppColors.textMuted,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 10),
+                // Summary baris kecil
+                Row(
+                  children: [
+                    _buildMiniBadge(
+                      '${res.summary.menunggu} Menunggu',
+                      const Color(0xFFFEF3C7),
+                      const Color(0xFF92400E),
+                    ),
+                    const SizedBox(width: 6),
+                    _buildMiniBadge(
+                      '${res.summary.diterima} Diterima',
+                      const Color(0xFFDCFCE7),
+                      const Color(0xFF15803D),
+                    ),
+                    const SizedBox(width: 6),
+                    _buildMiniBadge(
+                      '${res.summary.ditolak} Ditolak',
+                      const Color(0xFFFEE2E2),
+                      const Color(0xFFB91C1C),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: AppColors.border),
+
+          // Cuplikan Pelamar (maksimal 2 ditampilkan di ringkasan)
+          if (res.applications.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Belum ada pelamar pada tim ini.',
+                style: AppTextStyles.bodySm,
+              ),
+            )
+          else ...[
+            ...res.applications.take(2).map((app) {
+              return InkWell(
+                onTap: () => _openTeamApplications(res),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 18,
+                        backgroundColor: AppColors.primarySoft,
+                        backgroundImage: _resolveAppAvatar(app.fotoProfil),
+                        child: _resolveAppAvatar(app.fotoProfil) == null
+                            ? Text(
+                                app.namaPengguna.isNotEmpty
+                                    ? app.namaPengguna[0].toUpperCase()
+                                    : '?',
+                                style: const TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              )
+                            : null,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              app.namaPengguna,
+                              style: AppTextStyles.bodyMd.copyWith(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13.5,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              'Posisi: ${app.posisi} • ${app.relativeTime}',
+                              style: AppTextStyles.bodySm.copyWith(
+                                color: AppColors.textMuted,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      ApplicationStatusBadge(status: app.statusPengajuan),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ],
+
+          const Divider(height: 1, color: AppColors.border),
+
+          // Tombol Buka Kelola Pengajuan
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _openTeamApplications(res),
+                icon: const Icon(Icons.people_outline_rounded, size: 16),
+                label: Text(
+                  hasPending
+                      ? 'Kelola Pengajuan Masuk ($pendingCount Menunggu)'
+                      : 'Lihat Semua Pengajuan ($totalCount)',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12.5,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: hasPending
+                      ? AppColors.primary
+                      : AppColors.surfaceContainerLow,
+                  foregroundColor:
+                      hasPending ? Colors.white : AppColors.primary,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openTeamApplications(TeamApplicationsResult res) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TeamApplicationsScreen(
+          idTim: res.idTim,
+          teamName: res.namaTim,
+        ),
+      ),
+    );
+    _loadTeamApplications();
+  }
+
+  Widget _buildMiniBadge(String text, Color bg, Color fg) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: fg,
+          fontSize: 10.5,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
+  ImageProvider? _resolveAppAvatar(String? foto) {
+    if (foto == null || foto.trim().isEmpty) return null;
+    final trimmed = foto.trim();
+    if (trimmed.startsWith('assets/')) return AssetImage(trimmed);
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return NetworkImage(trimmed);
+    }
+    if (trimmed.startsWith('profiles/') || trimmed.startsWith('storage/')) {
+      final cleanPath =
+          trimmed.startsWith('storage/') ? trimmed : 'storage/$trimmed';
+      final rootUrl = AppConfig.baseUrl.replaceAll('/api/v1', '');
+      return NetworkImage('$rootUrl/$cleanPath');
+    }
+    return null;
+  }
 }
+

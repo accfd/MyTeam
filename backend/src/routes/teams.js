@@ -47,14 +47,14 @@ const getAuthUserId = (req) => {
         return decoded.id_pengguna;
       }
     }
-  } catch (err) {}
+  } catch (err) { }
   return req.body?.id_pengguna || req.query?.id_pengguna || req.headers['x-user-id'] || 'usr_rafa_02';
 };
 
 // GET /api/v1/teams/feed (FR-13, FR-14: Feed & Filter Tim)
 router.get('/feed', async (req, res) => {
   try {
-    const { search, kategori } = req.query;
+    const { search, kategori, keahlian } = req.query;
     let query = `
       SELECT dt.*, p.nama_pengguna, p.foto_profil 
       FROM Data_Tim dt
@@ -63,13 +63,32 @@ router.get('/feed', async (req, res) => {
     `;
     const params = [];
 
-    if (search) {
-      query += ` AND (dt.nama_tim LIKE ? OR dt.nama_kegiatan LIKE ?)`;
-      params.push(`%${search}%`, `%${search}%`);
+    if (search && search.trim() !== '') {
+      const term = `%${search.trim()}%`;
+      query += ` AND (
+        dt.nama_tim LIKE ? 
+        OR dt.nama_kegiatan LIKE ? 
+        OR dt.deskripsi LIKE ?
+        OR EXISTS (
+          SELECT 1 FROM Kebutuhan_Anggota_Tim kat 
+          WHERE kat.id_tim = dt.id_tim 
+            AND (kat.keahlian_dibutuhkan LIKE ? OR kat.posisi_dibutuhkan LIKE ?)
+        )
+      )`;
+      params.push(term, term, term, term, term);
     }
-    if (kategori) {
+    if (kategori && kategori !== 'Semua' && kategori.trim() !== '') {
       query += ` AND dt.kategori_kegiatan = ?`;
-      params.push(kategori);
+      params.push(kategori.trim());
+    }
+    if (keahlian && keahlian.trim() !== '') {
+      const skillTerm = `%${keahlian.trim()}%`;
+      query += ` AND EXISTS (
+        SELECT 1 FROM Kebutuhan_Anggota_Tim kat 
+        WHERE kat.id_tim = dt.id_tim 
+          AND (kat.keahlian_dibutuhkan LIKE ? OR kat.posisi_dibutuhkan LIKE ?)
+      )`;
+      params.push(skillTerm, skillTerm);
     }
 
     query += ` ORDER BY dt.created_at DESC`;
@@ -77,10 +96,27 @@ router.get('/feed', async (req, res) => {
     const [teams] = await db.query(query, params);
 
     for (const team of teams) {
-      const [kebutuhan] = await db.query('SELECT * FROM Kebutuhan_Anggota_Tim WHERE id_tim = ?', [team.id_tim]);
-      const [dokumen] = await db.query('SELECT * FROM Dokumen_Pendukung WHERE id_tim = ? ORDER BY urutan ASC', [team.id_tim]);
+      const [kebutuhan] = await db.query(
+        'SELECT * FROM Kebutuhan_Anggota_Tim WHERE id_tim = ?',
+        [team.id_tim]
+      );
+      const [dokumen] = await db.query(
+        'SELECT * FROM Dokumen_Pendukung WHERE id_tim = ? ORDER BY urutan ASC',
+        [team.id_tim]
+      );
+      const [[anggotaCount]] = await db.query(
+        'SELECT COUNT(*) AS total FROM Anggota_Tim WHERE id_tim = ?',
+        [team.id_tim]
+      );
+
+      team.pembuat_tim = {
+        id_pengguna: team.id_pengguna,
+        nama_pengguna: team.nama_pengguna,
+        foto_profil: team.foto_profil
+      };
       team.kebutuhan_tim = kebutuhan;
       team.dokumen_pendukung = dokumen;
+      team.total_anggota_saat_ini = Number(anggotaCount?.total) || 0;
     }
 
     return res.json({
@@ -98,10 +134,15 @@ router.get('/feed', async (req, res) => {
 router.get('/feed/:id_tim', async (req, res) => {
   try {
     const { id_tim } = req.params;
+    const currentUserId = getAuthUserId(req);
+
     const [teams] = await db.query(`
-      SELECT dt.*, p.nama_pengguna, p.foto_profil
+      SELECT dt.*, 
+             p.nama_pengguna, p.foto_profil, p.nim,
+             dd.program_studi, dd.fakultas, dd.kontak
       FROM Data_Tim dt
       JOIN Pengguna p ON dt.id_pengguna = p.id_pengguna
+      LEFT JOIN Data_Diri dd ON p.id_pengguna = dd.id_pengguna
       WHERE dt.id_tim = ?
     `, [id_tim]);
 
@@ -113,18 +154,58 @@ router.get('/feed/:id_tim', async (req, res) => {
     const [kebutuhan] = await db.query('SELECT * FROM Kebutuhan_Anggota_Tim WHERE id_tim = ?', [id_tim]);
     const [dokumen] = await db.query('SELECT * FROM Dokumen_Pendukung WHERE id_tim = ? ORDER BY urutan ASC', [id_tim]);
     const [anggota] = await db.query(`
-      SELECT at.*, p.nama_pengguna, p.foto_profil
+      SELECT at.*, 
+             p.nama_pengguna, p.foto_profil, p.nim,
+             dd.program_studi, dd.fakultas
       FROM Anggota_Tim at
       JOIN Pengguna p ON at.id_pengguna = p.id_pengguna
+      LEFT JOIN Data_Diri dd ON p.id_pengguna = dd.id_pengguna
       WHERE at.id_tim = ?
+      ORDER BY at.joined_at ASC
     `, [id_tim]);
 
     team.kebutuhan_tim = kebutuhan;
     team.dokumen_pendukung = dokumen;
     team.anggota_tim = anggota;
+    team.total_anggota_saat_ini = anggota.length;
 
-    return res.json({ success: true, data: team });
+    team.pembuat_tim = {
+      id_pengguna: team.id_pengguna,
+      nama_pengguna: team.nama_pengguna,
+      foto_profil: team.foto_profil,
+      nim: team.nim,
+      program_studi: team.program_studi,
+      fakultas: team.fakultas,
+      kontak: team.kontak
+    };
+
+    let hasPending = false;
+    if (currentUserId) {
+      const [pendingApps] = await db.query(`
+        SELECT id_pengajuan_bergabung_tim 
+        FROM Pengajuan_Bergabung_Tim 
+        WHERE id_tim = ? AND id_pengguna = ? AND status_pengajuan = 'menunggu'
+        LIMIT 1
+      `, [id_tim, currentUserId]);
+      hasPending = pendingApps.length > 0;
+    }
+
+    const isPembuat = currentUserId ? (team.id_pengguna === currentUserId) : false;
+    const isAnggota = currentUserId ? anggota.some(a => a.id_pengguna === currentUserId) : false;
+
+    team.user_status = {
+      is_pembuat: isPembuat,
+      is_anggota: isAnggota,
+      has_pending_application: hasPending
+    };
+
+    return res.json({
+      success: true,
+      message: 'Detail tim berhasil dimuat',
+      data: team
+    });
   } catch (error) {
+    console.error('Error detail team:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -177,7 +258,7 @@ router.post('/', upload.any(), async (req, res) => {
     if (typeof kebutuhan === 'string') {
       try {
         kebutuhan = JSON.parse(kebutuhan);
-      } catch (_) {}
+      } catch (_) { }
     }
 
     const id_tim = `tim_${Date.now()}`;
@@ -233,20 +314,101 @@ router.post('/', upload.any(), async (req, res) => {
   }
 });
 
-// GET /api/v1/teams/:id_tim/applications (FR-17: Pelamar Masuk ke Tim)
+// GET /api/v1/teams/:id_tim/applications (FR-17: Pelamar Masuk ke Tim - Pembuat Tim)
 router.get('/:id_tim/applications', async (req, res) => {
   try {
     const { id_tim } = req.params;
-    const [rows] = await db.query(`
-      SELECT pbt.*, p.nama_pengguna, p.nim, p.foto_profil
+    const { status } = req.query;
+    const id_pengguna = getAuthUserId(req);
+
+    // 1. Validasi keberadaan tim dan otorisasi pembuat tim
+    const [teamRows] = await db.query(
+      'SELECT id_tim, id_pengguna, nama_tim, nama_kegiatan FROM Data_Tim WHERE id_tim = ?',
+      [id_tim]
+    );
+
+    if (teamRows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Tim tidak ditemukan.'
+      });
+    }
+
+    const team = teamRows[0];
+    if (team.id_pengguna !== id_pengguna) {
+      return res.status(403).json({
+        success: false,
+        message: 'Akses ditolak. Hanya pembuat tim yang dapat melihat daftar pengajuan ini.'
+      });
+    }
+
+    // 2. Query data pelamar dengan join Pengguna dan Data_Diri
+    let query = `
+      SELECT 
+        pbt.id_pengajuan_bergabung_tim,
+        pbt.id_tim,
+        pbt.id_pengguna,
+        pbt.posisi,
+        pbt.pesan_pengajuan,
+        pbt.waktu_pengajuan,
+        pbt.status_pengajuan,
+        p.nama_pengguna,
+        p.nim,
+        p.foto_profil,
+        dd.program_studi,
+        dd.fakultas,
+        dd.ipk,
+        dd.kontak,
+        dt.nama_tim,
+        dt.nama_kegiatan
       FROM Pengajuan_Bergabung_Tim pbt
+      JOIN Data_Tim dt ON pbt.id_tim = dt.id_tim
       JOIN Pengguna p ON pbt.id_pengguna = p.id_pengguna
+      LEFT JOIN Data_Diri dd ON p.id_pengguna = dd.id_pengguna
       WHERE pbt.id_tim = ?
-      ORDER BY pbt.waktu_pengajuan DESC
+    `;
+    const params = [id_tim];
+
+    if (status && status !== 'Semua' && ['menunggu', 'diterima', 'ditolak'].includes(status.toString().toLowerCase().trim())) {
+      query += ` AND LOWER(pbt.status_pengajuan) = ?`;
+      params.push(status.toString().toLowerCase().trim());
+    }
+
+    query += ` ORDER BY pbt.waktu_pengajuan DESC`;
+
+    const [rows] = await db.query(query, params);
+
+    // 3. Hitung rekap counter status lamaran (FR-17)
+    const [counts] = await db.query(`
+      SELECT 
+        COUNT(*) AS total,
+        SUM(CASE WHEN status_pengajuan = 'menunggu' THEN 1 ELSE 0 END) AS menunggu,
+        SUM(CASE WHEN status_pengajuan = 'diterima' THEN 1 ELSE 0 END) AS diterima,
+        SUM(CASE WHEN status_pengajuan = 'ditolak' THEN 1 ELSE 0 END) AS ditolak
+      FROM Pengajuan_Bergabung_Tim
+      WHERE id_tim = ?
     `, [id_tim]);
 
-    return res.json({ success: true, data: rows });
+    const summary = {
+      total: Number(counts[0]?.total || 0),
+      menunggu: Number(counts[0]?.menunggu || 0),
+      diterima: Number(counts[0]?.diterima || 0),
+      ditolak: Number(counts[0]?.ditolak || 0)
+    };
+
+    return res.json({
+      success: true,
+      message: 'Daftar pengajuan tim berhasil dimuat.',
+      team: {
+        id_tim: team.id_tim,
+        nama_tim: team.nama_tim,
+        nama_kegiatan: team.nama_kegiatan
+      },
+      summary,
+      data: rows
+    });
   } catch (error) {
+    console.error('Error get team applications:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -306,7 +468,7 @@ router.post('/:id_tim/update', upload.any(), async (req, res) => {
     if (typeof kebutuhan === 'string') {
       try {
         kebutuhan = JSON.parse(kebutuhan);
-      } catch (_) {}
+      } catch (_) { }
     }
 
     const [existing] = await db.query('SELECT * FROM Data_Tim WHERE id_tim = ?', [id_tim]);

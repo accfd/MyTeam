@@ -732,11 +732,13 @@ class _TalentSearchScreenState extends State<TalentSearchScreen>
                       radius: 22,
                       backgroundColor: AppColors.primarySoft,
                       backgroundImage: (member.fotoProfil != null &&
-                              member.fotoProfil!.isNotEmpty)
+                              member.fotoProfil!.isNotEmpty &&
+                              member.fotoProfil!.startsWith('http'))
                           ? NetworkImage(member.fotoProfil!) as ImageProvider
                           : null,
                       child: (member.fotoProfil == null ||
-                              member.fotoProfil!.isEmpty)
+                              member.fotoProfil!.isEmpty ||
+                              !member.fotoProfil!.startsWith('http'))
                           ? Text(member.inisial,
                               style: AppTextStyles.titleMd.copyWith(
                                   color: AppColors.primary, fontSize: 16))

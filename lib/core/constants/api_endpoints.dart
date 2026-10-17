@@ -21,6 +21,8 @@ class ApiEndpoints {
   static const String feed = '/teams/feed';
   static const String joinTeam = '/applications/join-team';
   static const String myApplications = '/applications/my-applications';
+  static String teamApplications(String idTim) => '/teams/$idTim/applications';
+  static String joinTeamDetail(String idPengajuan) => '/applications/join-team/$idPengajuan';
 
   // Talent Search & Invitation (Modul 4 - Diva)
   static const String searchMembers = '/members/search';
