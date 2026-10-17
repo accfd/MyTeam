@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/storage/storage_service.dart';
+import '../../../profile/models/data_diri_model.dart';
+import '../../../profile/models/media_sosial_model.dart';
 import '../../../profile/models/profile_detail_model.dart';
+import '../../../profile/models/tim_diikuti_model.dart';
 import '../../../profile/services/profile_service.dart';
 import '../../../profile/views/widgets/profile_header_card.dart';
 import '../../../team_management/services/team_management_service.dart';
@@ -11,8 +13,8 @@ import '../../models/talent_member_model.dart';
 import '../../services/talent_search_service.dart';
 
 /// Halaman Detail Profil Calon Anggota (FR-22)
-/// Seragam 100% dengan ProfileScreen (Header Card + 4 Tab Filter: Tentang, Minat, Keahlian, Pengalaman)
-/// + Sticky Bottom Bar: Ajak Bergabung ke Tim (FR-23: POST /applications/invite-member)
+/// Desain 100% identik dengan ProfileScreen (Header Card + 4 Tab: Tentang, Minat, Keahlian, Pengalaman)
+/// Mode Read-Only (tanpa aksi edit/hapus) + Sticky Bottom Bar "Ajak Bergabung ke Tim"
 class MemberDetailScreen extends StatefulWidget {
   final TalentMemberModel member;
   final String myUserId;
@@ -52,72 +54,68 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
   }
 
   Future<void> _loadProfileDetail() async {
-    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      final data = await ProfileService.getProfileDetail(widget.member.idPengguna);
-      if (mounted) {
-        setState(() {
-          _profile = data;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = e.toString().replaceFirst('Exception: ', '');
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _launchUrl(String url) async {
-    final uri = Uri.tryParse(url);
-    if (uri != null && await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
+      final p = await ProfileService.getProfileDetail(widget.member.idPengguna);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Tidak dapat membuka tautan: $url'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      setState(() {
+        _profile = p;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        _isLoading = false;
+      });
     }
   }
 
-  // ── FR-23: Buka Bottom Sheet Undang ke Tim ────────────────────────────────
-  Future<void> _showInviteSheet() async {
-    final myId = widget.myUserId.isNotEmpty
-        ? widget.myUserId
-        : (await StorageService.getUserId() ?? '');
-
-    if (!mounted) return;
-
-    if (myId == widget.member.idPengguna) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Anda tidak dapat mengundang diri sendiri.'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-
+  void _showInviteSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _InviteBottomSheet(
         member: widget.member,
-        myUserId: myId,
+        myUserId: widget.myUserId,
       ),
     );
+  }
+
+  Future<void> _openUrl(String urlString) async {
+    try {
+      String formattedUrl = urlString.trim();
+      if (!formattedUrl.startsWith('http://') &&
+          !formattedUrl.startsWith('https://')) {
+        formattedUrl = 'https://$formattedUrl';
+      }
+      final uri = Uri.parse(formattedUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Tidak dapat membuka tautan ini.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _openWhatsApp(String nomor) async {
+    String cleanNumber = nomor.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleanNumber.startsWith('0')) {
+      cleanNumber = '62${cleanNumber.substring(1)}';
+    }
+    final waUrl = 'https://wa.me/$cleanNumber';
+    await _openUrl(waUrl);
   }
 
   @override
@@ -129,6 +127,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
         elevation: 0,
         scrolledUnderElevation: 1,
         shadowColor: AppColors.border,
+        automaticallyImplyLeading: false,
         leading: Padding(
           padding: const EdgeInsets.only(left: 14),
           child: Center(
@@ -142,24 +141,35 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
               ),
               child: IconButton(
                 padding: EdgeInsets.zero,
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: AppColors.text),
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  size: 16,
+                  color: AppColors.text,
+                ),
                 onPressed: () => Navigator.pop(context),
                 tooltip: 'Kembali',
               ),
             ),
           ),
         ),
+        titleSpacing: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               'Profil Calon Anggota',
-              style: AppTextStyles.titleMd.copyWith(fontWeight: FontWeight.bold, fontSize: 17),
+              style: AppTextStyles.titleMd.copyWith(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
             ),
             Text(
               widget.member.namaPengguna,
-              style: AppTextStyles.labelSm.copyWith(color: AppColors.textMuted, fontSize: 11),
+              style: AppTextStyles.labelSm.copyWith(
+                color: AppColors.textMuted,
+                fontSize: 11,
+              ),
             ),
           ],
         ),
@@ -175,7 +185,8 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
             ),
             child: IconButton(
               padding: EdgeInsets.zero,
-              icon: const Icon(Icons.refresh_rounded, color: AppColors.primary, size: 20),
+              icon: const Icon(Icons.refresh_rounded,
+                  color: AppColors.primary, size: 20),
               onPressed: _loadProfileDetail,
               tooltip: 'Segarkan Profil',
             ),
@@ -201,7 +212,8 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline_rounded, color: AppColors.statusDangerText, size: 48),
+              const Icon(Icons.error_outline_rounded,
+                  color: AppColors.statusDangerText, size: 48),
               const SizedBox(height: 12),
               Text('Gagal Memuat Profil', style: AppTextStyles.titleMd),
               const SizedBox(height: 6),
@@ -215,7 +227,8 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
                 onPressed: _loadProfileDetail,
                 icon: const Icon(Icons.refresh_rounded, size: 18),
                 label: const Text('Coba Lagi'),
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary),
               ),
             ],
           ),
@@ -230,16 +243,16 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
       color: AppColors.primary,
       child: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
-          // ── Header Card Profil Seragam ────────────────────────────────────
+          // ── Header Card Profil Seragam 100% ───────────────────────────────
           SliverToBoxAdapter(
             child: ProfileHeaderCard(
               user: p.pengguna,
-              onGantiFoto: null, // Mode lihat profil orang lain
-              onSettings: null,
+              onGantiFoto: null, // Read-only
+              onSettings: null,  // Read-only
             ),
           ),
 
-          // ── Pinned 4 Tab Bar (Tentang, Minat, Keahlian, Pengalaman) ────────
+          // ── Pinned TabBar Modern Kapsul (Identik dengan ProfileScreen) ────
           SliverPersistentHeader(
             pinned: true,
             delegate: _SliverTabBarDelegate(_tabCtrl),
@@ -259,7 +272,7 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 1. TAB TENTANG (Biodata, Kontak, Akademik, Riwayat Tim)
+  // 1. TAB TENTANG (Biodata, Kontak, Akademik, Medsos, Riwayat Tim)
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildTentangTab(ProfileDetailModel p) {
     final dd = p.dataDiri;
@@ -267,118 +280,320 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
       children: [
-        // Ringkasan Diri / Bio
+        // Tentang Saya
         _buildSectionCard(
           title: 'Tentang Saya',
-          icon: Icons.person_pin_rounded,
+          icon: Icons.person_outline_rounded,
           child: Text(
-            (dd != null && dd.deskripsiSingkat.isNotEmpty)
+            (dd != null && dd.deskripsiSingkat.trim().isNotEmpty)
                 ? dd.deskripsiSingkat
                 : 'Mahasiswa ini belum menulis deskripsi diri.',
             style: AppTextStyles.bodyMd.copyWith(
-              color: AppColors.text,
-              height: 1.45,
+              color: (dd != null && dd.deskripsiSingkat.trim().isNotEmpty)
+                  ? AppColors.text
+                  : AppColors.textMuted,
+              height: 1.5,
             ),
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 16),
 
-        // Informasi Akademik & Kontak
-        _buildSectionCard(
-          title: 'Informasi Akademik & Kontak',
-          icon: Icons.school_rounded,
-          child: Column(
+        // Akademik
+        _buildAkademikCard(dd),
+        const SizedBox(height: 16),
+
+        // Kontak
+        _buildKontakCard(dd),
+        const SizedBox(height: 16),
+
+        // Media Sosial
+        _buildMedsosCard(p.mediaSosial),
+        const SizedBox(height: 16),
+
+        // Tim yang Diikuti
+        _buildTimDiikutiCard(p.timDiikuti),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _buildAkademikCard(DataDiriModel? dataDiri) {
+    final prodi = (dataDiri != null && dataDiri.programStudi.isNotEmpty)
+        ? dataDiri.programStudi
+        : 'Sistem Informasi';
+    final fakultas = (dataDiri != null && dataDiri.fakultas.isNotEmpty)
+        ? dataDiri.fakultas
+        : 'Teknologi Informasi';
+    final ipk = (dataDiri?.ipk ?? 0.00).toStringAsFixed(2);
+
+    return _buildSectionCard(
+      title: 'Akademik',
+      icon: Icons.school_outlined,
+      child: Column(
+        children: [
+          _buildAkademikRow(Icons.school_outlined, 'Program Studi', prodi),
+          const Divider(height: 16, color: AppColors.border),
+          _buildAkademikRow(
+              Icons.account_balance_outlined, 'Fakultas', fakultas),
+          const Divider(height: 16, color: AppColors.border),
+          Row(
             children: [
-              _buildInfoRow('Program Studi', dd?.programStudi ?? '-'),
-              const Divider(height: 16, color: AppColors.border),
-              _buildInfoRow('Fakultas', dd?.fakultas ?? '-'),
-              const Divider(height: 16, color: AppColors.border),
-              _buildInfoRow('Indeks Prestasi Kumulatif (IPK)', dd != null ? dd.ipk.toStringAsFixed(2) : '-'),
-              const Divider(height: 16, color: AppColors.border),
-              _buildInfoRow('Kontak WhatsApp / HP', dd?.kontak ?? '-'),
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: AppColors.categoryCompetitionBg,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.stars_rounded,
+                    color: AppColors.categoryCompetitionText, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Indeks Prestasi Kumulatif',
+                        style: AppTextStyles.labelSm
+                            .copyWith(color: AppColors.textMuted)),
+                    const SizedBox(height: 1),
+                    Text('IPK: $ipk',
+                        style: AppTextStyles.titleMd.copyWith(
+                            fontSize: 14, fontWeight: FontWeight.w700)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAkademikRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(7),
+          decoration: BoxDecoration(
+            color: AppColors.primarySoft,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: AppColors.primary, size: 18),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label,
+                  style: AppTextStyles.labelSm
+                      .copyWith(color: AppColors.textMuted)),
+              const SizedBox(height: 1),
+              Text(value,
+                  style: AppTextStyles.titleMd
+                      .copyWith(fontSize: 14, fontWeight: FontWeight.w700)),
             ],
           ),
         ),
-        const SizedBox(height: 14),
+      ],
+    );
+  }
 
-        // Media Sosial & Portofolio Tautan
-        if (p.mediaSosial.isNotEmpty) ...[
-          _buildSectionCard(
-            title: 'Tautan Media Sosial & Portofolio',
-            icon: Icons.link_rounded,
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: p.mediaSosial.map((m) {
-                return ActionChip(
-                  backgroundColor: AppColors.primarySoft,
-                  side: const BorderSide(color: AppColors.primaryOutline),
-                  avatar: const Icon(Icons.open_in_new_rounded, size: 15, color: AppColors.primary),
-                  label: Text(
-                    m.namaMediaSosial,
-                    style: AppTextStyles.labelMd.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w600,
+  Widget _buildKontakCard(DataDiriModel? dataDiri) {
+    final kontak = dataDiri?.kontak ?? '';
+    final hasKontak = kontak.trim().isNotEmpty;
+
+    return _buildSectionCard(
+      title: 'Kontak',
+      icon: Icons.phone_outlined,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: hasKontak ? () => _openWhatsApp(kontak) : null,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.statusSuccessBg,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.chat_bubble_outline_rounded,
+                      color: AppColors.statusSuccessText, size: 20),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Nomor Kontak / WhatsApp',
+                          style: AppTextStyles.labelSm
+                              .copyWith(color: AppColors.textMuted)),
+                      const SizedBox(height: 2),
+                      Text(
+                        hasKontak ? kontak : 'Belum dicantumkan',
+                        style: AppTextStyles.titleMd.copyWith(fontSize: 15),
+                      ),
+                    ],
+                  ),
+                ),
+                if (hasKontak) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.statusSuccessBg,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFFA7F3D0)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.open_in_new_rounded,
+                            size: 12, color: AppColors.statusSuccessText),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Buka WA',
+                          style: AppTextStyles.labelSm.copyWith(
+                            color: AppColors.statusSuccessText,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  onPressed: () => _launchUrl(m.linkMediaSosial),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMedsosCard(List<MediaSosialModel> medsosList) {
+    return _buildSectionCard(
+      title: 'Media Sosial',
+      icon: Icons.link_rounded,
+      child: medsosList.isEmpty
+          ? _buildEmptyState('Belum ada media sosial ditambahkan.')
+          : Column(
+              children: medsosList.map((m) {
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: ListTile(
+                    dense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 2),
+                    leading: Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: AppColors.primarySoft,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.language_rounded,
+                          color: AppColors.primary, size: 18),
+                    ),
+                    title: Text(m.namaMediaSosial,
+                        style: AppTextStyles.titleMd.copyWith(fontSize: 13.5)),
+                    subtitle: Text(
+                      m.linkMediaSosial,
+                      style: AppTextStyles.bodySm.copyWith(
+                          color: AppColors.textMuted, fontSize: 11.5),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: const Icon(Icons.open_in_new_rounded,
+                        size: 14, color: AppColors.primary),
+                    onTap: () => _openUrl(m.linkMediaSosial),
+                  ),
                 );
               }).toList(),
             ),
-          ),
-          const SizedBox(height: 14),
-        ],
+    );
+  }
 
-        // Riwayat Tim yang Pernah Diikuti
-        _buildSectionCard(
-          title: 'Riwayat Tim yang Diikuti',
-          icon: Icons.workspace_premium_rounded,
-          child: p.timDiikuti.isEmpty
-              ? Text(
-                  'Belum ada riwayat tim yang tercatat.',
-                  style: AppTextStyles.bodySm.copyWith(color: AppColors.textMuted),
-                )
-              : Column(
-                  children: p.timDiikuti.map((t) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              color: AppColors.primarySoft,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(Icons.groups_rounded, color: AppColors.primary, size: 20),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildTimDiikutiCard(List<TimDiikutiModel> timList) {
+    return _buildSectionCard(
+      title: 'Tim yang Diikuti',
+      icon: Icons.groups_rounded,
+      child: timList.isEmpty
+          ? _buildEmptyState('Mahasiswa belum tergabung dalam tim manapun.')
+          : Column(
+              children: timList.map((t) {
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.primarySoft,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.group_work_rounded,
+                            color: AppColors.primary, size: 24),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
                               children: [
-                                Text(
-                                  t.namaTim,
-                                  style: AppTextStyles.labelLg.copyWith(fontWeight: FontWeight.bold),
+                                Expanded(
+                                  child: Text(t.namaTim,
+                                      style: AppTextStyles.titleMd.copyWith(
+                                          fontWeight: FontWeight.w700)),
                                 ),
-                                Text(
-                                  '${t.posisi} • ${t.namaKegiatan}',
-                                  style: AppTextStyles.bodySm.copyWith(
-                                    color: AppColors.textMuted,
-                                    fontSize: 11.5,
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.categoryCompetitionBg,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    t.kategoriKegiatan,
+                                    style: AppTextStyles.labelSm.copyWith(
+                                      color: AppColors.categoryCompetitionText,
+                                      fontSize: 10,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 4),
+                            Text('Kegiatan: ${t.namaKegiatan}',
+                                style: AppTextStyles.bodySm
+                                    .copyWith(color: AppColors.textMuted)),
+                            const SizedBox(height: 2),
+                            Text('Posisi: ${t.posisi}',
+                                style: AppTextStyles.labelMd.copyWith(
+                                    color: AppColors.primary, fontSize: 12)),
+                          ],
+                        ),
                       ),
-                    );
-                  }).toList(),
-                ),
-        ),
-      ],
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
     );
   }
 
@@ -390,51 +605,59 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
       return _buildEmptyTab('Belum ada data minat yang ditambahkan.');
     }
 
-    return ListView.separated(
+    return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-      itemCount: p.minat.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 10),
-      itemBuilder: (context, i) {
-        final m = p.minat[i];
-        return Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
+      children: [
+        _buildSectionCard(
+          title: 'Minat',
+          icon: Icons.interests_rounded,
+          child: Column(
+            children: p.minat.map((m) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.categoryResearchBg,
-                  borderRadius: BorderRadius.circular(8),
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.border),
                 ),
-                child: const Icon(Icons.interests_rounded, color: AppColors.categoryResearchText, size: 18),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      m.minat,
-                      style: AppTextStyles.labelLg.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    if (m.deskripsiMinat.isNotEmpty)
-                      Text(
-                        m.deskripsiMinat,
-                        style: AppTextStyles.bodySm.copyWith(color: AppColors.textMuted, fontSize: 11.5),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.categoryResearchBg,
+                        borderRadius: BorderRadius.circular(8),
                       ),
+                      child: const Icon(Icons.interests_rounded,
+                          color: AppColors.categoryResearchText, size: 18),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(m.minat,
+                              style: AppTextStyles.titleMd.copyWith(
+                                  fontSize: 14, fontWeight: FontWeight.bold)),
+                          if (m.deskripsiMinat.isNotEmpty) ...[
+                            const SizedBox(height: 3),
+                            Text(m.deskripsiMinat,
+                                style: AppTextStyles.bodySm.copyWith(
+                                    color: AppColors.textMuted,
+                                    fontSize: 12)),
+                          ],
+                        ],
+                      ),
+                    ),
                   ],
                 ),
-              ),
-            ],
+              );
+            }).toList(),
           ),
-        );
-      },
+        ),
+      ],
     );
   }
 
@@ -446,57 +669,59 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
       return _buildEmptyTab('Belum ada data keahlian yang ditambahkan.');
     }
 
-    return ListView.separated(
+    return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-      itemCount: p.keahlian.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 10),
-      itemBuilder: (context, i) {
-        final k = p.keahlian[i];
-        return Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 36,
-                height: 36,
+      children: [
+        _buildSectionCard(
+          title: 'Keahlian',
+          icon: Icons.auto_awesome_rounded,
+          child: Column(
+            children: p.keahlian.map((k) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.primarySoft,
-                  borderRadius: BorderRadius.circular(8),
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.border),
                 ),
-                child: const Icon(Icons.bolt_rounded, color: AppColors.primary, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      k.keahlian,
-                      style: AppTextStyles.labelLg.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primarySoft,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.auto_awesome_rounded,
+                          color: AppColors.primary, size: 18),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(k.keahlian,
+                              style: AppTextStyles.titleMd.copyWith(
+                                  fontSize: 14, fontWeight: FontWeight.bold)),
+                          if (k.deskripsiKeahlian.isNotEmpty) ...[
+                            const SizedBox(height: 3),
+                            Text(k.deskripsiKeahlian,
+                                style: AppTextStyles.bodySm.copyWith(
+                                    color: AppColors.textMuted,
+                                    fontSize: 12)),
+                          ],
+                        ],
                       ),
                     ),
-                    if (k.deskripsiKeahlian.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        k.deskripsiKeahlian,
-                        style: AppTextStyles.bodySm.copyWith(color: AppColors.text, fontSize: 12),
-                      ),
-                    ],
                   ],
                 ),
-              ),
-            ],
+              );
+            }).toList(),
           ),
-        );
-      },
+        ),
+      ],
     );
   }
 
@@ -508,134 +733,169 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
       return _buildEmptyTab('Belum ada riwayat pengalaman yang ditambahkan.');
     }
 
-    return ListView.separated(
+    return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-      itemCount: p.pengalaman.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
-      itemBuilder: (context, i) {
-        final exp = p.pengalaman[i];
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
-          ),
+      children: [
+        _buildSectionCard(
+          title: 'Pengalaman',
+          icon: Icons.workspace_premium_rounded,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text(
-                      exp.namaKegiatan,
-                      style: AppTextStyles.labelLg.copyWith(fontWeight: FontWeight.bold, fontSize: 14),
+            children: p.pengalaman.map((exp) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            exp.namaKegiatan,
+                            style: AppTextStyles.titleMd.copyWith(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.categoryCompetitionBg,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '${exp.tahun}',
+                            style: AppTextStyles.labelSm.copyWith(
+                              color: AppColors.categoryCompetitionText,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: AppColors.categoryCompetitionBg,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      '${exp.tahun}',
-                      style: AppTextStyles.labelSm.copyWith(
-                        color: AppColors.categoryCompetitionText,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 10,
+                    const SizedBox(height: 4),
+                    Text(
+                      exp.peran,
+                      style: AppTextStyles.labelMd.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                exp.peran,
-                style: AppTextStyles.bodySm.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
+                    if (exp.deskripsiPengalaman.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        exp.deskripsiPengalaman,
+                        style: AppTextStyles.bodySm.copyWith(
+                          color: AppColors.textMuted,
+                          fontSize: 12,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-              ),
-              if (exp.deskripsiPengalaman.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Text(
-                  exp.deskripsiPengalaman,
-                  style: AppTextStyles.bodySm.copyWith(color: AppColors.textMuted, fontSize: 12),
-                ),
-              ],
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildSectionCard({
-    required String title,
-    required IconData icon,
-    required Widget child,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 18, color: AppColors.primary),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: AppTextStyles.titleMd.copyWith(fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          child,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: AppTextStyles.bodySm.copyWith(color: AppColors.textMuted)),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            value,
-            style: AppTextStyles.bodySm.copyWith(fontWeight: FontWeight.w600),
-            textAlign: TextAlign.end,
+              );
+            }).toList(),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildEmptyTab(String text) {
+  Widget _buildSectionCard({
+    required String title,
+    required IconData icon,
+    Widget? action,
+    required Widget child,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 20, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppTextStyles.headlineMd
+                      .copyWith(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+              ?action,
+            ],
+          ),
+          const SizedBox(height: 14),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyTab(String message) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
-        child: Text(
-          text,
-          style: AppTextStyles.bodySm.copyWith(color: AppColors.textMuted),
-          textAlign: TextAlign.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: const BoxDecoration(
+                color: AppColors.surfaceContainer,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.inbox_outlined,
+                  color: AppColors.textMuted, size: 28),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              style: AppTextStyles.bodySm.copyWith(color: AppColors.textMuted),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // ── Sticky Bottom Bar: Ajak Bergabung ke Tim ──────────────────────────────
+  Widget _buildEmptyState(String message) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Text(
+        message,
+        style: AppTextStyles.bodySm.copyWith(color: AppColors.textMuted),
+      ),
+    );
+  }
+
+  // ── Bottom Bar: Ajak Bergabung ke Tim ─────────────────────────────────────
   Widget _buildBottomBar() {
     if (widget.myUserId == widget.member.idPengguna) {
       return const SizedBox.shrink();
@@ -677,53 +937,109 @@ class _MemberDetailScreenState extends State<MemberDetailScreen>
   }
 }
 
-// ── Persistent TabBar Delegate ──────────────────────────────────────────────
+// ── Persistent TabBar Delegate (Identik 100% dengan ProfileScreen) ──────────
 class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
-  final TabController tabController;
+  final TabController controller;
 
-  _SliverTabBarDelegate(this.tabController);
-
-  @override
-  double get minExtent => 48;
-  @override
-  double get maxExtent => 48;
+  _SliverTabBarDelegate(this.controller);
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  double get minExtent => 56;
+
+  @override
+  double get maxExtent => 56;
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: TabBar(
-        controller: tabController,
-        isScrollable: false,
-        labelColor: AppColors.primary,
-        unselectedLabelColor: AppColors.textMuted,
-        indicatorColor: AppColors.primary,
-        indicatorWeight: 3,
-        labelStyle: AppTextStyles.labelMd.copyWith(fontWeight: FontWeight.bold, fontSize: 13),
-        unselectedLabelStyle: AppTextStyles.labelMd.copyWith(fontWeight: FontWeight.w500, fontSize: 13),
-        tabs: const [
-          Tab(text: 'Tentang'),
-          Tab(text: 'Minat'),
-          Tab(text: 'Keahlian'),
-          Tab(text: 'Pengalaman'),
-        ],
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Container(
+        height: 40,
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF3F4F6),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border, width: 0.8),
+        ),
+        child: Row(
+          children: [
+            _buildTabItem(0, Icons.person_rounded, 'Tentang'),
+            _buildTabItem(1, Icons.interests_rounded, 'Minat'),
+            _buildTabItem(2, Icons.auto_awesome_rounded, 'Keahlian'),
+            _buildTabItem(3, Icons.workspace_premium_rounded, 'Pengalaman'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTabItem(int index, IconData icon, String label) {
+    final isSelected = controller.index == index;
+    return Expanded(
+      flex: isSelected ? 4 : 2,
+      child: GestureDetector(
+        onTap: () => controller.animateTo(index),
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOutCubic,
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(9),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: isSelected ? AppColors.primary : AppColors.textMuted,
+              ),
+              if (isSelected) ...[
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    label,
+                    style: AppTextStyles.labelMd.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                      fontSize: 12,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
 
   @override
-  bool shouldRebuild(covariant _SliverTabBarDelegate oldDelegate) => true;
+  bool shouldRebuild(_SliverTabBarDelegate oldDelegate) => true;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// INVITE BOTTOM SHEET (FR-23) — Dropdown pilih tim & posisi berkuota
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Bottom Sheet Ajak Bergabung ke Tim ──────────────────────────────────────
 class _InviteBottomSheet extends StatefulWidget {
   final TalentMemberModel member;
   final String myUserId;
 
-  const _InviteBottomSheet({required this.member, required this.myUserId});
+  const _InviteBottomSheet({
+    required this.member,
+    required this.myUserId,
+  });
 
   @override
   State<_InviteBottomSheet> createState() => _InviteBottomSheetState();
@@ -731,14 +1047,12 @@ class _InviteBottomSheet extends StatefulWidget {
 
 class _InviteBottomSheetState extends State<_InviteBottomSheet> {
   final _msgCtrl = TextEditingController();
-  bool _isSending = false;
-  String? _errorMsg;
-
   List<Map<String, dynamic>> _myTeams = [];
   bool _loadingTeams = true;
+  String? _teamsErrorMsg;
   String? _selectedTeamId;
   String? _selectedPosition;
-  String? _teamsErrorMsg;
+  bool _submitting = false;
 
   @override
   void initState() {
@@ -762,7 +1076,8 @@ class _InviteBottomSheetState extends State<_InviteBottomSheet> {
       final teams = await TeamManagementService.getMyTeams();
       if (!mounted) return;
 
-      final eligible = teams.where((t) => t.statusTim.toLowerCase() != 'selesai').toList();
+      final eligible =
+          teams.where((t) => t.statusTim.toLowerCase() != 'selesai').toList();
 
       setState(() {
         _myTeams = eligible.map((t) => {
@@ -771,7 +1086,9 @@ class _InviteBottomSheetState extends State<_InviteBottomSheet> {
           'nama_kegiatan': t.namaKegiatan,
           'kebutuhan_tim': t.kebutuhanTim.map((k) {
             final terisiCount = t.anggotaTim
-                .where((a) => a.posisi.trim().toLowerCase() == k.posisiDibutuhkan.trim().toLowerCase())
+                .where((a) =>
+                    a.posisi.trim().toLowerCase() ==
+                    k.posisiDibutuhkan.trim().toLowerCase())
                 .length;
             return {
               'posisi_dibutuhkan': k.posisiDibutuhkan,
@@ -819,27 +1136,23 @@ class _InviteBottomSheetState extends State<_InviteBottomSheet> {
 
   Future<void> _sendInvitation() async {
     if (_selectedTeamId == null || _selectedPosition == null) {
-      setState(() => _errorMsg = 'Pilih tim dan posisi terlebih dahulu.');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pilih tim dan posisi terlebih dahulu.'),
+          backgroundColor: AppColors.statusDangerText,
+        ),
+      );
       return;
     }
 
-    final message = _msgCtrl.text.trim();
-    if (message.isEmpty) {
-      setState(() => _errorMsg = 'Pesan ajakan bergabung wajib diisi.');
-      return;
-    }
-
-    setState(() {
-      _isSending = true;
-      _errorMsg = null;
-    });
+    setState(() => _submitting = true);
 
     try {
       await TalentSearchService.inviteMember(
         idTim: _selectedTeamId!,
         idPengguna: widget.member.idPengguna,
         posisi: _selectedPosition!,
-        pesanPengajuan: message,
+        pesanPengajuan: _msgCtrl.text.trim(),
       );
 
       if (!mounted) return;
@@ -848,7 +1161,7 @@ class _InviteBottomSheetState extends State<_InviteBottomSheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Undangan berhasil dikirimkan ke ${widget.member.namaPengguna}!',
+            'Undangan berhasil dikirim kepada ${widget.member.namaPengguna}!',
           ),
           backgroundColor: AppColors.statusSuccessText,
           behavior: SnackBarBehavior.floating,
@@ -856,25 +1169,32 @@ class _InviteBottomSheetState extends State<_InviteBottomSheet> {
       );
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _errorMsg = e.toString().replaceFirst('Exception: ', '');
-        _isSending = false;
-      });
+      setState(() => _submitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: AppColors.statusDangerText,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+      padding: EdgeInsets.only(
+        top: 20,
+        left: 20,
+        right: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: SafeArea(
+        top: false,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -884,23 +1204,25 @@ class _InviteBottomSheetState extends State<_InviteBottomSheet> {
                 child: Container(
                   width: 40,
                   height: 4,
-                  margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
                     color: AppColors.border,
-                    borderRadius: BorderRadius.circular(99),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
+              const SizedBox(height: 16),
+
+              // Judul Sheet
               Row(
                 children: [
                   Container(
-                    width: 36,
-                    height: 36,
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: AppColors.primarySoft,
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.send_rounded, color: AppColors.primary, size: 18),
+                    child: const Icon(Icons.send_rounded,
+                        color: AppColors.primary, size: 22),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -916,7 +1238,8 @@ class _InviteBottomSheetState extends State<_InviteBottomSheet> {
                         ),
                         Text(
                           'Kirim undangan kepada ${widget.member.namaPengguna}',
-                          style: AppTextStyles.labelSm.copyWith(color: AppColors.textMuted),
+                          style: AppTextStyles.labelSm
+                              .copyWith(color: AppColors.textMuted),
                         ),
                       ],
                     ),
@@ -935,7 +1258,9 @@ class _InviteBottomSheetState extends State<_InviteBottomSheet> {
                   ),
                 )
               else if (_teamsErrorMsg != null)
-                Text(_teamsErrorMsg!, style: const TextStyle(color: AppColors.statusDangerText))
+                Text(_teamsErrorMsg!,
+                    style:
+                        const TextStyle(color: AppColors.statusDangerText))
               else if (_myTeams.isEmpty)
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -945,16 +1270,19 @@ class _InviteBottomSheetState extends State<_InviteBottomSheet> {
                   ),
                   child: Column(
                     children: [
-                      const Icon(Icons.info_outline_rounded, color: AppColors.textMuted, size: 32),
+                      const Icon(Icons.info_outline_rounded,
+                          color: AppColors.textMuted, size: 32),
                       const SizedBox(height: 8),
                       Text(
                         'Anda belum memiliki tim yang aktif.',
-                        style: AppTextStyles.bodySm.copyWith(color: AppColors.textMuted),
+                        style: AppTextStyles.bodySm
+                            .copyWith(color: AppColors.textMuted),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Buat tim terlebih dahulu di tab MyTeam untuk dapat mengundang anggota.',
-                        style: AppTextStyles.labelSm.copyWith(color: AppColors.textMuted),
+                        style: AppTextStyles.labelSm
+                            .copyWith(color: AppColors.textMuted),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -962,13 +1290,16 @@ class _InviteBottomSheetState extends State<_InviteBottomSheet> {
                 )
               else ...[
                 // Pilih Tim
-                Text('Pilih Tim Anda', style: AppTextStyles.labelMd.copyWith(fontWeight: FontWeight.bold)),
+                Text('Pilih Tim Anda',
+                    style: AppTextStyles.labelMd
+                        .copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 6),
                 DropdownButtonFormField<String>(
                   initialValue: _selectedTeamId,
                   isExpanded: true,
                   decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: const BorderSide(color: AppColors.border),
@@ -984,14 +1315,17 @@ class _InviteBottomSheetState extends State<_InviteBottomSheet> {
                     setState(() {
                       _selectedTeamId = val;
                       final pos = _availablePositions;
-                      _selectedPosition = pos.isNotEmpty ? pos.keys.first : null;
+                      _selectedPosition =
+                          pos.isNotEmpty ? pos.keys.first : null;
                     });
                   },
                 ),
                 const SizedBox(height: 14),
 
                 // Pilih Posisi
-                Text('Posisi yang Ditawarkan', style: AppTextStyles.labelMd.copyWith(fontWeight: FontWeight.bold)),
+                Text('Posisi yang Ditawarkan',
+                    style: AppTextStyles.labelMd
+                        .copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 6),
                 if (_availablePositions.isEmpty)
                   Container(
@@ -1002,7 +1336,8 @@ class _InviteBottomSheetState extends State<_InviteBottomSheet> {
                     ),
                     child: Text(
                       'Semua kuota posisi pada tim ini telah penuh.',
-                      style: AppTextStyles.bodySm.copyWith(color: AppColors.statusDangerText),
+                      style: AppTextStyles.bodySm
+                          .copyWith(color: AppColors.statusDangerText),
                     ),
                   )
                 else
@@ -1010,7 +1345,8 @@ class _InviteBottomSheetState extends State<_InviteBottomSheet> {
                     initialValue: _selectedPosition,
                     isExpanded: true,
                     decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: const BorderSide(color: AppColors.border),
@@ -1019,22 +1355,29 @@ class _InviteBottomSheetState extends State<_InviteBottomSheet> {
                     items: _availablePositions.entries.map((e) {
                       return DropdownMenuItem<String>(
                         value: e.key,
-                        child: Text('${e.key} (Sisa ${e.value} kuota)', style: AppTextStyles.bodySm),
+                        child: Text('${e.key} (Sisa ${e.value} kuota)',
+                            style: AppTextStyles.bodySm),
                       );
                     }).toList(),
-                    onChanged: (val) => setState(() => _selectedPosition = val),
+                    onChanged: (val) {
+                      setState(() => _selectedPosition = val);
+                    },
                   ),
                 const SizedBox(height: 14),
 
                 // Pesan Ajakan
-                Text('Pesan Ajakan Bergabung', style: AppTextStyles.labelMd.copyWith(fontWeight: FontWeight.bold)),
+                Text('Pesan Ajakan (Opsional)',
+                    style: AppTextStyles.labelMd
+                        .copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 6),
                 TextField(
                   controller: _msgCtrl,
                   maxLines: 3,
                   decoration: InputDecoration(
-                    hintText: 'Tuliskan alasan mengapa Anda mengajak mahasiswa ini...',
-                    hintStyle: AppTextStyles.bodySm.copyWith(color: AppColors.textMuted),
+                    hintText:
+                        'Tuliskan alasan mengapa Anda mengajak mahasiswa ini bergabung...',
+                    hintStyle: AppTextStyles.bodySm
+                        .copyWith(color: AppColors.textMuted),
                     contentPadding: const EdgeInsets.all(12),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -1042,32 +1385,37 @@ class _InviteBottomSheetState extends State<_InviteBottomSheet> {
                     ),
                   ),
                 ),
-                if (_errorMsg != null) ...[
-                  const SizedBox(height: 8),
-                  Text(_errorMsg!, style: const TextStyle(color: AppColors.statusDangerText, fontSize: 12)),
-                ],
-                const SizedBox(height: 18),
+                const SizedBox(height: 20),
 
-                // Tombol Kirim
+                // Tombol Kirim Undangan
                 SizedBox(
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
-                    onPressed: (_isSending || _availablePositions.isEmpty) ? null : _sendInvitation,
+                    onPressed: _submitting ? null : _sendInvitation,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       elevation: 0,
                     ),
-                    child: _isSending
+                    child: _submitting
                         ? const SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
                           )
                         : const Text(
                             'Kirim Undangan Sekarang',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
                           ),
                   ),
                 ),
