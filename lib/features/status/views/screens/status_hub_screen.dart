@@ -124,17 +124,17 @@ class _StatusHubScreenState extends State<StatusHubScreen>
       builder: (context, _) {
         return Column(
           children: [
-            // ── Segmented Switcher Pill ─────────────────────────────────────
+            // ── Segmented Switcher Pill (Proporsi Presisi ProfileScreen) ────
             Container(
               color: Colors.white,
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Container(
-                height: 46,
-                padding: const EdgeInsets.all(4),
+                height: 40,
+                padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceContainer,
+                  color: const Color(0xFFF3F4F6),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: AppColors.border, width: 0.8),
                 ),
                 child: Row(
                   children: [
@@ -144,7 +144,6 @@ class _StatusHubScreenState extends State<StatusHubScreen>
                       label: 'Undangan Masuk',
                       badgeCount: _viewModel.pendingInvitationsCount,
                     ),
-                    const SizedBox(width: 6),
                     _buildSegmentButton(
                       index: 1,
                       icon: Icons.send_rounded,
@@ -181,12 +180,11 @@ class _StatusHubScreenState extends State<StatusHubScreen>
   }) {
     final isSelected = _subTabCtrl.index == index;
     return Expanded(
-      flex: isSelected ? 4 : 2,
       child: GestureDetector(
         onTap: () => setState(() => _subTabCtrl.animateTo(index)),
         behavior: HitTestBehavior.opaque,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
+          duration: const Duration(milliseconds: 200),
           curve: Curves.easeInOutCubic,
           decoration: BoxDecoration(
             color: isSelected ? Colors.white : Colors.transparent,
@@ -201,47 +199,48 @@ class _StatusHubScreenState extends State<StatusHubScreen>
                   ]
                 : null,
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 17,
-                color: isSelected ? AppColors.primary : AppColors.textMuted,
-              ),
-              if (isSelected) ...[
+          child: Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  size: 16,
+                  color: isSelected ? AppColors.primary : AppColors.textMuted,
+                ),
                 const SizedBox(width: 6),
                 Flexible(
                   child: Text(
                     label,
                     style: AppTextStyles.labelMd.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
-                      fontSize: 12.5,
+                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      color: isSelected ? AppColors.primary : AppColors.textMuted,
+                      fontSize: 12,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-              ],
-              if (badgeCount > 0) ...[
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primary : AppColors.textMuted.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(99),
-                  ),
-                  child: Text(
-                    '$badgeCount',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
+                if (badgeCount > 0) ...[
+                  const SizedBox(width: 5),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppColors.primary : AppColors.textMuted.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                    child: Text(
+                      '$badgeCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -847,20 +846,32 @@ class _StatusHubScreenState extends State<StatusHubScreen>
     return GestureDetector(
       onTap: () => _viewModel.setAppFilter(key),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        height: 34,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        alignment: Alignment.center,
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary : Colors.white,
-          borderRadius: BorderRadius.circular(99),
+          borderRadius: BorderRadius.circular(9),
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.border,
+            width: 0.8,
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.15),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           label,
           style: AppTextStyles.labelMd.copyWith(
             color: isSelected ? Colors.white : AppColors.textMuted,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            fontSize: 11.5,
+            fontSize: 12,
           ),
         ),
       ),

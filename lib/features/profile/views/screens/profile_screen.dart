@@ -15,14 +15,23 @@ import '../widgets/profile_skeleton.dart';
 import '../../models/tim_diikuti_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../team_feed/views/screens/my_applications_screen.dart';
+import '../../../talent_search/models/talent_member_model.dart';
+import '../../../talent_search/views/widgets/invite_member_bottom_sheet.dart';
 
 /// Layar Profil Mahasiswa — MyTeam (Modul 1: FR-01 s/d FR-07)
 /// Mengimplementasikan arsitektur MVVM murni dengan ProfileViewModel
+/// Mendukung mode Profil Pribadi maupun Profil Calon Anggota (Visiting Mode)
 class ProfileScreen extends StatefulWidget {
   final String? idPenggunaOverride;
   final bool showAppBar;
+  final TalentMemberModel? visitingMember;
 
-  const ProfileScreen({super.key, this.idPenggunaOverride, this.showAppBar = true});
+  const ProfileScreen({
+    super.key,
+    this.idPenggunaOverride,
+    this.showAppBar = true,
+    this.visitingMember,
+  });
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -32,6 +41,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   late final TabController _tabController;
   final _viewModel = ProfileViewModel();
 
+  bool get _isVisiting => widget.visitingMember != null || widget.idPenggunaOverride != null;
+  String? get _targetUserId => widget.visitingMember?.idPengguna ?? widget.idPenggunaOverride;
+
   @override
   void initState() {
     super.initState();
@@ -39,7 +51,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     _tabController.addListener(() {
       if (mounted) setState(() {});
     });
-    _viewModel.loadProfile(idPenggunaOverride: widget.idPenggunaOverride);
+    _viewModel.loadProfile(idPenggunaOverride: _targetUserId);
   }
 
   @override
@@ -60,7 +72,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         scrolledUnderElevation: 1,
         shadowColor: AppColors.border,
         automaticallyImplyLeading: false,
-        leading: widget.idPenggunaOverride != null
+        leading: _isVisiting
             ? Padding(
                 padding: const EdgeInsets.only(left: 14),
                 child: Center(
@@ -82,16 +94,30 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 ),
               )
             : null,
-        titleSpacing: widget.idPenggunaOverride != null ? 0 : 20,
-        title: widget.idPenggunaOverride != null
-            ? Text(
-                'Profil Mahasiswa',
-                style: AppTextStyles.headlineMd.copyWith(
-                  color: AppColors.text,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 20,
-                  letterSpacing: -0.3,
-                ),
+        titleSpacing: _isVisiting ? 0 : 20,
+        title: _isVisiting
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.visitingMember != null ? 'Profil Calon Anggota' : 'Profil Mahasiswa',
+                    style: AppTextStyles.headlineMd.copyWith(
+                      color: AppColors.text,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  if (widget.visitingMember != null)
+                    Text(
+                      widget.visitingMember!.namaPengguna,
+                      style: AppTextStyles.labelSm.copyWith(
+                        color: AppColors.textMuted,
+                        fontSize: 11,
+                      ),
+                    ),
+                ],
               )
             : Row(
                 children: [
@@ -156,13 +182,14 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             child: IconButton(
               padding: EdgeInsets.zero,
               icon: const Icon(Icons.refresh_rounded, color: AppColors.primary, size: 20),
-              onPressed: () => _viewModel.loadProfile(idPenggunaOverride: widget.idPenggunaOverride),
+              onPressed: () => _viewModel.loadProfile(idPenggunaOverride: _targetUserId),
               tooltip: 'Segarkan Profil',
             ),
           ),
         ],
       )
     : null,
+      bottomNavigationBar: widget.visitingMember != null ? _buildVisitingBottomBar() : null,
       body: ListenableBuilder(
         listenable: _viewModel,
         builder: (context, _) {
@@ -185,15 +212,15 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
           // 4. Data siap: Ditampilkan instan tanpa loading berputar!
           return RefreshIndicator(
-            onRefresh: () => _viewModel.loadProfile(idPenggunaOverride: widget.idPenggunaOverride),
+            onRefresh: () => _viewModel.loadProfile(idPenggunaOverride: _targetUserId),
             color: AppColors.primaryContainer,
             child: NestedScrollView(
               headerSliverBuilder: (context, innerBoxIsScrolled) => [
                 SliverToBoxAdapter(
                   child: ProfileHeaderCard(
                     user: profile.pengguna,
-                    onGantiFoto: _showGantiFotoDialog,
-                    onSettings: widget.idPenggunaOverride == null ? _showSettingsSheet : null,
+                    onGantiFoto: !_isVisiting ? _showGantiFotoDialog : null,
+                    onSettings: !_isVisiting ? _showSettingsSheet : null,
                   ),
                 ),
                 SliverPersistentHeader(
@@ -217,6 +244,49 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     );
   }
 
+  Widget _buildVisitingBottomBar() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: AppColors.border)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: ElevatedButton.icon(
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (ctx) => InviteMemberBottomSheet(member: widget.visitingMember!),
+              );
+            },
+            icon: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
+            label: const Text(
+              'Ajak Bergabung ke Tim',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildErrorView() {
     return Center(
       child: Padding(
@@ -231,7 +301,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             Text(_viewModel.errorMessage ?? 'Terjadi kesalahan.', style: AppTextStyles.bodySm, textAlign: TextAlign.center),
             const SizedBox(height: 20),
             ElevatedButton.icon(
-              onPressed: () => _viewModel.loadProfile(idPenggunaOverride: widget.idPenggunaOverride),
+              onPressed: () => _viewModel.loadProfile(idPenggunaOverride: _targetUserId),
               icon: const Icon(Icons.refresh_rounded, color: Colors.white),
               label: const Text('Coba Lagi', style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
@@ -257,7 +327,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         _buildSectionCard(
           title: 'Tentang Saya',
           icon: Icons.person_outline_rounded,
-          action: widget.idPenggunaOverride == null
+          action: !_isVisiting
               ? TextButton.icon(
                   onPressed: () => EditDataDiriDialog.show(
                     context,
@@ -295,7 +365,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               onTap: (dataDiri?.kontak != null && dataDiri!.kontak.trim().isNotEmpty)
                   ? () => _openWhatsApp(dataDiri.kontak)
                   : () {
-                      if (widget.idPenggunaOverride == null) {
+                      if (!_isVisiting) {
                         EditDataDiriDialog.show(
                           context,
                           dataDiri: dataDiri,
@@ -362,7 +432,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         _buildSectionCard(
           title: 'Media Sosial',
           icon: Icons.link_rounded,
-          action: widget.idPenggunaOverride == null
+          action: !_isVisiting
               ? TextButton.icon(
                   onPressed: () => FormMedsosDialog.show(context, onSave: _viewModel.addMediaSosial),
                   icon: const Icon(Icons.add_rounded, size: 18, color: AppColors.primary),
@@ -373,7 +443,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               ? _buildEmptyState('Belum ada media sosial ditambahkan.')
               : Column(
                   children: medsosList.map((m) {
-                    final isOwner = widget.idPenggunaOverride == null;
+                    final isOwner = !_isVisiting;
                     return Container(
                       margin: const EdgeInsets.only(bottom: 8),
                       decoration: BoxDecoration(
@@ -604,7 +674,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   Widget _buildMinatTab() {
     final profile = _viewModel.profile!;
     final minatList = profile.minat;
-    final isOwner = widget.idPenggunaOverride == null;
+    final isOwner = !_isVisiting;
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -678,7 +748,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   Widget _buildKeahlianTab() {
     final profile = _viewModel.profile!;
     final keahlianList = profile.keahlian;
-    final isOwner = widget.idPenggunaOverride == null;
+    final isOwner = !_isVisiting;
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -751,7 +821,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   // ─── TAB 4: PENGALAMAN (FR-05) ────────────────────────────────────────────
   Widget _buildPengalamanTab() {
     final pengalamanList = _viewModel.profile!.pengalaman;
-    final isOwner = widget.idPenggunaOverride == null;
+    final isOwner = !_isVisiting;
 
     return ListView(
       padding: const EdgeInsets.all(16),

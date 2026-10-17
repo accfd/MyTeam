@@ -317,7 +317,7 @@ class _TalentSearchScreenState extends State<TalentSearchScreen>
           ),
         ),
         SizedBox(
-          height: 36,
+          height: 34,
           child: ListView.builder(
             padding: const EdgeInsets.only(left: 20, right: 8),
             scrollDirection: Axis.horizontal,
@@ -330,8 +330,8 @@ class _TalentSearchScreenState extends State<TalentSearchScreen>
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
                     color: AppColors.background,
-                    borderRadius: BorderRadius.circular(99),
-                    border: Border.all(color: AppColors.border),
+                    borderRadius: BorderRadius.circular(9),
+                    border: Border.all(color: AppColors.border, width: 0.8),
                   ),
                   child: Text('Memuat...',
                       style: AppTextStyles.bodySm.copyWith(
@@ -356,12 +356,22 @@ class _TalentSearchScreenState extends State<TalentSearchScreen>
                     color: isSelected
                         ? AppColors.primaryContainer
                         : Colors.white,
-                    borderRadius: BorderRadius.circular(99),
+                    borderRadius: BorderRadius.circular(9),
                     border: Border.all(
                       color: isSelected
                           ? AppColors.primaryContainer
                           : AppColors.border,
+                      width: 0.8,
                     ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.15),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ]
+                        : null,
                   ),
                   child: Text(
                     k,
@@ -405,7 +415,7 @@ class _TalentSearchScreenState extends State<TalentSearchScreen>
           ),
         ),
         SizedBox(
-          height: 36,
+          height: 34,
           child: ListView.builder(
             padding: const EdgeInsets.only(left: 20, right: 8),
             scrollDirection: Axis.horizontal,
@@ -417,8 +427,8 @@ class _TalentSearchScreenState extends State<TalentSearchScreen>
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
                     color: AppColors.background,
-                    borderRadius: BorderRadius.circular(99),
-                    border: Border.all(color: AppColors.border),
+                    borderRadius: BorderRadius.circular(9),
+                    border: Border.all(color: AppColors.border, width: 0.8),
                   ),
                   child: Text('Memuat...',
                       style: AppTextStyles.bodySm.copyWith(
@@ -443,12 +453,22 @@ class _TalentSearchScreenState extends State<TalentSearchScreen>
                     color: isSelected
                         ? AppColors.categoryResearchBg
                         : Colors.white,
-                    borderRadius: BorderRadius.circular(99),
+                    borderRadius: BorderRadius.circular(9),
                     border: Border.all(
                       color: isSelected
                           ? AppColors.categoryResearchText
                           : AppColors.border,
+                      width: 0.8,
                     ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.15),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ]
+                        : null,
                   ),
                   child: Text(
                     m,
