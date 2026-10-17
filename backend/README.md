@@ -30,6 +30,12 @@ Cukup jalankan 5 langkah simpel berikut lewat terminal:
    - **NIM:** `2411522001` (Fuadi) / `2411522014` (Rafa) / `2411521017` (Diva) / `2411521007` (Nayla)
    - **Kata Sandi:** `SandiAman123!`
 
+Data tim di `docs/dummy_seed_myteam.sql` dibagikan dengan jumlah Fuadi 4 tim,
+Rafa 3 tim, Diva 2 tim, dan Nayla 1 tim. Setiap tim menyediakan beberapa posisi
+yang dapat diisi.
+Untuk menambahkan atau menyelaraskan data tim tanpa mengimpor ulang seluruh
+database, jalankan `node seed_teams_dummy.js` dari folder `backend`.
+
 ---
 
 ## 📡 Daftar Pemetaan Endpoint Lengkap (Sesuai Kontrak API v1.0.0)
@@ -86,3 +92,4 @@ Seluruh endpoint berikut diselaraskan 100% dengan dokumen [**`api_specification_
 | `GET` | `/api/v1/notifications` | **Universal** | Mengambil seluruh daftar notifikasi pengguna |
 | `PATCH`| `/api/v1/notifications/:id/read` | **Universal** | Menandai notifikasi telah dibaca |
 | `GET` | `/api/v1/notifications/unread-count` | **Universal** | Menghitung jumlah notifikasi yang belum dibaca |
+| `PATCH`| `/api/v1/notifications/read-all` | **Universal** | Menandai semua notifikasi milik pengguna aktif telah dibaca |

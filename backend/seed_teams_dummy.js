@@ -1,11 +1,6 @@
 /**
- * seed_teams_dummy.js
- * Script untuk menambahkan data dummy Tim ke database myteam_db
- * Jalankan: node seed_teams_dummy.js
- * 
- * Tim akan dibuat atas nama user yang sedang login di app:
- * - usr_fuadi_01 (default fallback di members.js / applications.js)
- * - usr_rafa_02  (default fallback di teams.js)
+ * Seed data tim dummy untuk empat akun contoh MyTeam.
+ * Jalankan dari folder backend: node seed_teams_dummy.js
  */
 
 const mysql = require('mysql2/promise');
@@ -21,113 +16,196 @@ const db = mysql.createPool({
 
 const teams = [
   {
-    id_tim: 'tim_diva_001',
-    id_pengguna: 'usr_fuadi_01',   // user login default di members/applications
-    nama_tim: 'Tim Riset AI Unand',
-    nama_kegiatan: 'Penelitian NLP & Sentiment Analysis',
-    kategori_kegiatan: 'Penelitian',
-    deskripsi: 'Tim riset yang berfokus pada pengembangan model NLP untuk Bahasa Indonesia, khususnya analisis sentimen di media sosial.',
-    status_tim: 'terbuka',
-    kebutuhan: [
-      { posisi: 'Machine Learning Engineer', keahlian: 'Python, TensorFlow/PyTorch', jumlah: 2 },
-      { posisi: 'Backend Developer', keahlian: 'Node.js atau FastAPI', jumlah: 1 },
-    ]
-  },
-  {
-    id_tim: 'tim_diva_002',
-    id_pengguna: 'usr_fuadi_01',
-    nama_tim: 'Gemastik UI/UX Team',
-    nama_kegiatan: 'Gemastik XVII - Desain UX',
+    id_tim: 'tim_gemastik_01',
+    id_pengguna: 'usr_rafa_02',
+    nama_tim: 'Tim Robotik Cerdas Unand',
+    nama_kegiatan: 'GEMASTIK XVII Divisi Software Development',
     kategori_kegiatan: 'Lomba',
-    deskripsi: 'Tim yang mempersiapkan kompetisi Gemastik XVII kategori UI/UX Design, membuat prototype aplikasi mobile untuk UMKM Sumatera Barat.',
-    status_tim: 'terbuka',
+    deskripsi: 'Membangun aplikasi kendali telemetri untuk robot penjelajah otonom kampus.',
     kebutuhan: [
-      { posisi: 'UI/UX Designer', keahlian: 'Figma, user research', jumlah: 1 },
-      { posisi: 'Flutter Developer', keahlian: 'Flutter, Dart, prototype interaktif', jumlah: 1 },
-    ]
+      ['keb_01', 'Frontend Flutter', 'Flutter, Dart, REST API Integration'],
+      ['keb_02', 'UI/UX Designer', 'Figma, Wireframing, User Testing'],
+    ],
   },
   {
-    id_tim: 'tim_diva_003',
-    id_pengguna: 'usr_rafa_02',    // user login default di teams.js
-    nama_tim: 'PKM-KC Inovasi Pertanian',
-    nama_kegiatan: 'PKM Karsa Cipta - Smart Farming IoT',
+    id_tim: 'tim_pkm_02',
+    id_pengguna: 'usr_nayla_04',
+    nama_tim: 'Inovator Pangan Unand',
+    nama_kegiatan: 'Program Kreativitas Mahasiswa Riset Eksakta 2026',
     kategori_kegiatan: 'Penelitian',
-    deskripsi: 'Tim PKM Karsa Cipta yang mengembangkan sistem monitoring kebun cerdas berbasis IoT dan dashboard real-time untuk petani Sumatera Barat.',
-    status_tim: 'terbuka',
+    deskripsi: 'Riset AI dan aplikasi pemantau kestabilan pasokan komoditas pangan lokal.',
     kebutuhan: [
-      { posisi: 'IoT Engineer', keahlian: 'Arduino, ESP32', jumlah: 1 },
-      { posisi: 'Frontend Developer', keahlian: 'React.js atau Vue.js', jumlah: 1 },
-      { posisi: 'Data Analyst', keahlian: 'Python, pandas, visualisasi data', jumlah: 1 },
-    ]
+      ['keb_03', 'Mobile App Developer', 'Flutter, Android, SQLite'],
+      ['keb_04', 'Data Analyst', 'Python, Data Modeling, Statistics'],
+    ],
+  },
+  {
+    id_tim: 'tim_fuadi_03',
+    id_pengguna: 'usr_fuadi_01',
+    nama_tim: 'Aplikasi Jelajah Kampus',
+    nama_kegiatan: 'Unand Digital Innovation Challenge 2026',
+    kategori_kegiatan: 'Proyek',
+    deskripsi: 'Mengembangkan aplikasi untuk membantu mahasiswa menemukan fasilitas kampus.',
+    kebutuhan: [
+      ['keb_05', 'Flutter Developer', 'Flutter, Dart, REST API'],
+      ['keb_09', 'Product Designer', 'Product discovery, usability testing, Figma'],
+    ],
+  },
+  {
+    id_tim: 'tim_rafa_04',
+    id_pengguna: 'usr_rafa_02',
+    nama_tim: 'Sistem Irigasi Cerdas',
+    nama_kegiatan: 'Kompetisi Inovasi Teknologi Pertanian 2026',
+    kategori_kegiatan: 'Lomba',
+    deskripsi: 'Merancang sistem IoT dan backend untuk pemantauan irigasi lahan pertanian.',
+    kebutuhan: [
+      ['keb_06', 'IoT Engineer', 'ESP32, sensor, MQTT'],
+      ['keb_10', 'Backend Developer', 'Node.js, API design, database'],
+    ],
+  },
+  {
+    id_tim: 'tim_diva_05',
+    id_pengguna: 'usr_diva_03',
+    nama_tim: 'Ruang Belajar Inklusif',
+    nama_kegiatan: 'Program Kreativitas Mahasiswa Pengabdian 2026',
+    kategori_kegiatan: 'Penelitian',
+    deskripsi: 'Mendesain pengalaman belajar digital yang mudah diakses semua mahasiswa.',
+    kebutuhan: [
+      ['keb_07', 'UI/UX Designer', 'Figma, accessibility, user research'],
+      ['keb_11', 'Accessibility Tester', 'WCAG, usability testing, inclusive design'],
+    ],
+  },
+  {
+    id_tim: 'tim_diva_06',
+    id_pengguna: 'usr_diva_03',
+    nama_tim: 'Dashboard Data Kampus',
+    nama_kegiatan: 'Unand Data Visualization Project 2026',
+    kategori_kegiatan: 'Proyek',
+    deskripsi: 'Membuat dashboard interaktif untuk menyajikan data layanan dan aktivitas kampus.',
+    kebutuhan: [
+      ['keb_08', 'Data Visualization Designer', 'Figma, dashboard design, data storytelling'],
+      ['keb_12', 'Frontend Developer', 'React, charting library, REST API'],
+    ],
+  },
+  {
+    id_tim: 'tim_fuadi_08',
+    id_pengguna: 'usr_fuadi_01',
+    nama_tim: 'Platform Relawan Kampus',
+    nama_kegiatan: 'Unand Social Impact Challenge 2026',
+    kategori_kegiatan: 'Proyek',
+    deskripsi: 'Menghubungkan relawan mahasiswa dengan program sosial di sekitar kampus.',
+    kebutuhan: [
+      ['keb_13', 'Backend Developer', 'Node.js, PostgreSQL, REST API'],
+      ['keb_14', 'UX Researcher', 'User interview, service design, usability testing'],
+    ],
+  },
+  {
+    id_tim: 'tim_fuadi_09',
+    id_pengguna: 'usr_fuadi_01',
+    nama_tim: 'Deteksi Hoaks Bahasa Minang',
+    nama_kegiatan: 'Kompetisi Inovasi Digital Sumatera Barat 2026',
+    kategori_kegiatan: 'Lomba',
+    deskripsi: 'Mengembangkan model dan aplikasi untuk mengenali hoaks berbahasa Minang.',
+    kebutuhan: [
+      ['keb_15', 'Machine Learning Engineer', 'Python, NLP, model evaluation'],
+      ['keb_16', 'Mobile Developer', 'Flutter, Dart, API integration'],
+    ],
+  },
+  {
+    id_tim: 'tim_fuadi_10',
+    id_pengguna: 'usr_fuadi_01',
+    nama_tim: 'Asisten Akademik Berbasis AI',
+    nama_kegiatan: 'Proyek Riset Teknologi Pendidikan 2026',
+    kategori_kegiatan: 'Penelitian',
+    deskripsi: 'Merancang asisten akademik untuk membantu menemukan materi dan informasi kuliah.',
+    kebutuhan: [
+      ['keb_17', 'AI Researcher', 'Python, LLM, information retrieval'],
+      ['keb_18', 'Frontend Developer', 'Flutter, responsive UI, accessibility'],
+    ],
+  },
+  {
+    id_tim: 'tim_rafa_08',
+    id_pengguna: 'usr_rafa_02',
+    nama_tim: 'Pemantau Kualitas Udara',
+    nama_kegiatan: 'Lomba IoT dan Smart City 2026',
+    kategori_kegiatan: 'Lomba',
+    deskripsi: 'Membangun perangkat IoT dan dashboard pemantau kualitas udara kampus.',
+    kebutuhan: [
+      ['keb_19', 'IoT Engineer', 'ESP32, sensor calibration, MQTT'],
+      ['keb_20', 'Data Dashboard Developer', 'React, data visualization, API'],
+    ],
   },
 ];
 
 async function seed() {
-  const conn = await db.getConnection();
+  const connection = await db.getConnection();
   try {
-    console.log('🌱 Memulai seeding data dummy tim...\n');
+    await connection.beginTransaction();
+
+    // Hapus hanya ID tim dummy usang agar jumlah contoh sesuai distribusi baru.
+    await connection.query(
+      `DELETE FROM Data_Tim
+       WHERE id_tim IN ('tim_diva_001', 'tim_diva_002', 'tim_diva_003', 'tim_diva_07')`
+    );
 
     for (const team of teams) {
-      // 1. Cek apakah id_tim sudah ada
-      const [existing] = await conn.query(
-        'SELECT id_tim FROM Data_Tim WHERE id_tim = ?', [team.id_tim]
+      const [users] = await connection.query(
+        'SELECT id_pengguna FROM Pengguna WHERE id_pengguna = ?',
+        [team.id_pengguna]
       );
-
-      if (existing.length > 0) {
-        console.log(`⏭️  Tim "${team.nama_tim}" sudah ada — skip.`);
-        continue;
+      if (users.length === 0) {
+        throw new Error(`Pengguna ${team.id_pengguna} belum ada. Jalankan npm run db:setup terlebih dahulu.`);
       }
 
-      // 2. Cek apakah id_pengguna ada di tabel Pengguna
-      const [user] = await conn.query(
-        'SELECT id_pengguna FROM Pengguna WHERE id_pengguna = ?', [team.id_pengguna]
+      const [existing] = await connection.query(
+        'SELECT id_tim FROM Data_Tim WHERE id_tim = ?',
+        [team.id_tim]
       );
-      if (user.length === 0) {
-        console.log(`⚠️  User "${team.id_pengguna}" tidak ditemukan — skip tim "${team.nama_tim}".`);
-        console.log(`   → Pastikan user ini ada di tabel Pengguna.\n`);
-        continue;
-      }
-
-      // 3. Insert Data_Tim
-      await conn.query(
-        `INSERT INTO Data_Tim 
-          (id_tim, id_pengguna, nama_tim, nama_kegiatan, kategori_kegiatan, deskripsi, status_tim)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [team.id_tim, team.id_pengguna, team.nama_tim, team.nama_kegiatan,
-         team.kategori_kegiatan, team.deskripsi, team.status_tim]
-      );
-      console.log(`✅ Tim "${team.nama_tim}" berhasil dibuat (${team.id_tim})`);
-
-      // 4. Insert Kebutuhan_Anggota_Tim
-      for (const keb of team.kebutuhan) {
-        const id_keb = `keb_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
-        await conn.query(
-          `INSERT INTO Kebutuhan_Anggota_Tim 
-            (id_kebutuhan, id_tim, posisi_dibutuhkan, keahlian_dibutuhkan, jumlah_anggota_dibutuhkan)
-           VALUES (?, ?, ?, ?, ?)`,
-          [id_keb, team.id_tim, keb.posisi, keb.keahlian, keb.jumlah]
+      if (existing.length === 0) {
+        await connection.query(
+          `INSERT INTO Data_Tim
+            (id_tim, id_pengguna, nama_tim, nama_kegiatan, kategori_kegiatan, deskripsi, status_tim)
+           VALUES (?, ?, ?, ?, ?, ?, 'terbuka')`,
+          [
+            team.id_tim,
+            team.id_pengguna,
+            team.nama_tim,
+            team.nama_kegiatan,
+            team.kategori_kegiatan,
+            team.deskripsi,
+          ]
         );
-        console.log(`   ➕ Kebutuhan: ${keb.posisi} (${keb.jumlah} orang)`);
       }
-      console.log('');
+
+      for (const [idKebutuhan, posisi, keahlian] of team.kebutuhan) {
+        const [existingNeed] = await connection.query(
+          'SELECT id_kebutuhan FROM Kebutuhan_Anggota_Tim WHERE id_kebutuhan = ?',
+          [idKebutuhan]
+        );
+        if (existingNeed.length === 0) {
+          await connection.query(
+            `INSERT INTO Kebutuhan_Anggota_Tim
+              (id_kebutuhan, id_tim, posisi_dibutuhkan, keahlian_dibutuhkan, jumlah_anggota_dibutuhkan)
+             VALUES (?, ?, ?, ?, 1)`,
+            [idKebutuhan, team.id_tim, posisi, keahlian]
+          );
+        }
+      }
     }
 
-    console.log('✅ Seeding selesai!\n');
-    console.log('👤 Tim untuk usr_fuadi_01:');
-    console.log('   - tim_diva_001: Tim Riset AI Unand');
-    console.log('   - tim_diva_002: Gemastik UI/UX Team');
-    console.log('\n👤 Tim untuk usr_rafa_02:');
-    console.log('   - tim_diva_003: PKM-KC Inovasi Pertanian');
-    console.log('\n📱 Sekarang buka app → Cari Talenta → klik calon anggota → "Ajak Bergabung ke Tim"');
-    console.log('   Dropdown tim akan muncul secara otomatis!');
-
-  } catch (err) {
-    console.error('❌ Error saat seeding:', err.message);
-    console.error(err);
+    await connection.commit();
+    console.log('Seed tim dummy selesai: Fuadi 4, Rafa 3, Diva 2, Nayla 1.');
+  } catch (error) {
+    await connection.rollback();
+    console.error('Gagal menjalankan seed tim dummy:', error.message);
+    process.exitCode = 1;
   } finally {
-    conn.release();
-    process.exit(0);
+    connection.release();
+    await db.end();
   }
 }
 
-seed();
+seed().catch((error) => {
+  console.error('Gagal menghubungkan ke database:', error.message);
+  process.exitCode = 1;
+});

@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../core/storage/storage_service.dart';
-import '../../team_feed/models/my_application_model.dart';
 import '../models/invitation_model.dart';
 import '../services/status_service.dart';
 
 /// ViewModel untuk Modul Status (MVVM)
-/// Mengelola state Alur D (Undangan Masuk - Fuadi) & Alur A (Lamaran Saya - Rafa)
+/// Mengelola state undangan masuk dan undangan terkirim.
 class StatusViewModel extends ChangeNotifier {
   // ── Alur D: Undangan Masuk State ──────────────────────────────────────────
   List<InvitationModel> _invitations = [];
@@ -21,39 +19,41 @@ class StatusViewModel extends ChangeNotifier {
   int get pendingInvitationsCount =>
       _invitations.where((i) => i.isMenunggu).length;
 
-  // ── Alur A: Lamaran Saya State ────────────────────────────────────────────
-  List<MyApplicationModel> _applications = [];
-  MyApplicationsSummary _applicationsSummary = const MyApplicationsSummary();
-  bool _isLoadingApplications = true;
-  String? _errorApplications;
-  String _activeAppFilter = 'semua'; // 'semua', 'menunggu', 'diterima', 'ditolak'
+  // ── Undangan terkirim oleh pemilik tim ───────────────────────────────────
+  List<Map<String, dynamic>> _sentInvitations = [];
+  bool _isLoadingSentInvitations = true;
+  String? _errorSentInvitations;
+  String _activeSentInvitationFilter = 'semua';
 
-  List<MyApplicationModel> get applications => _applications;
-  MyApplicationsSummary get applicationsSummary => _applicationsSummary;
-  bool get isLoadingApplications => _isLoadingApplications;
-  String? get errorApplications => _errorApplications;
-  String get activeAppFilter => _activeAppFilter;
-
-  List<MyApplicationModel> get filteredApplications {
-    if (_activeAppFilter == 'semua') return _applications;
-    return _applications
-        .where((a) => a.statusPengajuan.toLowerCase() == _activeAppFilter)
+  List<Map<String, dynamic>> get sentInvitations => _sentInvitations;
+  bool get isLoadingSentInvitations => _isLoadingSentInvitations;
+  String? get errorSentInvitations => _errorSentInvitations;
+  String get activeSentInvitationFilter => _activeSentInvitationFilter;
+  List<Map<String, dynamic>> get filteredSentInvitations {
+    if (_activeSentInvitationFilter == 'semua') return _sentInvitations;
+    return _sentInvitations
+        .where(
+          (invitation) =>
+              invitation['status_pengajuan']?.toString().toLowerCase() ==
+              _activeSentInvitationFilter,
+        )
         .toList();
   }
 
-  int get pendingApplicationsCount =>
-      _applications.where((a) => a.isMenunggu).length;
-  int get acceptedApplicationsCount =>
-      _applications.where((a) => a.isDiterima).length;
-  int get rejectedApplicationsCount =>
-      _applications.where((a) => a.isDitolak).length;
+  int get pendingSentInvitationsCount => _countSentInvitations('menunggu');
+  int get acceptedSentInvitationsCount => _countSentInvitations('diterima');
+  int get rejectedSentInvitationsCount => _countSentInvitations('ditolak');
+
+  int _countSentInvitations(String status) => _sentInvitations
+      .where(
+        (invitation) =>
+            invitation['status_pengajuan']?.toString().toLowerCase() == status,
+      )
+      .length;
 
   // ── Inisialisasi & Muat Data ──────────────────────────────────────────────
   Future<void> loadAll() async {
-    await Future.wait([
-      loadInvitations(),
-      loadApplications(),
-    ]);
+    await Future.wait([loadInvitations(), loadSentInvitations()]);
   }
 
   // ── 1. Load Undangan Masuk (Alur D — Fuadi) ───────────────────────────────
@@ -63,8 +63,7 @@ class StatusViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final myUserId = await StorageService.getUserId() ?? '';
-      _invitations = await StatusService.getReceivedInvitations(myUserId);
+      _invitations = await StatusService.getReceivedInvitations();
       _isLoadingInvitations = false;
       notifyListeners();
     } catch (e) {
@@ -98,29 +97,27 @@ class StatusViewModel extends ChangeNotifier {
     }
   }
 
-  // ── 3. Load Lamaran Saya (Alur A — Rafa) ───────────────────────────────────
-  Future<void> loadApplications() async {
-    _isLoadingApplications = true;
-    _errorApplications = null;
+  // ── 3. Load undangan yang dikirim pemilik tim ─────────────────────────────
+  Future<void> loadSentInvitations() async {
+    _isLoadingSentInvitations = true;
+    _errorSentInvitations = null;
     notifyListeners();
 
     try {
-      final result = await StatusService.getMyApplications();
-      _applications = result.applications;
-      _applicationsSummary = result.summary;
-      _isLoadingApplications = false;
+      _sentInvitations = await StatusService.getSentInvitations();
+      _isLoadingSentInvitations = false;
       notifyListeners();
     } catch (e) {
-      _errorApplications = e.toString().replaceFirst('Exception: ', '');
-      _isLoadingApplications = false;
+      _errorSentInvitations = e.toString().replaceFirst('Exception: ', '');
+      _isLoadingSentInvitations = false;
       notifyListeners();
     }
   }
 
-  // ── 4. Set Filter Lamaran ─────────────────────────────────────────────────
-  void setAppFilter(String filterKey) {
-    if (_activeAppFilter == filterKey) return;
-    _activeAppFilter = filterKey;
+  // ── 4. Set filter undangan terkirim ──────────────────────────────────────
+  void setSentInvitationFilter(String filterKey) {
+    if (_activeSentInvitationFilter == filterKey) return;
+    _activeSentInvitationFilter = filterKey;
     notifyListeners();
   }
 }

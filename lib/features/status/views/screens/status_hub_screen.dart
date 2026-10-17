@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../team_feed/views/screens/application_detail_screen.dart';
 import '../../models/invitation_model.dart';
 import '../../viewmodels/status_viewmodel.dart';
 
 /// Layar Hub Status Terpadu (Tab ke-4: Status) — Arsitektur MVVM
 /// Menggabungkan:
 /// - Sub-Tab 1: Undangan Masuk (Alur D - Fuadi, FR-24 & FR-25)
-/// - Sub-Tab 2: Lamaran Saya (Alur A - Rafa, FR-19 & FR-20)
+/// - Sub-Tab 2: Undangan Terkirim oleh pemilik tim (FR-25)
 class StatusHubScreen extends StatefulWidget {
   final int initialSubTab;
 
@@ -68,19 +67,27 @@ class _StatusHubScreenState extends State<StatusHubScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Batal', style: TextStyle(color: AppColors.textMuted)),
+            child: const Text(
+              'Batal',
+              style: TextStyle(color: AppColors.textMuted),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: status == 'diterima'
                   ? AppColors.primary
                   : AppColors.statusDangerText,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(
               status == 'diterima' ? 'Ya, Terima' : 'Ya, Tolak',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -147,8 +154,8 @@ class _StatusHubScreenState extends State<StatusHubScreen>
                     _buildSegmentButton(
                       index: 1,
                       icon: Icons.send_rounded,
-                      label: 'Lamaran Saya',
-                      badgeCount: _viewModel.pendingApplicationsCount,
+                      label: 'Undangan Terkirim',
+                      badgeCount: _viewModel.pendingSentInvitationsCount,
                     ),
                   ],
                 ),
@@ -160,10 +167,7 @@ class _StatusHubScreenState extends State<StatusHubScreen>
             Expanded(
               child: TabBarView(
                 controller: _subTabCtrl,
-                children: [
-                  _buildInvitationsTab(),
-                  _buildApplicationsTab(),
-                ],
+                children: [_buildInvitationsTab(), _buildSentInvitationsTab()],
               ),
             ),
           ],
@@ -214,8 +218,12 @@ class _StatusHubScreenState extends State<StatusHubScreen>
                   child: Text(
                     label,
                     style: AppTextStyles.labelMd.copyWith(
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                      color: isSelected ? AppColors.primary : AppColors.textMuted,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                      color: isSelected
+                          ? AppColors.primary
+                          : AppColors.textMuted,
                       fontSize: 12,
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -224,9 +232,14 @@ class _StatusHubScreenState extends State<StatusHubScreen>
                 if (badgeCount > 0) ...[
                   const SizedBox(width: 5),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 1.5,
+                    ),
                     decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primary : AppColors.textMuted.withValues(alpha: 0.5),
+                      color: isSelected
+                          ? AppColors.primary
+                          : AppColors.textMuted.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(99),
                     ),
                     child: Text(
@@ -264,19 +277,27 @@ class _StatusHubScreenState extends State<StatusHubScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline_rounded,
-                  color: AppColors.statusDangerText, size: 48),
+              const Icon(
+                Icons.error_outline_rounded,
+                color: AppColors.statusDangerText,
+                size: 48,
+              ),
               const SizedBox(height: 12),
               Text('Gagal memuat undangan', style: AppTextStyles.titleMd),
               const SizedBox(height: 6),
-              Text(_viewModel.errorInvitations!,
-                  style: AppTextStyles.bodySm, textAlign: TextAlign.center),
+              Text(
+                _viewModel.errorInvitations!,
+                style: AppTextStyles.bodySm,
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: _viewModel.loadInvitations,
                 icon: const Icon(Icons.refresh_rounded, size: 18),
                 label: const Text('Coba Lagi'),
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                ),
               ),
             ],
           ),
@@ -308,12 +329,16 @@ class _StatusHubScreenState extends State<StatusHubScreen>
               const SizedBox(height: 16),
               Text(
                 'Belum Ada Undangan Masuk',
-                style: AppTextStyles.titleMd.copyWith(fontWeight: FontWeight.w700),
+                style: AppTextStyles.titleMd.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 6),
               Text(
                 'Saat ketua tim mengundang Anda untuk bergabung ke tim mereka (Alur D), undangannya akan tampil di sini.',
-                style: AppTextStyles.bodySm.copyWith(color: AppColors.textMuted),
+                style: AppTextStyles.bodySm.copyWith(
+                  color: AppColors.textMuted,
+                ),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -368,8 +393,11 @@ class _StatusHubScreenState extends State<StatusHubScreen>
                           color: AppColors.primarySoft,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(Icons.groups_rounded,
-                            color: AppColors.primary, size: 22),
+                        child: const Icon(
+                          Icons.groups_rounded,
+                          color: AppColors.primary,
+                          size: 22,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -405,7 +433,10 @@ class _StatusHubScreenState extends State<StatusHubScreen>
 
                   // Detail Posisi & Pengundang
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.background,
                       borderRadius: BorderRadius.circular(10),
@@ -434,7 +465,11 @@ class _StatusHubScreenState extends State<StatusHubScreen>
                             ],
                           ),
                         ),
-                        Container(width: 1, height: 26, color: AppColors.border),
+                        Container(
+                          width: 1,
+                          height: 26,
+                          color: AppColors.border,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -493,7 +528,9 @@ class _StatusHubScreenState extends State<StatusHubScreen>
                         child: Padding(
                           padding: EdgeInsets.symmetric(vertical: 8),
                           child: CircularProgressIndicator(
-                              color: AppColors.primary, strokeWidth: 2),
+                            color: AppColors.primary,
+                            strokeWidth: 2,
+                          ),
                         ),
                       )
                     else
@@ -503,12 +540,17 @@ class _StatusHubScreenState extends State<StatusHubScreen>
                             child: OutlinedButton(
                               style: OutlinedButton.styleFrom(
                                 side: const BorderSide(
-                                    color: AppColors.statusDangerText),
+                                  color: AppColors.statusDangerText,
+                                ),
                                 shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10)),
-                                padding: const EdgeInsets.symmetric(vertical: 11),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 11,
+                                ),
                               ),
-                              onPressed: () => _handleRespondInvitation(item, 'ditolak'),
+                              onPressed: () =>
+                                  _handleRespondInvitation(item, 'ditolak'),
                               child: const Text(
                                 'Tolak',
                                 style: TextStyle(
@@ -525,10 +567,14 @@ class _StatusHubScreenState extends State<StatusHubScreen>
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primary,
                                 shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10)),
-                                padding: const EdgeInsets.symmetric(vertical: 11),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 11,
+                                ),
                               ),
-                              onPressed: () => _handleRespondInvitation(item, 'diterima'),
+                              onPressed: () =>
+                                  _handleRespondInvitation(item, 'diterima'),
                               child: const Text(
                                 'Terima',
                                 style: TextStyle(
@@ -552,35 +598,46 @@ class _StatusHubScreenState extends State<StatusHubScreen>
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // SUB-TAB 2: LAMARAN SAYA (ALUR A - RAFA: FR-19 & FR-20)
+  // SUB-TAB 2: UNDANGAN TERKIRIM OLEH PEMILIK TIM (FR-25)
   // ═══════════════════════════════════════════════════════════════════════════
-  Widget _buildApplicationsTab() {
-    if (_viewModel.isLoadingApplications) {
+  Widget _buildSentInvitationsTab() {
+    if (_viewModel.isLoadingSentInvitations) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
 
-    if (_viewModel.errorApplications != null) {
+    if (_viewModel.errorSentInvitations != null) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline_rounded,
-                  color: AppColors.statusDangerText, size: 48),
+              const Icon(
+                Icons.error_outline_rounded,
+                color: AppColors.statusDangerText,
+                size: 48,
+              ),
               const SizedBox(height: 12),
-              Text('Gagal memuat status pengajuan', style: AppTextStyles.titleMd),
+              Text(
+                'Gagal memuat undangan terkirim',
+                style: AppTextStyles.titleMd,
+              ),
               const SizedBox(height: 6),
-              Text(_viewModel.errorApplications!,
-                  style: AppTextStyles.bodySm, textAlign: TextAlign.center),
+              Text(
+                _viewModel.errorSentInvitations!,
+                style: AppTextStyles.bodySm,
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 16),
               ElevatedButton.icon(
-                onPressed: _viewModel.loadApplications,
+                onPressed: _viewModel.loadSentInvitations,
                 icon: const Icon(Icons.refresh_rounded, size: 18),
                 label: const Text('Coba Lagi'),
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                ),
               ),
             ],
           ),
@@ -588,57 +645,77 @@ class _StatusHubScreenState extends State<StatusHubScreen>
       );
     }
 
-    final filtered = _viewModel.filteredApplications;
-    final total = _viewModel.applications.length;
-    final pending = _viewModel.pendingApplicationsCount;
-    final accepted = _viewModel.acceptedApplicationsCount;
-    final rejected = _viewModel.rejectedApplicationsCount;
+    final filtered = _viewModel.filteredSentInvitations;
+    final total = _viewModel.sentInvitations.length;
+    final pending = _viewModel.pendingSentInvitationsCount;
+    final accepted = _viewModel.acceptedSentInvitationsCount;
+    final rejected = _viewModel.rejectedSentInvitationsCount;
 
     return RefreshIndicator(
-      onRefresh: _viewModel.loadApplications,
+      onRefresh: _viewModel.loadSentInvitations,
       color: AppColors.primary,
       child: Column(
         children: [
-          // Ringkasan Metrik / Statistik
           Container(
             color: Colors.white,
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
             child: Row(
               children: [
-                _buildStatPill('Total', '$total', AppColors.surfaceContainer,
-                    AppColors.text),
+                _buildStatPill(
+                  'Total',
+                  '$total',
+                  AppColors.surfaceContainer,
+                  AppColors.text,
+                ),
                 const SizedBox(width: 8),
-                _buildStatPill('Menunggu', '$pending', AppColors.statusPendingBg,
-                    AppColors.statusPendingText),
+                _buildStatPill(
+                  'Menunggu',
+                  '$pending',
+                  AppColors.statusPendingBg,
+                  AppColors.statusPendingText,
+                ),
                 const SizedBox(width: 8),
-                _buildStatPill('Diterima', '$accepted', AppColors.statusSuccessBg,
-                    AppColors.statusSuccessText),
+                _buildStatPill(
+                  'Diterima',
+                  '$accepted',
+                  AppColors.statusSuccessBg,
+                  AppColors.statusSuccessText,
+                ),
                 const SizedBox(width: 8),
-                _buildStatPill('Ditolak', '$rejected', AppColors.statusDangerBg,
-                    AppColors.statusDangerText),
+                _buildStatPill(
+                  'Ditolak',
+                  '$rejected',
+                  AppColors.statusDangerBg,
+                  AppColors.statusDangerText,
+                ),
               ],
             ),
           ),
           const Divider(height: 1, color: AppColors.border),
-
-          // Filter Chips
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Row(
               children: [
-                _buildFilterChip('semua', 'Semua ($total)'),
+                _buildSentInvitationFilterChip('semua', 'Semua ($total)'),
                 const SizedBox(width: 8),
-                _buildFilterChip('menunggu', 'Menunggu ($pending)'),
+                _buildSentInvitationFilterChip(
+                  'menunggu',
+                  'Menunggu ($pending)',
+                ),
                 const SizedBox(width: 8),
-                _buildFilterChip('diterima', 'Diterima ($accepted)'),
+                _buildSentInvitationFilterChip(
+                  'diterima',
+                  'Diterima ($accepted)',
+                ),
                 const SizedBox(width: 8),
-                _buildFilterChip('ditolak', 'Ditolak ($rejected)'),
+                _buildSentInvitationFilterChip(
+                  'ditolak',
+                  'Ditolak ($rejected)',
+                ),
               ],
             ),
           ),
-
-          // List Lamaran
           Expanded(
             child: filtered.isEmpty
                 ? Center(
@@ -662,15 +739,17 @@ class _StatusHubScreenState extends State<StatusHubScreen>
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'Belum Ada Pengajuan Terkirim',
-                            style: AppTextStyles.titleMd
-                                .copyWith(fontWeight: FontWeight.w700),
+                            'Belum Ada Undangan Terkirim',
+                            style: AppTextStyles.titleMd.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Lamaran yang Anda kirimkan ke tim-tim di Beranda (Alur A) akan terpantau statusnya di sini.',
-                            style: AppTextStyles.bodySm
-                                .copyWith(color: AppColors.textMuted),
+                            'Undangan yang Anda kirim sebagai pemilik tim akan muncul dan dapat dipantau statusnya di sini.',
+                            style: AppTextStyles.bodySm.copyWith(
+                              color: AppColors.textMuted,
+                            ),
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -683,123 +762,111 @@ class _StatusHubScreenState extends State<StatusHubScreen>
                     separatorBuilder: (context, index) =>
                         const SizedBox(height: 12),
                     itemBuilder: (context, index) {
-                      final app = filtered[index];
-                      return InkWell(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ApplicationDetailScreen(
-                                  idPengajuan: app.idPengajuanBergabungTim),
-                            ),
-                          );
-                        },
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppColors.border),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.02),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          app.namaTim,
-                                          style: AppTextStyles.titleMd.copyWith(
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          app.namaKegiatan,
-                                          style: AppTextStyles.bodySm.copyWith(
-                                            color: AppColors.textMuted,
-                                            fontSize: 11.5,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  _buildStatusBadge(app.statusPengajuan),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primarySoft,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  'Posisi Dilamar: ${app.posisi}',
-                                  style: AppTextStyles.labelMd.copyWith(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 11.5,
-                                  ),
-                                ),
-                              ),
-                              if (app.pesanPengajuan.isNotEmpty) ...[
-                                const SizedBox(height: 8),
-                                Text(
-                                  '"${app.pesanPengajuan}"',
-                                  style: AppTextStyles.bodySm.copyWith(
-                                    fontStyle: FontStyle.italic,
-                                    color: AppColors.textMuted,
-                                    fontSize: 11.5,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                              const SizedBox(height: 8),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    app.formattedDate,
-                                    style: AppTextStyles.labelSm.copyWith(
-                                      color: AppColors.textMuted,
-                                      fontSize: 10.5,
-                                    ),
-                                  ),
-                                  Row(
+                      final invitation = filtered[index];
+                      final status =
+                          invitation['status_pengajuan']?.toString() ??
+                          'menunggu';
+                      final candidate =
+                          invitation['nama_calon']?.toString() ??
+                          'Calon anggota';
+                      final team = invitation['nama_tim']?.toString() ?? 'Tim';
+                      final event =
+                          invitation['nama_kegiatan']?.toString() ?? '';
+                      final position = invitation['posisi']?.toString() ?? '';
+                      final sentAt = _formatSentInvitationDate(
+                        invitation['waktu_pengajuan'],
+                      );
+
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'Lihat Detail',
-                                        style: AppTextStyles.labelMd.copyWith(
-                                          color: AppColors.primary,
+                                        candidate,
+                                        style: AppTextStyles.titleMd.copyWith(
                                           fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Undangan dari tim $team',
+                                        style: AppTextStyles.bodySm.copyWith(
+                                          color: AppColors.textMuted,
                                           fontSize: 11.5,
                                         ),
                                       ),
-                                      const Icon(Icons.chevron_right_rounded,
-                                          size: 16, color: AppColors.primary),
                                     ],
                                   ),
-                                ],
+                                ),
+                                _buildStatusBadge(status),
+                              ],
+                            ),
+                            if (event.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                event,
+                                style: AppTextStyles.bodySm.copyWith(
+                                  color: AppColors.textMuted,
+                                ),
                               ),
                             ],
-                          ),
+                            const SizedBox(height: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.primarySoft,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                'Posisi ditawarkan: $position',
+                                style: AppTextStyles.labelMd.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 11.5,
+                                ),
+                              ),
+                            ),
+                            if ((invitation['pesan_pengajuan']?.toString() ??
+                                    '')
+                                .isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                '"${invitation['pesan_pengajuan']}"',
+                                style: AppTextStyles.bodySm.copyWith(
+                                  fontStyle: FontStyle.italic,
+                                  color: AppColors.textMuted,
+                                  fontSize: 11.5,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                            const SizedBox(height: 8),
+                            Text(
+                              sentAt,
+                              style: AppTextStyles.labelSm.copyWith(
+                                color: AppColors.textMuted,
+                                fontSize: 10.5,
+                              ),
+                            ),
+                          ],
                         ),
                       );
                     },
@@ -808,6 +875,21 @@ class _StatusHubScreenState extends State<StatusHubScreen>
         ],
       ),
     );
+  }
+
+  String _formatSentInvitationDate(dynamic value) {
+    final raw = value?.toString() ?? '';
+    if (raw.isEmpty) return '-';
+    try {
+      final date = DateTime.parse(raw).toLocal();
+      final day = date.day.toString().padLeft(2, '0');
+      final month = date.month.toString().padLeft(2, '0');
+      final hour = date.hour.toString().padLeft(2, '0');
+      final minute = date.minute.toString().padLeft(2, '0');
+      return '$day/$month/${date.year}, $hour:$minute';
+    } catch (_) {
+      return raw;
+    }
   }
 
   Widget _buildStatPill(String title, String count, Color bg, Color text) {
@@ -830,10 +912,7 @@ class _StatusHubScreenState extends State<StatusHubScreen>
             ),
             Text(
               title,
-              style: AppTextStyles.labelSm.copyWith(
-                color: text,
-                fontSize: 10,
-              ),
+              style: AppTextStyles.labelSm.copyWith(color: text, fontSize: 10),
             ),
           ],
         ),
@@ -841,10 +920,10 @@ class _StatusHubScreenState extends State<StatusHubScreen>
     );
   }
 
-  Widget _buildFilterChip(String key, String label) {
-    final isSelected = _viewModel.activeAppFilter == key;
+  Widget _buildSentInvitationFilterChip(String key, String label) {
+    final isSelected = _viewModel.activeSentInvitationFilter == key;
     return GestureDetector(
-      onTap: () => _viewModel.setAppFilter(key),
+      onTap: () => _viewModel.setSentInvitationFilter(key),
       child: Container(
         height: 34,
         padding: const EdgeInsets.symmetric(horizontal: 14),

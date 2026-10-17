@@ -10,13 +10,11 @@ import '../../services/talent_search_service.dart';
 class InviteMemberBottomSheet extends StatefulWidget {
   final TalentMemberModel member;
 
-  const InviteMemberBottomSheet({
-    super.key,
-    required this.member,
-  });
+  const InviteMemberBottomSheet({super.key, required this.member});
 
   @override
-  State<InviteMemberBottomSheet> createState() => _InviteMemberBottomSheetState();
+  State<InviteMemberBottomSheet> createState() =>
+      _InviteMemberBottomSheetState();
 }
 
 class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
@@ -56,8 +54,9 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
       final teams = await TeamManagementService.getMyTeams();
       if (!mounted) return;
 
-      final eligible =
-          teams.where((t) => t.statusTim.toLowerCase() != 'selesai').toList();
+      final eligible = teams
+          .where((t) => t.isOwner && t.statusTim.toLowerCase() != 'selesai')
+          .toList();
 
       setState(() {
         _myTeams = eligible.map((t) {
@@ -72,9 +71,11 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
             'is_already_member': isAlreadyMember,
             'kebutuhan_tim': t.kebutuhanTim.map((k) {
               final terisiCount = t.anggotaTim
-                  .where((a) =>
-                      a.posisi.trim().toLowerCase() ==
-                      k.posisiDibutuhkan.trim().toLowerCase())
+                  .where(
+                    (a) =>
+                        a.posisi.trim().toLowerCase() ==
+                        k.posisiDibutuhkan.trim().toLowerCase(),
+                  )
                   .length;
               return {
                 'posisi_dibutuhkan': k.posisiDibutuhkan,
@@ -86,12 +87,14 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
         }).toList();
 
         if (_myTeams.isNotEmpty) {
-          // Cari tim pertama yang calon anggota belum bergabung di dalamnya
-          final availableTeam = _myTeams.firstWhere(
-            (t) => t['is_already_member'] != true,
-            orElse: () => _myTeams.first,
-          );
-          _selectedTeamId = availableTeam['id_tim'];
+          final availableTeam = _myTeams.first;
+          for (final team in _myTeams) {
+            if (team['is_already_member'] != true) {
+              _selectedTeamId = team['id_tim']?.toString();
+              break;
+            }
+          }
+          _selectedTeamId ??= availableTeam['id_tim']?.toString();
 
           final pos = _availablePositions;
           if (pos.isNotEmpty) {
@@ -227,8 +230,11 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
                       color: AppColors.primarySoft,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.send_rounded,
-                        color: AppColors.primary, size: 22),
+                    child: const Icon(
+                      Icons.send_rounded,
+                      color: AppColors.primary,
+                      size: 22,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -244,8 +250,9 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
                         ),
                         Text(
                           'Kirim undangan kepada ${widget.member.namaPengguna}',
-                          style: AppTextStyles.labelSm
-                              .copyWith(color: AppColors.textMuted),
+                          style: AppTextStyles.labelSm.copyWith(
+                            color: AppColors.textMuted,
+                          ),
                         ),
                       ],
                     ),
@@ -264,9 +271,10 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
                   ),
                 )
               else if (_teamsErrorMsg != null)
-                Text(_teamsErrorMsg!,
-                    style:
-                        const TextStyle(color: AppColors.statusDangerText))
+                Text(
+                  _teamsErrorMsg!,
+                  style: const TextStyle(color: AppColors.statusDangerText),
+                )
               else if (_myTeams.isEmpty)
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -276,19 +284,24 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
                   ),
                   child: Column(
                     children: [
-                      const Icon(Icons.info_outline_rounded,
-                          color: AppColors.textMuted, size: 32),
+                      const Icon(
+                        Icons.info_outline_rounded,
+                        color: AppColors.textMuted,
+                        size: 32,
+                      ),
                       const SizedBox(height: 8),
                       Text(
                         'Anda belum memiliki tim yang aktif.',
-                        style: AppTextStyles.bodySm
-                            .copyWith(color: AppColors.textMuted),
+                        style: AppTextStyles.bodySm.copyWith(
+                          color: AppColors.textMuted,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Buat tim terlebih dahulu di tab MyTeam untuk dapat mengundang anggota.',
-                        style: AppTextStyles.labelSm
-                            .copyWith(color: AppColors.textMuted),
+                        style: AppTextStyles.labelSm.copyWith(
+                          color: AppColors.textMuted,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -296,16 +309,21 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
                 )
               else ...[
                 // Pilih Tim
-                Text('Pilih Tim Anda',
-                    style: AppTextStyles.labelMd
-                        .copyWith(fontWeight: FontWeight.bold)),
+                Text(
+                  'Pilih Tim Anda',
+                  style: AppTextStyles.labelMd.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 6),
                 DropdownButtonFormField<String>(
                   initialValue: _selectedTeamId,
                   isExpanded: true,
                   decoration: InputDecoration(
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 12),
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: const BorderSide(color: AppColors.border),
@@ -333,8 +351,9 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
                       _selectedTeamId = val;
                       _inlineError = null;
                       final pos = _availablePositions;
-                      _selectedPosition =
-                          pos.isNotEmpty ? pos.keys.first : null;
+                      _selectedPosition = pos.isNotEmpty
+                          ? pos.keys.first
+                          : null;
                     });
                   },
                 ),
@@ -349,14 +368,19 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
                       color: AppColors.statusPendingBg,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                          color: AppColors.statusPendingText
-                              .withValues(alpha: 0.3)),
+                        color: AppColors.statusPendingText.withValues(
+                          alpha: 0.3,
+                        ),
+                      ),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.info_outline_rounded,
-                            color: AppColors.statusPendingText, size: 20),
+                        const Icon(
+                          Icons.info_outline_rounded,
+                          color: AppColors.statusPendingText,
+                          size: 20,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -375,9 +399,12 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
                 ],
 
                 // Pilih Posisi
-                Text('Pilih Posisi Ditawarkan',
-                    style: AppTextStyles.labelMd
-                        .copyWith(fontWeight: FontWeight.bold)),
+                Text(
+                  'Pilih Posisi Ditawarkan',
+                  style: AppTextStyles.labelMd.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 6),
                 if (_availablePositions.isEmpty)
                   Container(
@@ -388,8 +415,9 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
                     ),
                     child: Text(
                       'Semua kuota posisi pada tim ini telah penuh.',
-                      style: AppTextStyles.bodySm
-                          .copyWith(color: AppColors.statusDangerText),
+                      style: AppTextStyles.bodySm.copyWith(
+                        color: AppColors.statusDangerText,
+                      ),
                     ),
                   )
                 else
@@ -398,7 +426,9 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
                     isExpanded: true,
                     decoration: InputDecoration(
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 12),
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: const BorderSide(color: AppColors.border),
@@ -407,8 +437,10 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
                     items: _availablePositions.entries.map((e) {
                       return DropdownMenuItem<String>(
                         value: e.key,
-                        child: Text('${e.key} (Sisa ${e.value} kuota)',
-                            style: AppTextStyles.bodySm),
+                        child: Text(
+                          '${e.key} (Sisa ${e.value} kuota)',
+                          style: AppTextStyles.bodySm,
+                        ),
                       );
                     }).toList(),
                     onChanged: (val) {
@@ -421,9 +453,12 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
                 const SizedBox(height: 14),
 
                 // Pesan Ajakan
-                Text('Pesan Ajakan (Opsional)',
-                    style: AppTextStyles.labelMd
-                        .copyWith(fontWeight: FontWeight.bold)),
+                Text(
+                  'Pesan Ajakan (Opsional)',
+                  style: AppTextStyles.labelMd.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 6),
                 TextField(
                   controller: _msgCtrl,
@@ -431,8 +466,9 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
                   decoration: InputDecoration(
                     hintText:
                         'Tuliskan alasan mengapa Anda mengajak mahasiswa ini bergabung...',
-                    hintStyle: AppTextStyles.bodySm
-                        .copyWith(color: AppColors.textMuted),
+                    hintStyle: AppTextStyles.bodySm.copyWith(
+                      color: AppColors.textMuted,
+                    ),
                     contentPadding: const EdgeInsets.all(12),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -451,15 +487,19 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
                       color: AppColors.statusDangerBg,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: AppColors.statusDangerText
-                            .withValues(alpha: 0.3),
+                        color: AppColors.statusDangerText.withValues(
+                          alpha: 0.3,
+                        ),
                       ),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.error_outline_rounded,
-                            color: AppColors.statusDangerText, size: 20),
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          color: AppColors.statusDangerText,
+                          size: 20,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(

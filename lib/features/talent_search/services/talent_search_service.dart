@@ -64,13 +64,8 @@ class TalentSearchService {
   }
 
   // FR-24: GET /api/v1/applications/received-invitations
-  static Future<List<Map<String, dynamic>>> getReceivedInvitations(
-    String idPengguna,
-  ) async {
-    final resp = await ApiClient.get(
-      '/applications/received-invitations',
-      queryParams: {'id_pengguna': idPengguna},
-    );
+  static Future<List<Map<String, dynamic>>> getReceivedInvitations() async {
+    final resp = await ApiClient.get('/applications/received-invitations');
     final json = jsonDecode(resp.body) as Map<String, dynamic>;
     if (resp.statusCode == 200 && json['success'] == true) {
       return (json['data'] as List<dynamic>)
@@ -109,13 +104,8 @@ class TalentSearchService {
 
   // FR-25: GET /api/v1/applications/sent-invitations
   // Undangan yang sudah dikirim oleh user (sebagai ketua tim) + statusnya
-  static Future<List<Map<String, dynamic>>> getSentInvitations(
-    String idPengguna,
-  ) async {
-    final resp = await ApiClient.get(
-      '/applications/sent-invitations',
-      queryParams: {'id_pengguna': idPengguna},
-    );
+  static Future<List<Map<String, dynamic>>> getSentInvitations() async {
+    final resp = await ApiClient.get('/applications/sent-invitations');
     final json = jsonDecode(resp.body) as Map<String, dynamic>;
     if (resp.statusCode == 200 && json['success'] == true) {
       return (json['data'] as List<dynamic>)

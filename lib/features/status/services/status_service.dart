@@ -1,19 +1,12 @@
 import 'dart:convert';
 import '../../../core/network/api_client.dart';
-import '../../team_feed/models/my_application_model.dart';
-import '../../team_feed/services/team_feed_service.dart';
 import '../models/invitation_model.dart';
 
-/// Service untuk Modul Status (Alur D: Undangan Masuk & Alur A: Lamaran Saya)
+/// Service untuk undangan masuk, undangan terkirim, dan lamaran tim.
 class StatusService {
   // FR-24: Undangan masuk untuk pengguna saat ini (Alur D — Fuadi)
-  static Future<List<InvitationModel>> getReceivedInvitations(
-    String idPengguna,
-  ) async {
-    final resp = await ApiClient.get(
-      '/applications/received-invitations',
-      queryParams: {'id_pengguna': idPengguna},
-    );
+  static Future<List<InvitationModel>> getReceivedInvitations() async {
+    final resp = await ApiClient.get('/applications/received-invitations');
     final json = jsonDecode(resp.body) as Map<String, dynamic>;
     if (resp.statusCode == 200 && json['success'] == true) {
       final list = json['data'] as List<dynamic>? ?? [];
@@ -43,8 +36,15 @@ class StatusService {
     };
   }
 
-  // FR-19 & FR-20: Status Lamaran Saya (Alur A — Rafa)
-  static Future<MyApplicationsResult> getMyApplications() async {
-    return await TeamFeedService.getMyApplications();
+  // FR-25: Undangan yang dikirim oleh pemilik tim saat ini.
+  static Future<List<Map<String, dynamic>>> getSentInvitations() async {
+    final resp = await ApiClient.get('/applications/sent-invitations');
+    final json = jsonDecode(resp.body) as Map<String, dynamic>;
+    if (resp.statusCode == 200 && json['success'] == true) {
+      return (json['data'] as List<dynamic>? ?? [])
+          .map((item) => item as Map<String, dynamic>)
+          .toList();
+    }
+    throw Exception(json['message'] ?? 'Gagal memuat undangan terkirim.');
   }
 }

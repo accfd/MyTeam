@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import '../../features/team_feed/services/team_feed_service.dart';
 import 'notifications_modal.dart';
 
 /// AppBar Resmi dan Seragam untuk 5 Layar Utama MyTeam
 /// - Kiri: Logo resmi MyTeam + Nama Aplikasi 'MyTeam' + Subjudul 2-3 kata
 /// - Kanan: Ikon Notifikasi universal dengan indikator notifikasi
-class MainHeaderAppBar extends StatelessWidget implements PreferredSizeWidget {
+class MainHeaderAppBar extends StatefulWidget implements PreferredSizeWidget {
   final String subtitle;
   final VoidCallback? onRefresh;
   final List<Widget>? extraActions;
@@ -20,6 +21,33 @@ class MainHeaderAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize => const Size.fromHeight(60);
+
+  @override
+  State<MainHeaderAppBar> createState() => _MainHeaderAppBarState();
+}
+
+class _MainHeaderAppBarState extends State<MainHeaderAppBar> {
+  int _unreadCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUnreadCount();
+  }
+
+  Future<void> _loadUnreadCount() async {
+    try {
+      final count = await TeamFeedService.fetchUnreadNotificationCount();
+      if (mounted) setState(() => _unreadCount = count);
+    } catch (error) {
+      debugPrint('Gagal memuat jumlah notifikasi belum dibaca: $error');
+    }
+  }
+
+  Future<void> _showNotifications() async {
+    await NotificationsModal.show(context);
+    await _loadUnreadCount();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +108,7 @@ class MainHeaderAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
                 const SizedBox(height: 1),
                 Text(
-                  subtitle,
+                  widget.subtitle,
                   style: AppTextStyles.labelSm.copyWith(
                     color: AppColors.textMuted,
                     fontSize: 10.5,
@@ -95,10 +123,10 @@ class MainHeaderAppBar extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
-        if (extraActions != null) ...extraActions!,
+        if (widget.extraActions != null) ...widget.extraActions!,
 
         // Tombol Segarkan (opsional)
-        if (onRefresh != null)
+        if (widget.onRefresh != null)
           Container(
             margin: const EdgeInsets.only(right: 8),
             width: 38,
@@ -110,8 +138,12 @@ class MainHeaderAppBar extends StatelessWidget implements PreferredSizeWidget {
             ),
             child: IconButton(
               padding: EdgeInsets.zero,
-              icon: const Icon(Icons.refresh_rounded, color: AppColors.primary, size: 20),
-              onPressed: onRefresh,
+              icon: const Icon(
+                Icons.refresh_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
+              onPressed: widget.onRefresh,
               tooltip: 'Segarkan Halaman',
             ),
           ),
@@ -136,22 +168,33 @@ class MainHeaderAppBar extends StatelessWidget implements PreferredSizeWidget {
                   color: AppColors.primary,
                   size: 21,
                 ),
-                onPressed: () => NotificationsModal.show(context),
+                onPressed: _showNotifications,
                 tooltip: 'Pusat Notifikasi',
               ),
-              // Titik Indikator Notifikasi
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Container(
-                  width: 7,
-                  height: 7,
-                  decoration: const BoxDecoration(
-                    color: AppColors.statusDangerText,
-                    shape: BoxShape.circle,
+              if (_unreadCount > 0)
+                Positioned(
+                  top: 3,
+                  right: 2,
+                  child: Container(
+                    constraints: const BoxConstraints(minWidth: 16),
+                    height: 16,
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AppColors.statusDangerText,
+                      borderRadius: BorderRadius.circular(99),
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    child: Text(
+                      _unreadCount > 99 ? '99+' : '$_unreadCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 8,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         ),

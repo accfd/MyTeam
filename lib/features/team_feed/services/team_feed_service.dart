@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../core/config/app_config.dart';
+import '../../../core/constants/api_endpoints.dart';
 import '../../../core/storage/storage_service.dart';
 import '../../../core/network/api_client.dart';
 import '../models/feed_team_model.dart';
@@ -11,10 +12,10 @@ import '../../talent_search/models/talent_member_model.dart';
 /// Service untuk endpoint Tim dan Talenta Anggota MyTeam
 class TeamFeedService {
   static Map<String, String> _authHeader(String token) => {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        if (token.isNotEmpty) 'Authorization': 'Bearer $token',
-      };
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    if (token.isNotEmpty) 'Authorization': 'Bearer $token',
+  };
 
   /// GET /api/v1/teams/:id_tim/applications (FR-17: Pembuat Tim Melihat Daftar Pengajuan Masuk)
   static Future<TeamApplicationsResult> fetchTeamApplications(
@@ -96,7 +97,10 @@ class TeamFeedService {
       if (userId != null && userId.isNotEmpty) 'id_pengguna': userId,
     };
 
-    final response = await ApiClient.post('/applications/join-team', body: body);
+    final response = await ApiClient.post(
+      '/applications/join-team',
+      body: body,
+    );
     final json = jsonDecode(response.body) as Map<String, dynamic>;
 
     if (response.statusCode == 201 && json['success'] == true) {
@@ -129,8 +133,9 @@ class TeamFeedService {
       params['keahlian'] = keahlian.trim();
     }
 
-    final uri = Uri.parse('${AppConfig.baseUrl}/teams/feed')
-        .replace(queryParameters: params.isEmpty ? null : params);
+    final uri = Uri.parse(
+      '${AppConfig.baseUrl}/teams/feed',
+    ).replace(queryParameters: params.isEmpty ? null : params);
 
     late final http.Response resp;
     try {
@@ -161,8 +166,9 @@ class TeamFeedService {
     if (q != null && q.isNotEmpty) params['q'] = q;
     if (keahlian != null && keahlian.isNotEmpty) params['keahlian'] = keahlian;
 
-    final uri = Uri.parse('${AppConfig.baseUrl}/members/search')
-        .replace(queryParameters: params.isEmpty ? null : params);
+    final uri = Uri.parse(
+      '${AppConfig.baseUrl}/members/search',
+    ).replace(queryParameters: params.isEmpty ? null : params);
 
     late final http.Response resp;
     try {
@@ -191,12 +197,15 @@ class TeamFeedService {
     final userId = await StorageService.getUserId() ?? '';
 
     final queryParams = <String, String>{};
-    if (status != null && status.isNotEmpty && status.toLowerCase() != 'semua') {
+    if (status != null &&
+        status.isNotEmpty &&
+        status.toLowerCase() != 'semua') {
       queryParams['status'] = status.toLowerCase();
     }
 
-    final uri = Uri.parse('${AppConfig.baseUrl}/applications/my-applications')
-        .replace(queryParameters: queryParams.isEmpty ? null : queryParams);
+    final uri = Uri.parse(
+      '${AppConfig.baseUrl}/applications/my-applications',
+    ).replace(queryParameters: queryParams.isEmpty ? null : queryParams);
 
     final headers = <String, String>{
       'Content-Type': 'application/json',
@@ -234,16 +243,35 @@ class TeamFeedService {
       if (userId.isNotEmpty) 'x-user-id': userId,
     };
 
-    try {
-      final resp = await http
-          .get(uri, headers: headers)
-          .timeout(const Duration(seconds: 15));
-      final json = jsonDecode(resp.body) as Map<String, dynamic>;
-      if (resp.statusCode == 200 && json['success'] == true) {
-        return List<Map<String, dynamic>>.from(json['data'] ?? []);
-      }
-    } catch (_) {}
-    return [];
+    final resp = await http
+        .get(uri, headers: headers)
+        .timeout(const Duration(seconds: 15));
+    final json = jsonDecode(resp.body) as Map<String, dynamic>;
+    if (resp.statusCode == 200 && json['success'] == true) {
+      return List<Map<String, dynamic>>.from(json['data'] ?? []);
+    }
+    throw Exception(json['message'] ?? 'Gagal memuat notifikasi.');
+  }
+
+  static Future<int> fetchUnreadNotificationCount() async {
+    final response = await ApiClient.get(ApiEndpoints.unreadCount);
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode == 200 && json['success'] == true) {
+      final count = json['data']?['unread_count'];
+      if (count is num) return count.toInt();
+      throw Exception(
+        'Jumlah notifikasi belum dibaca dari server tidak valid.',
+      );
+    }
+    throw Exception(json['message'] ?? 'Gagal menghitung notifikasi baru.');
+  }
+
+  static Future<void> markAllNotificationsRead() async {
+    final response = await ApiClient.patch(ApiEndpoints.readAllNotifications);
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode != 200 || json['success'] != true) {
+      throw Exception(json['message'] ?? 'Gagal menandai notifikasi dibaca.');
+    }
   }
 }
 

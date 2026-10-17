@@ -58,27 +58,43 @@ class _NotificationsModalState extends State<NotificationsModal> {
 
   IconData _iconForType(String? type) {
     return switch (type) {
-      'undangan_tim' => Icons.mail_outline_rounded,
-      'lamaran_diterima' => Icons.check_circle_outline_rounded,
-      'lamaran_ditolak' => Icons.highlight_off_rounded,
-      'anggota_baru' => Icons.group_add_outlined,
+      'undangan_tim' || 'undangan_masuk' => Icons.mail_outline_rounded,
+      'lamaran_diterima' ||
+      'pengajuan_diterima' => Icons.check_circle_outline_rounded,
+      'lamaran_ditolak' || 'pengajuan_ditolak' => Icons.highlight_off_rounded,
+      'anggota_baru' || 'respon_undangan' => Icons.group_add_outlined,
       _ => Icons.notifications_none_rounded,
     };
   }
 
   Color _colorForType(String? type) {
     return switch (type) {
-      'undangan_tim' => AppColors.primary,
-      'lamaran_diterima' => AppColors.statusSuccessText,
-      'lamaran_ditolak' => AppColors.statusDangerText,
-      'anggota_baru' => AppColors.primaryContainer,
+      'undangan_tim' || 'undangan_masuk' => AppColors.primary,
+      'lamaran_diterima' || 'pengajuan_diterima' => AppColors.statusSuccessText,
+      'lamaran_ditolak' || 'pengajuan_ditolak' => AppColors.statusDangerText,
+      'anggota_baru' || 'respon_undangan' => AppColors.primaryContainer,
       _ => AppColors.textMuted,
     };
   }
 
+  Future<void> _markAllAsRead() async {
+    try {
+      await TeamFeedService.markAllNotificationsRead();
+      await _loadNotifications();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menandai notifikasi dibaca: $error')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final unreadCount = _notifications.where((n) => n['dibaca'] == false || n['dibaca'] == 0).length;
+    final unreadCount = _notifications.where((n) {
+      final isRead = n['status_dibaca'] ?? n['dibaca'];
+      return isRead == false || isRead == 0;
+    }).length;
 
     return Container(
       constraints: BoxConstraints(
@@ -139,7 +155,10 @@ class _NotificationsModalState extends State<NotificationsModal> {
                           if (unreadCount > 0) ...[
                             const SizedBox(width: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppColors.statusDangerText,
                                 borderRadius: BorderRadius.circular(99),
@@ -166,8 +185,20 @@ class _NotificationsModalState extends State<NotificationsModal> {
                     ],
                   ),
                 ),
+                if (unreadCount > 0)
+                  IconButton(
+                    icon: const Icon(
+                      Icons.mark_email_read_outlined,
+                      color: AppColors.primary,
+                    ),
+                    onPressed: _markAllAsRead,
+                    tooltip: 'Tandai semua dibaca',
+                  ),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: AppColors.textMuted,
+                  ),
                   onPressed: () => Navigator.pop(context),
                   tooltip: 'Tutup',
                 ),
@@ -177,9 +208,7 @@ class _NotificationsModalState extends State<NotificationsModal> {
           const Divider(height: 1, color: AppColors.border),
 
           // Content
-          Expanded(
-            child: _buildBody(),
-          ),
+          Expanded(child: _buildBody()),
         ],
       ),
     );
@@ -199,11 +228,19 @@ class _NotificationsModalState extends State<NotificationsModal> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline_rounded, color: AppColors.statusDangerText, size: 48),
+              const Icon(
+                Icons.error_outline_rounded,
+                color: AppColors.statusDangerText,
+                size: 48,
+              ),
               const SizedBox(height: 12),
               Text('Gagal memuat notifikasi', style: AppTextStyles.titleMd),
               const SizedBox(height: 6),
-              Text(_errorMessage!, style: AppTextStyles.bodySm, textAlign: TextAlign.center),
+              Text(
+                _errorMessage!,
+                style: AppTextStyles.bodySm,
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 16),
               OutlinedButton.icon(
                 onPressed: _loadNotifications,
@@ -239,12 +276,16 @@ class _NotificationsModalState extends State<NotificationsModal> {
               const SizedBox(height: 16),
               Text(
                 'Belum Ada Notifikasi',
-                style: AppTextStyles.titleMd.copyWith(fontWeight: FontWeight.w700),
+                style: AppTextStyles.titleMd.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 6),
               Text(
                 'Aktivitas undangan tim, respon lamaran, dan pembaruan penting akan muncul di sini.',
-                style: AppTextStyles.bodySm.copyWith(color: AppColors.textMuted),
+                style: AppTextStyles.bodySm.copyWith(
+                  color: AppColors.textMuted,
+                ),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -262,16 +303,24 @@ class _NotificationsModalState extends State<NotificationsModal> {
         separatorBuilder: (context, index) => const SizedBox(height: 10),
         itemBuilder: (context, index) {
           final notif = _notifications[index];
-          final type = notif['tipe']?.toString();
-          final isRead = notif['dibaca'] == true || notif['dibaca'] == 1;
-          final title = notif['judul']?.toString() ?? 'Pemberitahuan';
-          final message = notif['pesan']?.toString() ?? '';
-          final createdAt = notif['created_at']?.toString() ?? '';
+          final type = (notif['tipe'] ?? notif['jenis_notifikasi'])?.toString();
+          final readValue = notif['status_dibaca'] ?? notif['dibaca'];
+          final isRead = readValue == true || readValue == 1;
+          final title =
+              notif['judul']?.toString() ??
+              (type == 'undangan_masuk' ? 'Undangan Tim' : 'Pemberitahuan');
+          final message =
+              (notif['pesan'] ?? notif['pesan_notifikasi'])?.toString() ?? '';
+          final createdAt =
+              (notif['created_at'] ?? notif['waktu_notifikasi'])?.toString() ??
+              '';
 
           return Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: isRead ? Colors.white : AppColors.primarySoft.withValues(alpha: 0.35),
+              color: isRead
+                  ? Colors.white
+                  : AppColors.primarySoft.withValues(alpha: 0.35),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: isRead ? AppColors.border : AppColors.primaryOutline,
@@ -306,7 +355,9 @@ class _NotificationsModalState extends State<NotificationsModal> {
                               title,
                               style: AppTextStyles.titleMd.copyWith(
                                 fontSize: 13.5,
-                                fontWeight: isRead ? FontWeight.w600 : FontWeight.w700,
+                                fontWeight: isRead
+                                    ? FontWeight.w600
+                                    : FontWeight.w700,
                                 color: AppColors.text,
                               ),
                             ),
@@ -334,7 +385,9 @@ class _NotificationsModalState extends State<NotificationsModal> {
                       if (createdAt.isNotEmpty) ...[
                         const SizedBox(height: 6),
                         Text(
-                          createdAt.length >= 16 ? createdAt.substring(0, 16) : createdAt,
+                          createdAt.length >= 16
+                              ? createdAt.substring(0, 16)
+                              : createdAt,
                           style: AppTextStyles.labelSm.copyWith(
                             fontSize: 10,
                             color: AppColors.textMuted,

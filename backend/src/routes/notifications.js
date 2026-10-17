@@ -1,27 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const jwt = require('jsonwebtoken');
 const db = require('../config/db');
-
-// Helper: Ekstraksi ID Pengguna dari Header Authorization JWT / Header x-user-id / Query
-const getAuthUserId = (req) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'myteam_secret');
-      if (decoded && decoded.id_pengguna) {
-        return decoded.id_pengguna;
-      }
-    }
-  } catch (err) { }
-  return req.headers['x-user-id'] || req.query.id_pengguna || 'usr_fuadi_01';
-};
+const requireAuth = require('../middleware/auth');
 
 // GET /api/v1/notifications (Inbox Notifikasi Universal)
-router.get('/', async (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
   try {
-    const id_pengguna = getAuthUserId(req);
+    const id_pengguna = req.user.id_pengguna;
     const [rows] = await db.query(`
       SELECT 
         n.*,
@@ -47,10 +32,27 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/v1/notifications/unread-count (Hitung Belum Dibaca)
-router.get('/unread-count', async (req, res) => {
+// PATCH /api/v1/notifications/read-all (Tandai seluruh notifikasi dibaca)
+router.patch('/read-all', requireAuth, async (req, res) => {
   try {
-    const id_pengguna = getAuthUserId(req);
+    const [result] = await db.query(
+      'UPDATE Notifikasi SET status_dibaca = TRUE WHERE id_pengguna = ? AND status_dibaca = FALSE',
+      [req.user.id_pengguna]
+    );
+    return res.json({
+      success: true,
+      message: 'Seluruh notifikasi ditandai telah dibaca.',
+      data: { updated_count: result.affectedRows }
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// GET /api/v1/notifications/unread-count (Hitung Belum Dibaca)
+router.get('/unread-count', requireAuth, async (req, res) => {
+  try {
+    const id_pengguna = req.user.id_pengguna;
     const [rows] = await db.query(
       'SELECT COUNT(*) AS unread_count FROM Notifikasi WHERE id_pengguna = ? AND status_dibaca = FALSE',
       [id_pengguna]
@@ -65,10 +67,19 @@ router.get('/unread-count', async (req, res) => {
 });
 
 // PATCH /api/v1/notifications/:id/read (Tandai Dibaca)
-router.patch('/:id/read', async (req, res) => {
+router.patch('/:id/read', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    await db.query('UPDATE Notifikasi SET status_dibaca = TRUE WHERE id_notifikasi = ?', [id]);
+    const [result] = await db.query(
+      'UPDATE Notifikasi SET status_dibaca = TRUE WHERE id_notifikasi = ? AND id_pengguna = ?',
+      [id, req.user.id_pengguna]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Notifikasi tidak ditemukan.'
+      });
+    }
     return res.json({ success: true, message: 'Notifikasi ditandai telah dibaca.' });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

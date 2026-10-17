@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
+const requireAuth = require('../middleware/auth');
+const { getPositionCapacity } = require('../utils/kuota');
 
 // Helper: Ekstraksi ID Pengguna dari Header Authorization JWT / Query / Body
 const getAuthUserId = (req) => {
@@ -544,7 +546,7 @@ router.get('/my-applications', async (req, res) => {
   }
 });
 
-router.post('/invite-member', async (req, res) => {
+router.post('/invite-member', requireAuth, async (req, res) => {
   let connection;
   let transactionStarted = false;
   try {
@@ -556,20 +558,11 @@ router.post('/invite-member', async (req, res) => {
       });
     }
 
-    const currentUserId = getAuthUserId(req);
-    // Cek apakah pembuat tim mengundang dirinya sendiri
-    if (currentUserId && currentUserId === id_pengguna) {
-      return res.status(400).json({
+    const currentUserId = req.user.id_pengguna;
+    if (currentUserId === id_pengguna) {
+      return res.status(422).json({
         success: false,
         message: 'Anda tidak dapat mengundang diri Anda sendiri ke dalam tim.'
-      });
-    }
-
-    const [teamOwner] = await db.query('SELECT id_pengguna FROM Data_Tim WHERE id_tim = ?', [id_tim]);
-    if (teamOwner.length > 0 && teamOwner[0].id_pengguna === id_pengguna) {
-      return res.status(400).json({
-        success: false,
-        message: 'Ketua tim tidak dapat diundang sebagai anggota ke timnya sendiri.'
       });
     }
 
@@ -578,6 +571,41 @@ router.post('/invite-member', async (req, res) => {
     connection = await db.getConnection();
     await connection.beginTransaction();
     transactionStarted = true;
+
+    const [teams] = await connection.query(
+      'SELECT id_pengguna, nama_tim FROM Data_Tim WHERE id_tim = ? FOR UPDATE',
+      [id_tim]
+    );
+    if (teams.length === 0) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(404).json({
+        success: false,
+        message: 'Tim tidak ditemukan.'
+      });
+    }
+    const team = teams[0];
+    if (team.id_pengguna !== currentUserId) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(403).json({
+        success: false,
+        message: 'Hanya pembuat tim yang dapat mengirim undangan.'
+      });
+    }
+
+    const [candidate] = await connection.query(
+      'SELECT id_pengguna FROM Pengguna WHERE id_pengguna = ?',
+      [id_pengguna]
+    );
+    if (candidate.length === 0) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(404).json({
+        success: false,
+        message: 'Calon anggota tidak ditemukan.'
+      });
+    }
 
     const [existingMembers] = await connection.query(
       'SELECT id_anggota_tim FROM Anggota_Tim WHERE id_tim = ? AND id_pengguna = ?',
@@ -606,24 +634,8 @@ router.post('/invite-member', async (req, res) => {
       });
     }
 
-    const [kebutuhan] = await connection.query(`
-      SELECT jumlah_anggota_dibutuhkan
-      FROM Kebutuhan_Anggota_Tim
-      WHERE id_tim = ?
-        AND LOWER(TRIM(posisi_dibutuhkan)) = LOWER(TRIM(?))
-      FOR UPDATE
-    `, [id_tim, posisi]);
-    const jumlahDibutuhkan = kebutuhan.reduce(
-      (total, item) => total + Number(item.jumlah_anggota_dibutuhkan),
-      0
-    );
-    const [[jumlahAnggota]] = await connection.query(`
-      SELECT COUNT(*) AS jumlah
-      FROM Anggota_Tim
-      WHERE id_tim = ?
-        AND LOWER(TRIM(posisi)) = LOWER(TRIM(?))
-    `, [id_tim, posisi]);
-    if (jumlahDibutuhkan <= Number(jumlahAnggota.jumlah)) {
+    const capacity = await getPositionCapacity(connection, id_tim, posisi);
+    if (!capacity.available) {
       await connection.rollback();
       transactionStarted = false;
       return res.status(409).json({
@@ -639,14 +651,10 @@ router.post('/invite-member', async (req, res) => {
       [id_pga, id_tim, id_pengguna, posisi, pesan, 'menunggu']
     );
 
-    // Ambil info tim
-    const [team] = await connection.query('SELECT nama_tim FROM Data_Tim WHERE id_tim = ?', [id_tim]);
-    const namaTim = team[0]?.nama_tim || 'Tim';
-
     // Notifikasi undangan ke calon anggota
     await connection.query(
       'INSERT INTO Notifikasi (id_notifikasi, id_pengguna, id_pengajuan_anggota, jenis_notifikasi, pesan_notifikasi) VALUES (?, ?, ?, ?, ?)',
-      [`notif_${Date.now()}`, id_pengguna, id_pga, 'undangan_masuk', `Anda menerima undangan untuk bergabung ke "${namaTim}" sebagai ${posisi}.`]
+      [`notif_${Date.now()}`, id_pengguna, id_pga, 'undangan_masuk', `Anda menerima undangan untuk bergabung ke "${team.nama_tim}" sebagai ${posisi}.`]
     );
 
     await connection.commit();
@@ -666,9 +674,9 @@ router.post('/invite-member', async (req, res) => {
 });
 
 // GET /api/v1/applications/received-invitations (FR-24: Undangan yang Diterima Calon Anggota)
-router.get('/received-invitations', async (req, res) => {
+router.get('/received-invitations', requireAuth, async (req, res) => {
   try {
-    const id_pengguna = req.query.id_pengguna || 'usr_fuadi_01';
+    const id_pengguna = req.user.id_pengguna;
     const [rows] = await db.query(`
       SELECT pa.*, dt.nama_tim, dt.nama_kegiatan, dt.kategori_kegiatan, dt.deskripsi AS deskripsi_tim
       FROM Pengajuan_Anggota pa
@@ -684,7 +692,7 @@ router.get('/received-invitations', async (req, res) => {
 });
 
 // PATCH /api/v1/applications/received-invitations/:id/status (FR-24, FR-25: Respon Undangan)
-router.patch('/received-invitations/:id/status', async (req, res) => {
+router.patch('/received-invitations/:id/status', requireAuth, async (req, res) => {
   let connection;
   let transactionStarted = false;
   try {
@@ -709,6 +717,14 @@ router.patch('/received-invitations/:id/status', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Undangan tidak ditemukan.' });
     }
     const inv = rows[0];
+    if (inv.id_pengguna !== req.user.id_pengguna) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(403).json({
+        success: false,
+        message: 'Hanya penerima undangan yang dapat merespons undangan ini.'
+      });
+    }
     if (inv.status_pengajuan !== 'menunggu') {
       await connection.rollback();
       transactionStarted = false;
@@ -728,23 +744,6 @@ router.patch('/received-invitations/:id/status', async (req, res) => {
         });
       }
 
-      const [kebutuhan] = await connection.query(`
-        SELECT jumlah_anggota_dibutuhkan
-        FROM Kebutuhan_Anggota_Tim
-        WHERE id_tim = ?
-          AND LOWER(TRIM(posisi_dibutuhkan)) = LOWER(TRIM(?))
-        FOR UPDATE
-      `, [inv.id_tim, inv.posisi]);
-      const jumlahDibutuhkan = kebutuhan.reduce(
-        (total, item) => total + Number(item.jumlah_anggota_dibutuhkan),
-        0
-      );
-      const [[jumlahAnggota]] = await connection.query(`
-        SELECT COUNT(*) AS jumlah
-        FROM Anggota_Tim
-        WHERE id_tim = ?
-          AND LOWER(TRIM(posisi)) = LOWER(TRIM(?))
-      `, [inv.id_tim, inv.posisi]);
       const [existingMembers] = await connection.query(
         'SELECT id_anggota_tim FROM Anggota_Tim WHERE id_tim = ? AND id_pengguna = ?',
         [inv.id_tim, inv.id_pengguna]
@@ -757,7 +756,8 @@ router.patch('/received-invitations/:id/status', async (req, res) => {
           message: 'Anda sudah menjadi anggota tim ini.'
         });
       }
-      if (jumlahDibutuhkan <= Number(jumlahAnggota.jumlah)) {
+      const capacity = await getPositionCapacity(connection, inv.id_tim, inv.posisi);
+      if (!capacity.available) {
         finalStatus = 'ditolak';
         finalMessage = `Kuota untuk posisi "${inv.posisi}" sudah penuh. Undangan otomatis ditolak.`;
       } else {
@@ -803,9 +803,9 @@ router.patch('/received-invitations/:id/status', async (req, res) => {
 
 // GET /api/v1/applications/sent-invitations (FR-25: Status Undangan Terkirim)
 // Digunakan oleh ketua tim untuk melihat status semua undangan yang pernah dikirim
-router.get('/sent-invitations', async (req, res) => {
+router.get('/sent-invitations', requireAuth, async (req, res) => {
   try {
-    const id_pengguna = req.query.id_pengguna || 'usr_fuadi_01';
+    const id_pengguna = req.user.id_pengguna;
 
     // Ambil semua undangan dari tim yang dimiliki user
     const [rows] = await db.query(`

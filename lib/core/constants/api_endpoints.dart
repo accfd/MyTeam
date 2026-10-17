@@ -22,14 +22,17 @@ class ApiEndpoints {
   static const String joinTeam = '/applications/join-team';
   static const String myApplications = '/applications/my-applications';
   static String teamApplications(String idTim) => '/teams/$idTim/applications';
-  static String joinTeamDetail(String idPengajuan) => '/applications/join-team/$idPengajuan';
+  static String joinTeamDetail(String idPengajuan) =>
+      '/applications/join-team/$idPengajuan';
 
   // Talent Search & Invitation (Modul 4 - Diva)
   static const String searchMembers = '/members/search';
   static const String inviteMember = '/applications/invite-member';
-  static const String receivedInvitations = '/applications/received-invitations';
+  static const String receivedInvitations =
+      '/applications/received-invitations';
 
   // Notifications
   static const String notifications = '/notifications';
   static const String unreadCount = '/notifications/unread-count';
+  static const String readAllNotifications = '/notifications/read-all';
 }

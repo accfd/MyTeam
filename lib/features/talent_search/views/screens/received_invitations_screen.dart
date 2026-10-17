@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/storage/storage_service.dart';
 import '../../../../core/config/app_config.dart';
 import '../../services/talent_search_service.dart';
 import '../../../team_feed/models/team_application_model.dart';
@@ -29,7 +28,6 @@ class ReceivedInvitationsScreen extends StatefulWidget {
 class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabCtrl;
-  String _myUserId = '';
 
   // ── Tab 1: Undangan Masuk ─────────────────────────────────────────────────
   List<Map<String, dynamic>> _received = [];
@@ -58,7 +56,6 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
   }
 
   Future<void> _init() async {
-    _myUserId = await StorageService.getUserId() ?? '';
     await Future.wait([
       _loadReceived(),
       _loadSent(),
@@ -90,7 +87,7 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
       _errorReceived = null;
     });
     try {
-      final data = await TalentSearchService.getReceivedInvitations(_myUserId);
+      final data = await TalentSearchService.getReceivedInvitations();
       if (mounted) setState(() => _received = data);
     } catch (e) {
       if (mounted) {
@@ -111,7 +108,7 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
       _errorSent = null;
     });
     try {
-      final data = await TalentSearchService.getSentInvitations(_myUserId);
+      final data = await TalentSearchService.getSentInvitations();
       if (mounted) setState(() => _sent = data);
     } catch (e) {
       if (mounted) {
@@ -139,8 +136,9 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
       for (final team in myTeams) {
         if (team.isOwner) {
           try {
-            final appResult =
-                await TeamFeedService.fetchTeamApplications(team.idTim);
+            final appResult = await TeamFeedService.fetchTeamApplications(
+              team.idTim,
+            );
             results.add(appResult);
           } catch (_) {
             // Abaikan error per tim
@@ -467,9 +465,7 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
               ),
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const MyApplicationsScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const MyApplicationsScreen()),
               ),
               tooltip: 'Status Pengajuan Saya',
             ),
@@ -592,10 +588,7 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
     if (_received.isEmpty) {
       return RefreshIndicator(
         color: AppColors.primaryContainer,
-        onRefresh: () => Future.wait([
-          _loadReceived(),
-          _loadNotifications(),
-        ]),
+        onRefresh: () => Future.wait([_loadReceived(), _loadNotifications()]),
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -630,10 +623,7 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
 
     return RefreshIndicator(
       color: AppColors.primaryContainer,
-      onRefresh: () => Future.wait([
-        _loadReceived(),
-        _loadNotifications(),
-      ]),
+      onRefresh: () => Future.wait([_loadReceived(), _loadNotifications()]),
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -1571,9 +1561,7 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (_) => const MyApplicationsScreen(),
-              ),
+              MaterialPageRoute(builder: (_) => const MyApplicationsScreen()),
             );
           },
           child: Padding(
@@ -2065,8 +2053,9 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
                   backgroundColor: hasPending
                       ? AppColors.primary
                       : AppColors.surfaceContainerLow,
-                  foregroundColor:
-                      hasPending ? Colors.white : AppColors.primary,
+                  foregroundColor: hasPending
+                      ? Colors.white
+                      : AppColors.primary,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   shape: RoundedRectangleBorder(
@@ -2085,10 +2074,8 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => TeamApplicationsScreen(
-          idTim: res.idTim,
-          teamName: res.namaTim,
-        ),
+        builder: (_) =>
+            TeamApplicationsScreen(idTim: res.idTim, teamName: res.namaTim),
       ),
     );
     _loadTeamApplications();
@@ -2120,12 +2107,12 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
       return NetworkImage(trimmed);
     }
     if (trimmed.startsWith('profiles/') || trimmed.startsWith('storage/')) {
-      final cleanPath =
-          trimmed.startsWith('storage/') ? trimmed : 'storage/$trimmed';
+      final cleanPath = trimmed.startsWith('storage/')
+          ? trimmed
+          : 'storage/$trimmed';
       final rootUrl = AppConfig.baseUrl.replaceAll('/api/v1', '');
       return NetworkImage('$rootUrl/$cleanPath');
     }
     return null;
   }
 }
-

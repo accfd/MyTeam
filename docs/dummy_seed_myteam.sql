@@ -132,7 +132,7 @@ INSERT INTO Data_Pengalaman (id_pengalaman, id_pengguna, nama_kegiatan, peran, t
 
 -- =============================================================================
 -- 7. TABEL DATA_TIM
--- Distribusi tim per pemilik: Fuadi 1, Rafa 2, Diva 3, Nayla 1.
+-- Distribusi tim per pemilik: Fuadi 4, Rafa 3, Diva 2, Nayla 1.
 -- =============================================================================
 INSERT INTO Data_Tim (id_tim, id_pengguna, nama_tim, nama_kegiatan, kategori_kegiatan, deskripsi, status_tim, created_at) VALUES
 ('tim_gemastik_01', 'usr_rafa_02', 
@@ -177,12 +177,33 @@ INSERT INTO Data_Tim (id_tim, id_pengguna, nama_tim, nama_kegiatan, kategori_keg
  'Membuat dashboard interaktif untuk menyajikan data layanan dan aktivitas kampus.',
  'terbuka', '2026-10-07 12:00:00'),
 
-('tim_diva_07', 'usr_diva_03',
- 'Kampanye Literasi Digital',
- 'Kompetisi Konten Edukasi Digital 2026',
+('tim_fuadi_08', 'usr_fuadi_01',
+ 'Platform Relawan Kampus',
+ 'Unand Social Impact Challenge 2026',
+ 'Proyek',
+ 'Membangun platform untuk menghubungkan relawan mahasiswa dengan program sosial di sekitar kampus.',
+ 'terbuka', '2026-10-08 09:00:00'),
+
+('tim_fuadi_09', 'usr_fuadi_01',
+ 'Deteksi Hoaks Bahasa Minang',
+ 'Kompetisi Inovasi Digital Sumatera Barat 2026',
  'Lomba',
- 'Menyusun kampanye konten edukasi keamanan dan literasi digital bagi mahasiswa.',
- 'terbuka', '2026-10-07 13:00:00');
+ 'Mengembangkan model dan aplikasi untuk membantu mengenali hoaks berbahasa Minang.',
+ 'terbuka', '2026-10-08 10:00:00'),
+
+('tim_fuadi_10', 'usr_fuadi_01',
+ 'Asisten Akademik Berbasis AI',
+ 'Proyek Riset Teknologi Pendidikan 2026',
+ 'Penelitian',
+ 'Merancang asisten akademik yang membantu mahasiswa menemukan materi dan informasi perkuliahan.',
+ 'terbuka', '2026-10-08 11:00:00'),
+
+('tim_rafa_08', 'usr_rafa_02',
+ 'Pemantau Kualitas Udara',
+ 'Lomba IoT dan Smart City 2026',
+ 'Lomba',
+ 'Membangun perangkat IoT dan dashboard untuk memantau kualitas udara di area kampus.',
+ 'terbuka', '2026-10-08 12:00:00');
 
 
 -- =============================================================================
@@ -200,7 +221,18 @@ INSERT INTO Kebutuhan_Anggota_Tim (id_kebutuhan, id_tim, posisi_dibutuhkan, keah
 ('keb_06', 'tim_rafa_04',     'IoT Engineer',         'ESP32, sensor, MQTT',                               1, '2026-10-07 10:10:00'),
 ('keb_07', 'tim_diva_05',     'UI/UX Designer',       'Figma, accessibility, user research',               1, '2026-10-07 11:10:00'),
 ('keb_08', 'tim_diva_06',     'Data Visualization Designer', 'Figma, dashboard design, data storytelling', 1, '2026-10-07 12:10:00'),
-('keb_09', 'tim_diva_07',     'Content Designer',     'Copywriting, visual design, social media',          1, '2026-10-07 13:10:00');
+('keb_09', 'tim_fuadi_03',    'Product Designer',     'Product discovery, usability testing, Figma',        1, '2026-10-07 09:12:00'),
+('keb_10', 'tim_rafa_04',     'Backend Developer',    'Node.js, API design, database',                      1, '2026-10-07 10:12:00'),
+('keb_11', 'tim_diva_05',     'Accessibility Tester', 'WCAG, usability testing, inclusive design',          1, '2026-10-07 11:12:00'),
+('keb_12', 'tim_diva_06',     'Frontend Developer',   'React, charting library, REST API',                   1, '2026-10-07 12:12:00'),
+('keb_13', 'tim_fuadi_08',    'Backend Developer',    'Node.js, PostgreSQL, REST API',                       1, '2026-10-08 09:10:00'),
+('keb_14', 'tim_fuadi_08',    'UX Researcher',        'User interview, service design, usability testing',  1, '2026-10-08 09:12:00'),
+('keb_15', 'tim_fuadi_09',    'Machine Learning Engineer', 'Python, NLP, model evaluation',                 1, '2026-10-08 10:10:00'),
+('keb_16', 'tim_fuadi_09',    'Mobile Developer',     'Flutter, Dart, API integration',                      1, '2026-10-08 10:12:00'),
+('keb_17', 'tim_fuadi_10',    'AI Researcher',         'Python, LLM, information retrieval',                  1, '2026-10-08 11:10:00'),
+('keb_18', 'tim_fuadi_10',    'Frontend Developer',   'Flutter, responsive UI, accessibility',               1, '2026-10-08 11:12:00'),
+('keb_19', 'tim_rafa_08',     'IoT Engineer',         'ESP32, sensor calibration, MQTT',                     1, '2026-10-08 12:10:00'),
+('keb_20', 'tim_rafa_08',     'Data Dashboard Developer', 'React, data visualization, API',                   1, '2026-10-08 12:12:00');
 
 
 -- =============================================================================
