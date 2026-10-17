@@ -154,13 +154,15 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
                       backgroundColor: Colors.white.withAlpha(40),
                       backgroundImage:
                           (widget.member.fotoProfil != null &&
-                              widget.member.fotoProfil!.isNotEmpty)
+                              widget.member.fotoProfil!.isNotEmpty &&
+                              widget.member.fotoProfil!.startsWith('http'))
                           ? NetworkImage(widget.member.fotoProfil!)
                                 as ImageProvider
                           : null,
                       child:
                           (widget.member.fotoProfil == null ||
-                              widget.member.fotoProfil!.isEmpty)
+                              widget.member.fotoProfil!.isEmpty ||
+                              !widget.member.fotoProfil!.startsWith('http'))
                           ? Text(
                               widget.member.inisial,
                               style: AppTextStyles.headlineLg.copyWith(

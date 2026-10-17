@@ -7,6 +7,8 @@ import '../../viewmodels/team_management_viewmodel.dart';
 import '../widgets/team_category_badge.dart';
 import '../widgets/team_status_badge.dart';
 import '../widgets/team_management_edit_modal.dart';
+import '../../../team_feed/services/team_feed_service.dart';
+import '../../../team_feed/views/screens/team_applications_screen.dart';
 
 /// Halaman Detail Tim Milik Pembuat — FR-09
 class TeamManagementDetailScreen extends StatefulWidget {
@@ -26,14 +28,32 @@ class TeamManagementDetailScreen extends StatefulWidget {
 
 class _TeamManagementDetailScreenState
     extends State<TeamManagementDetailScreen> {
+  int? _pendingApplicationsCount;
+  int? _totalApplicationsCount;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         widget.viewModel.loadTeamDetail(widget.idTim);
+        _loadApplicationsCount();
       }
     });
+  }
+
+  Future<void> _loadApplicationsCount() async {
+    try {
+      final res = await TeamFeedService.fetchTeamApplications(widget.idTim);
+      if (mounted) {
+        setState(() {
+          _pendingApplicationsCount = res.summary.menunggu;
+          _totalApplicationsCount = res.summary.total;
+        });
+      }
+    } catch (_) {
+      // Abaikan jika bukan pembuat tim atau offline
+    }
   }
 
   @override
@@ -128,6 +148,12 @@ class _TeamManagementDetailScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // ── Kartu Akses Kelola Pengajuan Masuk (FR-17: Pembuat Tim)
+                if (team.isOwner) ...[
+                  _buildApplicationsEntryCard(team),
+                  const SizedBox(height: 12),
+                ],
+
                 // ── Deskripsi
                 _buildCard(
                   child: Column(
@@ -245,6 +271,160 @@ class _TeamManagementDetailScreenState
     );
   }
 
+  Widget _buildApplicationsEntryCard(TeamModel team) {
+    final hasPending = (_pendingApplicationsCount ?? 0) > 0;
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: hasPending ? const Color(0xFFFFFBEB) : AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: hasPending
+              ? const Color(0xFFFDE68A)
+              : AppColors.primaryOutline,
+          width: 1.5,
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => TeamApplicationsScreen(
+                  idTim: team.idTim,
+                  teamName: team.namaTim,
+                ),
+              ),
+            );
+            if (mounted) {
+              widget.viewModel.loadTeamDetail(widget.idTim);
+              _loadApplicationsCount();
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: hasPending
+                        ? const Color(0xFFFEF3C7)
+                        : AppColors.primarySoft,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    hasPending
+                        ? Icons.mark_email_unread_rounded
+                        : Icons.inbox_rounded,
+                    color: hasPending
+                        ? const Color(0xFFD97706)
+                        : AppColors.primary,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              'Kelola Pengajuan Masuk',
+                              style: AppTextStyles.titleMd.copyWith(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primarySoft,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              'FR-17',
+                              style: AppTextStyles.labelSm.copyWith(
+                                color: AppColors.primary,
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        hasPending
+                            ? '${_pendingApplicationsCount!} lamaran baru menunggu keputusan Anda'
+                            : (_totalApplicationsCount != null &&
+                                    _totalApplicationsCount! > 0
+                                ? 'Lihat ${_totalApplicationsCount!} pengajuan yang telah terdaftar'
+                                : 'Tinjau pelamar yang mengajukan diri ke tim ini'),
+                        style: AppTextStyles.bodySm.copyWith(
+                          color: hasPending
+                              ? const Color(0xFFB45309)
+                              : AppColors.textMuted,
+                          fontSize: 12,
+                          fontWeight:
+                              hasPending ? FontWeight.w600 : FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (hasPending)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD97706),
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                    child: Text(
+                      '${_pendingApplicationsCount!} Menunggu',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  )
+                else
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.primary,
+                    size: 22,
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildCard({required Widget child}) {
     return Container(
       width: double.infinity,
@@ -318,7 +498,7 @@ class _TeamManagementDetailScreenState
             radius: 20,
             backgroundColor: AppColors.primarySoft,
             backgroundImage: _getAvatarImage(a.fotoProfil),
-            onBackgroundImageError: (_, __) {},
+            onBackgroundImageError: (_, _) {},
             child: _getAvatarImage(a.fotoProfil) == null
                 ? Text(
                     a.namaPengguna?.isNotEmpty == true

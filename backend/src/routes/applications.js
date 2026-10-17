@@ -1,49 +1,213 @@
 const express = require('express');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
 const db = require('../config/db');
+
+// Helper: Ekstraksi ID Pengguna dari Header Authorization JWT / Query / Body
+const getAuthUserId = (req) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'myteam_secret');
+      if (decoded && decoded.id_pengguna) {
+        return decoded.id_pengguna;
+      }
+    }
+  } catch (err) { }
+  return req.body?.id_pengguna || req.query?.id_pengguna || req.headers['x-user-id'] || 'usr_fuadi_01';
+};
 
 // POST /api/v1/applications/join-team (FR-16: Lamar Tim dengan Posisi Wajib)
 router.post('/join-team', async (req, res) => {
+  let connection;
+  let transactionStarted = false;
   try {
-    const { id_tim, id_pengguna, posisi, pesan_pengajuan } = req.body;
+    const { id_tim, posisi, pesan_pengajuan } = req.body;
+    const id_pengguna = getAuthUserId(req);
 
-    if (!id_tim || !id_pengguna || !posisi || !pesan_pengajuan) {
+    if (!id_tim || !posisi || !pesan_pengajuan) {
       return res.status(422).json({
         success: false,
-        message: 'id_tim, id_pengguna, posisi, dan pesan_pengajuan wajib diisi.'
+        message: 'id_tim, posisi, dan pesan_pengajuan wajib diisi.'
       });
     }
 
-    const id_pbg = `pbg_${Date.now()}`;
-    await db.query(
-      'INSERT INTO Pengajuan_Bergabung_Tim (id_pengajuan_bergabung_tim, id_tim, id_pengguna, posisi, pesan_pengajuan, status_pengajuan) VALUES (?, ?, ?, ?, ?, ?)',
-      [id_pbg, id_tim, id_pengguna, posisi, pesan_pengajuan, 'menunggu']
+    const cleanIdTim = id_tim.toString().trim();
+    const cleanPosisi = posisi.toString().trim();
+    const cleanPesan = pesan_pengajuan.toString().trim();
+
+    if (!cleanPosisi || !cleanPesan) {
+      return res.status(422).json({
+        success: false,
+        message: 'Posisi dan pesan pengajuan tidak boleh kosong.'
+      });
+    }
+
+    if (!id_pengguna) {
+      return res.status(401).json({
+        success: false,
+        message: 'Sesi tidak valid atau pengguna belum login.'
+      });
+    }
+
+    connection = await db.getConnection();
+    await connection.beginTransaction();
+    transactionStarted = true;
+
+    // 1. Validasi tim: cek apakah tim ada dan berstatus terbuka
+    const [teamRows] = await connection.query(
+      'SELECT id_tim, id_pengguna, nama_tim, status_tim FROM Data_Tim WHERE id_tim = ? FOR UPDATE',
+      [cleanIdTim]
     );
 
-    // Kirim notifikasi otomatis ke pembuat tim (FR-12 - Modul 2 Nayla)
-    const [team] = await db.query('SELECT id_pengguna, nama_tim FROM Data_Tim WHERE id_tim = ?', [id_tim]);
-    if (team.length > 0) {
-      const idPembuat = team[0].id_pengguna;
-      await db.query(
-        'INSERT INTO Notifikasi (id_notifikasi, id_pengguna, id_pengajuan_bergabung_tim, jenis_notifikasi, pesan_notifikasi) VALUES (?, ?, ?, ?, ?)',
-        [`notif_${Date.now()}`, idPembuat, id_pbg, 'pengajuan_masuk', `Ada pengajuan bergabung baru untuk posisi ${posisi} pada tim "${team[0].nama_tim}".`]
-      );
+    if (teamRows.length === 0) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(404).json({
+        success: false,
+        message: 'Tim tidak ditemukan.'
+      });
     }
+
+    const team = teamRows[0];
+    if (team.status_tim !== 'terbuka') {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(400).json({
+        success: false,
+        message: 'Pendaftaran untuk tim ini telah ditutup.'
+      });
+    }
+
+    // 2. Validasi pembuat tim: pembuat tidak dapat melamar ke timnya sendiri
+    if (team.id_pengguna === id_pengguna) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(403).json({
+        success: false,
+        message: 'Anda adalah pembuat tim ini dan tidak dapat melamar ke tim sendiri.'
+      });
+    }
+
+    // 3. Validasi anggota tim: pengguna yang sudah menjadi anggota tim tidak dapat melamar lagi
+    const [existingMembers] = await connection.query(
+      'SELECT id_anggota_tim FROM Anggota_Tim WHERE id_tim = ? AND id_pengguna = ?',
+      [cleanIdTim, id_pengguna]
+    );
+    if (existingMembers.length > 0) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(409).json({
+        success: false,
+        message: 'Anda sudah menjadi anggota tim ini.'
+      });
+    }
+
+    // 4. Validasi lamaran ganda: cek apakah sudah ada pengajuan berstatus 'menunggu'
+    const [pendingApps] = await connection.query(
+      'SELECT id_pengajuan_bergabung_tim FROM Pengajuan_Bergabung_Tim WHERE id_tim = ? AND id_pengguna = ? AND status_pengajuan = "menunggu"',
+      [cleanIdTim, id_pengguna]
+    );
+    if (pendingApps.length > 0) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(409).json({
+        success: false,
+        message: 'Anda sudah mengajukan lamaran yang sedang menunggu konfirmasi pada tim ini.'
+      });
+    }
+
+    // 5. Validasi posisi sesuai kebutuhan tim
+    const [kebutuhan] = await connection.query(
+      'SELECT * FROM Kebutuhan_Anggota_Tim WHERE id_tim = ?',
+      [cleanIdTim]
+    );
+
+    if (kebutuhan.length > 0) {
+      const matchingKebutuhan = kebutuhan.find(
+        k => k.posisi_dibutuhkan.trim().toLowerCase() === cleanPosisi.toLowerCase()
+      );
+      if (!matchingKebutuhan) {
+        await connection.rollback();
+        transactionStarted = false;
+        return res.status(422).json({
+          success: false,
+          message: `Posisi "${cleanPosisi}" tidak tersedia dalam daftar kebutuhan tim ini.`
+        });
+      }
+
+      // Validasi kuota posisi jika sudah terpenuhi di Anggota_Tim
+      const [[anggotaPosisi]] = await connection.query(`
+        SELECT COUNT(*) AS total
+        FROM Anggota_Tim
+        WHERE id_tim = ? AND LOWER(TRIM(posisi)) = LOWER(TRIM(?))
+      `, [cleanIdTim, matchingKebutuhan.posisi_dibutuhkan]);
+
+      if (Number(anggotaPosisi.total) >= matchingKebutuhan.jumlah_anggota_dibutuhkan) {
+        await connection.rollback();
+        transactionStarted = false;
+        return res.status(409).json({
+          success: false,
+          message: `Kuota untuk posisi "${matchingKebutuhan.posisi_dibutuhkan}" sudah penuh.`
+        });
+      }
+    }
+
+    // 6. Masukkan data ke Pengajuan_Bergabung_Tim
+    const id_pbg = `pbg_${Date.now()}`;
+    await connection.query(
+      `INSERT INTO Pengajuan_Bergabung_Tim 
+       (id_pengajuan_bergabung_tim, id_tim, id_pengguna, posisi, pesan_pengajuan, status_pengajuan) 
+       VALUES (?, ?, ?, ?, ?, 'menunggu')`,
+      [id_pbg, cleanIdTim, id_pengguna, cleanPosisi, cleanPesan]
+    );
+
+    // 7. Ambil nama pelamar untuk notifikasi otomatis pemilik tim (FR-12)
+    const [pelamarRows] = await connection.query(
+      'SELECT nama_pengguna FROM Pengguna WHERE id_pengguna = ?',
+      [id_pengguna]
+    );
+    const namaPelamar = pelamarRows[0]?.nama_pengguna || 'Seorang mahasiswa';
+    const notifMsg = `${namaPelamar} mengajukan lamaran untuk posisi ${cleanPosisi} pada tim "${team.nama_tim}".`;
+
+    await connection.query(
+      `INSERT INTO Notifikasi 
+       (id_notifikasi, id_pengguna, id_pengajuan_bergabung_tim, jenis_notifikasi, pesan_notifikasi) 
+       VALUES (?, ?, ?, 'pengajuan_masuk', ?)`,
+      [`notif_${Date.now()}`, team.id_pengguna, id_pbg, notifMsg]
+    );
+
+    await connection.commit();
+    transactionStarted = false;
 
     return res.status(201).json({
       success: true,
-      message: 'Pengajuan bergabung berhasil dikirim',
+      message: 'Pengajuan bergabung berhasil dikirim ke pembuat tim',
       data: {
         id_pengajuan_bergabung_tim: id_pbg,
-        id_tim,
-        posisi,
+        id_tim: cleanIdTim,
+        id_pengguna,
+        posisi: cleanPosisi,
+        pesan_pengajuan: cleanPesan,
+        waktu_pengajuan: new Date().toISOString(),
         status_pengajuan: 'menunggu'
       }
     });
   } catch (error) {
     console.error('Error apply team:', error);
+    if (transactionStarted && connection) await connection.rollback();
     return res.status(500).json({ success: false, message: error.message });
+  } finally {
+    if (connection) connection.release();
   }
+});
+
+// GET /api/v1/applications/team/:id_tim (Alias FR-17: Pelamar Masuk ke Tim)
+router.get('/team/:id_tim', async (req, res) => {
+  // Redirect internal ke endpoint resmi /api/v1/teams/:id_tim/applications
+  const statusQuery = req.query.status ? `?status=${encodeURIComponent(req.query.status)}` : '';
+  return res.redirect(307, `/api/v1/teams/${req.params.id_tim}/applications${statusQuery}`);
 });
 
 // GET /api/v1/applications/join-team/:id (FR-18: Detail Pengajuan)
@@ -51,8 +215,13 @@ router.get('/join-team/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const [rows] = await db.query(`
-      SELECT pbt.*, p.nama_pengguna, p.nim, p.foto_profil, dd.program_studi, dd.ipk
+      SELECT 
+        pbt.*, 
+        p.nama_pengguna, p.nim, p.foto_profil, 
+        dd.program_studi, dd.fakultas, dd.ipk, dd.kontak,
+        dt.nama_tim, dt.nama_kegiatan, dt.kategori_kegiatan, dt.deskripsi AS deskripsi_tim
       FROM Pengajuan_Bergabung_Tim pbt
+      JOIN Data_Tim dt ON pbt.id_tim = dt.id_tim
       JOIN Pengguna p ON pbt.id_pengguna = p.id_pengguna
       LEFT JOIN Data_Diri dd ON p.id_pengguna = dd.id_pengguna
       WHERE pbt.id_pengajuan_bergabung_tim = ?
@@ -119,7 +288,7 @@ router.patch('/join-team/:id/status', async (req, res) => {
 // GET /api/v1/applications/my-applications (FR-20: Riwayat Lamaran Saya)
 router.get('/my-applications', async (req, res) => {
   try {
-    const id_pengguna = req.query.id_pengguna || 'usr_fuadi_01';
+    const id_pengguna = getAuthUserId(req);
     const [rows] = await db.query(`
       SELECT pbt.*, dt.nama_tim, dt.nama_kegiatan, dt.kategori_kegiatan
       FROM Pengajuan_Bergabung_Tim pbt
