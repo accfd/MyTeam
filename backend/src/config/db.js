@@ -20,8 +20,8 @@ pool.getConnection()
     conn.release();
   })
   .catch(err => {
-    console.error(' Gagal terhubung ke database MySQL:', err.message);
-    console.error('👉 Pastikan XAMPP/MySQL sudah dinyalakan dan database myteam_db sudah diimport.');
+    console.error('Gagal terhubung ke database MySQL:', err.message);
+    console.error('Pastikan XAMPP/MySQL sudah dinyalakan dan database myteam_db sudah diimport.');
   });
 
 module.exports = pool;

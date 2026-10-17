@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
 import '../../services/team_draft_service.dart';
 import 'team_category_badge.dart';
 
@@ -311,7 +310,7 @@ class _TeamDraftsModalState extends State<TeamDraftsModal> {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
       itemCount: _drafts.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, i) {
         final d = _drafts[i];
         final isActive = d.idDraft == widget.activeDraftId;

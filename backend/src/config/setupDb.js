@@ -20,23 +20,29 @@ async function setupDatabase() {
 
     console.log('✅ Terhubung ke MySQL server');
 
-    // 2. Baca dan jalankan schema_myteam.sql
-    const schemaPath = path.resolve(__dirname, '../../../schema_myteam.sql');
+    // 2. Baca dan jalankan schema_myteam.sql (mendukung folder docs/ atau root)
+    let schemaPath = path.resolve(__dirname, '../../../docs/schema_myteam.sql');
+    if (!fs.existsSync(schemaPath)) {
+      schemaPath = path.resolve(__dirname, '../../../schema_myteam.sql');
+    }
     if (!fs.existsSync(schemaPath)) {
       throw new Error(`File schema tidak ditemukan di: ${schemaPath}`);
     }
     const schemaSql = fs.readFileSync(schemaPath, 'utf8');
-    console.log('⏳ Mengimpor skema 13 tabel (schema_myteam.sql)...');
+    console.log(`⏳ Mengimpor skema 13 tabel dari (${schemaPath})...`);
     await connection.query(schemaSql);
     console.log('✅ Skema tabel berhasil dibuat!');
 
-    // 3. Baca dan jalankan dummy_seed_myteam.sql
-    const seedPath = path.resolve(__dirname, '../../../dummy_seed_myteam.sql');
+    // 3. Baca dan jalankan dummy_seed_myteam.sql (mendukung folder docs/ atau root)
+    let seedPath = path.resolve(__dirname, '../../../docs/dummy_seed_myteam.sql');
+    if (!fs.existsSync(seedPath)) {
+      seedPath = path.resolve(__dirname, '../../../dummy_seed_myteam.sql');
+    }
     if (!fs.existsSync(seedPath)) {
       throw new Error(`File seeder tidak ditemukan di: ${seedPath}`);
     }
     const seedSql = fs.readFileSync(seedPath, 'utf8');
-    console.log('⏳ Mengimpor data dummy 4 akun mahasiswa (dummy_seed_myteam.sql)...');
+    console.log(`⏳ Mengimpor data dummy 4 akun mahasiswa dari (${seedPath})...`);
     await connection.query(seedSql);
     console.log('✅ Data dummy seeder berhasil diimpor!');
 

@@ -543,8 +543,9 @@ class _MemberDetailScreenState extends State<MemberDetailScreen> {
     if (n.contains('github')) return Icons.code_rounded;
     if (n.contains('linkedin')) return Icons.business_center_rounded;
     if (n.contains('instagram')) return Icons.camera_alt_rounded;
-    if (n.contains('twitter') || n.contains('x'))
+    if (n.contains('twitter') || n.contains('x')) {
       return Icons.alternate_email_rounded;
+    }
     return Icons.link_rounded;
   }
 

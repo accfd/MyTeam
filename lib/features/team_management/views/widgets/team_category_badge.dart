@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/constants/app_constants.dart';
 
 /// Badge kategori kegiatan tim (DESIGN.md §2.1.C — Pill)
 class TeamCategoryBadge extends StatelessWidget {
