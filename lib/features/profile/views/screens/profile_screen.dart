@@ -17,6 +17,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../team_feed/views/screens/my_applications_screen.dart';
 import '../../../talent_search/models/talent_member_model.dart';
 import '../../../talent_search/views/widgets/invite_member_bottom_sheet.dart';
+import '../../../../core/storage/storage_service.dart';
 
 /// Layar Profil Mahasiswa — MyTeam (Modul 1: FR-01 s/d FR-07)
 /// Mengimplementasikan arsitektur MVVM murni dengan ProfileViewModel
@@ -40,9 +41,14 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
   late final TabController _tabController;
   final _viewModel = ProfileViewModel();
+  String? _sessionUserId;
 
   bool get _isVisiting => widget.visitingMember != null || widget.idPenggunaOverride != null;
   String? get _targetUserId => widget.visitingMember?.idPengguna ?? widget.idPenggunaOverride;
+  bool get _isSelf =>
+      _sessionUserId != null &&
+      _targetUserId != null &&
+      _sessionUserId == _targetUserId;
 
   @override
   void initState() {
@@ -50,6 +56,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(() {
       if (mounted) setState(() {});
+    });
+    StorageService.getUserId().then((id) {
+      if (mounted) setState(() => _sessionUserId = id);
     });
     _viewModel.loadProfile(idPenggunaOverride: _targetUserId);
   }
@@ -189,7 +198,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         ],
       )
     : null,
-      bottomNavigationBar: widget.visitingMember != null ? _buildVisitingBottomBar() : null,
+      bottomNavigationBar: (widget.visitingMember != null && !_isSelf) ? _buildVisitingBottomBar() : null,
       body: ListenableBuilder(
         listenable: _viewModel,
         builder: (context, _) {

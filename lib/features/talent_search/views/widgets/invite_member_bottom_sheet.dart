@@ -120,12 +120,15 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
 
     setState(() => _submitting = true);
 
+    final rawMsg = _msgCtrl.text.trim();
+    final pesan = rawMsg.isEmpty ? 'Mari bergabung bersama tim kami!' : rawMsg;
+
     try {
       await TalentSearchService.inviteMember(
         idTim: _selectedTeamId!,
         idPengguna: widget.member.idPengguna,
         posisi: _selectedPosition!,
-        pesanPengajuan: _msgCtrl.text.trim(),
+        pesanPengajuan: pesan,
       );
 
       if (!mounted) return;

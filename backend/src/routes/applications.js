@@ -544,18 +544,36 @@ router.get('/my-applications', async (req, res) => {
   }
 });
 
-// POST /api/v1/applications/invite-member (FR-23: Ajak Calon Anggota)
 router.post('/invite-member', async (req, res) => {
   let connection;
   let transactionStarted = false;
   try {
     const { id_tim, id_pengguna, posisi, pesan_pengajuan } = req.body;
-    if (!id_tim || !id_pengguna || !posisi || !pesan_pengajuan) {
+    if (!id_tim || !id_pengguna || !posisi) {
       return res.status(422).json({
         success: false,
-        message: 'id_tim, id_pengguna, posisi, dan pesan_pengajuan wajib diisi.'
+        message: 'id_tim, id_pengguna, dan posisi wajib diisi.'
       });
     }
+
+    const currentUserId = getAuthUserId(req);
+    // Cek apakah pembuat tim mengundang dirinya sendiri
+    if (currentUserId && currentUserId === id_pengguna) {
+      return res.status(400).json({
+        success: false,
+        message: 'Anda tidak dapat mengundang diri Anda sendiri ke dalam tim.'
+      });
+    }
+
+    const [teamOwner] = await db.query('SELECT id_pengguna FROM Data_Tim WHERE id_tim = ?', [id_tim]);
+    if (teamOwner.length > 0 && teamOwner[0].id_pengguna === id_pengguna) {
+      return res.status(400).json({
+        success: false,
+        message: 'Ketua tim tidak dapat diundang sebagai anggota ke timnya sendiri.'
+      });
+    }
+
+    const pesan = (pesan_pengajuan && typeof pesan_pengajuan === 'string') ? pesan_pengajuan.trim() : '';
 
     connection = await db.getConnection();
     await connection.beginTransaction();
@@ -604,7 +622,7 @@ router.post('/invite-member', async (req, res) => {
 
     await connection.query(
       'INSERT INTO Pengajuan_Anggota (id_pengajuan_anggota, id_tim, id_pengguna, posisi, pesan_pengajuan, status_pengajuan) VALUES (?, ?, ?, ?, ?, ?)',
-      [id_pga, id_tim, id_pengguna, posisi, pesan_pengajuan, 'menunggu']
+      [id_pga, id_tim, id_pengguna, posisi, pesan, 'menunggu']
     );
 
     // Ambil info tim

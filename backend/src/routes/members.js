@@ -1,12 +1,29 @@
 const express = require('express');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
 const db = require('../config/db');
+
+// Helper: Ekstraksi ID Pengguna dari Header Authorization / Query / Header
+const getAuthUserId = (req) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'myteam_secret');
+      if (decoded && decoded.id_pengguna) {
+        return decoded.id_pengguna;
+      }
+    }
+  } catch (err) {}
+  return req.query?.id_pengguna || req.headers['x-user-id'] || null;
+};
 
 // GET /api/v1/members/search (FR-21: Pencarian Calon Anggota)
 router.get('/search', async (req, res) => {
   try {
     const { q, keahlian, minat, page = 1, limit = 20 } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
+    const currentUserId = getAuthUserId(req);
 
     let query = `
       SELECT p.id_pengguna, p.nim, p.nama_pengguna, p.foto_profil,
@@ -16,6 +33,11 @@ router.get('/search', async (req, res) => {
       WHERE 1=1
     `;
     const params = [];
+
+    if (currentUserId) {
+      query += ` AND p.id_pengguna != ?`;
+      params.push(currentUserId);
+    }
 
     if (q) {
       query += ` AND (p.nama_pengguna LIKE ? OR dd.program_studi LIKE ? OR p.nim LIKE ?)`;

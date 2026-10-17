@@ -66,10 +66,12 @@ class _TalentSearchScreenState extends State<TalentSearchScreen>
       );
       if (mounted) {
         setState(() {
-          _members = results;
+          _members = _myUserId.isNotEmpty
+              ? results.where((m) => m.idPengguna != _myUserId).toList()
+              : results;
           // Rebuild filter options dari hasil fetch (hanya saat load tanpa filter aktif)
           if (keahlian == null && minat == null) {
-            _rebuildFilterOptions(results);
+            _rebuildFilterOptions(_members);
           }
         });
       }
