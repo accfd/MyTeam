@@ -5,12 +5,10 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/storage/storage_service.dart';
 import '../../models/feed_team_model.dart';
-import '../../../talent_search/models/talent_member_model.dart';
 import '../../services/team_feed_service.dart';
 import '../../../profile/views/screens/profile_screen.dart';
 import '../../../team_management/views/screens/team_management_screen.dart';
 import '../../../talent_search/views/screens/talent_search_screen.dart';
-import '../../../talent_search/views/screens/member_detail_screen.dart';
 import '../../../../core/widgets/main_header_app_bar.dart';
 import '../../../status/views/screens/status_hub_screen.dart';
 import 'team_feed_detail_screen.dart';
@@ -30,14 +28,11 @@ class _HomeScreenState extends State<HomeScreen> {
   // ── Session ───────────────────────────────────────────────────────────────
   String _nama = '';
   String _token = '';
-  String _myUserId = '';
   int _currentTab = 0;
 
   // ── Data ──────────────────────────────────────────────────────────────────
   List<TeamModel> _teams = [];
-  List<MemberModel> _members = [];
   bool _loadingTeams = true;
-  bool _loadingMembers = true;
   String? _teamError;
 
   // ── Filter & Search ───────────────────────────────────────────────────────
@@ -56,9 +51,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _initSession() async {
     _nama = await StorageService.getNama() ?? 'Mahasiswa';
     _token = await StorageService.getToken() ?? '';
-    _myUserId = await StorageService.getUserId() ?? '';
     if (mounted) setState(() {});
-    await Future.wait([_loadTeams(), _loadMembers()]);
+    await _loadTeams();
   }
 
   void _onSearchChanged(String value) {
@@ -96,16 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _loadMembers() async {
-    setState(() => _loadingMembers = true);
-    try {
-      final members = await TeamService.searchMembers(token: _token);
-      if (mounted) setState(() => _members = members);
-    } catch (_) {
-    } finally {
-      if (mounted) setState(() => _loadingMembers = false);
-    }
-  }
+
 
   @override
   void dispose() {
@@ -177,7 +162,6 @@ class _HomeScreenState extends State<HomeScreen> {
       onRefresh: () {
         if (_currentTab == 0) {
           _loadTeams();
-          _loadMembers();
         }
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -196,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
       color: AppColors.primary,
       backgroundColor: Colors.white,
       onRefresh: () async {
-        await Future.wait([_loadTeams(), _loadMembers()]);
+        await _loadTeams();
       },
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(
@@ -212,10 +196,6 @@ class _HomeScreenState extends State<HomeScreen> {
           SliverToBoxAdapter(
               child: _buildSectionHeader('Feed Tim & Rekomendasi Kegiatan')),
           SliverToBoxAdapter(child: _buildTeamSection()),
-          SliverToBoxAdapter(
-              child: _buildSectionHeader('Talenta Mahasiswa',
-                  subtitle: 'Calon anggota se-Universitas Andalas')),
-          SliverToBoxAdapter(child: _buildMemberSection()),
           SliverToBoxAdapter(child: _buildStatsBanner()),
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
@@ -1567,168 +1547,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Member Section (Talenta) ───────────────────────────────────────────────
-  Widget _buildMemberSection() {
-    if (_loadingMembers) {
-      return const SizedBox(
-        height: 220,
-        child: Center(
-          child: CircularProgressIndicator(
-              color: AppColors.primaryContainer, strokeWidth: 2.5),
-        ),
-      );
-    }
-    if (_members.isEmpty) return const SizedBox.shrink();
-
-    return SizedBox(
-      height: 220,
-      child: ListView.builder(
-        padding: const EdgeInsets.only(left: 20, right: 8),
-        scrollDirection: Axis.horizontal,
-        itemCount: _members.length,
-        itemBuilder: (context, i) => _buildMemberCard(_members[i]),
-      ),
-    );
-  }
-
-  Widget _buildMemberCard(MemberModel member) {
-    return Container(
-      width: 165,
-      margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(6),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Avatar
-          Row(
-            children: [
-              Stack(
-                children: [
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundColor: AppColors.primarySoft,
-                    backgroundImage: (member.fotoProfil != null &&
-                            member.fotoProfil!.isNotEmpty &&
-                            member.fotoProfil!.startsWith('http'))
-                        ? NetworkImage(member.fotoProfil!)
-                        : null,
-                    child: (member.fotoProfil == null ||
-                            member.fotoProfil!.isEmpty ||
-                            !member.fotoProfil!.startsWith('http'))
-                        ? Text(
-                            member.inisial,
-                            style: AppTextStyles.titleMd.copyWith(
-                                color: AppColors.primary, fontSize: 14),
-                          )
-                        : null,
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      width: 12,
-                      height: 12,
-                      decoration: const BoxDecoration(
-                        color: AppColors.statusSuccessText,
-                        shape: BoxShape.circle,
-                        border: Border.fromBorderSide(
-                            BorderSide(color: Colors.white, width: 2)),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          // Nama
-          Text(
-            member.namaPengguna,
-            style: AppTextStyles.bodyMd.copyWith(
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 2),
-
-          // Prodi + Angkatan
-          Text(
-            '${member.programStudi} ${member.angkatan}',
-            style: AppTextStyles.bodySm.copyWith(fontSize: 11),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 6),
-
-          // Keahlian chips
-          Wrap(
-            spacing: 4,
-            runSpacing: 4,
-            children: member.keahlian
-                .take(2)
-                .map((k) => _buildSkillChip(k, fontSize: 9))
-                .toList(),
-          ),
-          const Spacer(),
-
-          // Lihat Profil
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => MemberDetailScreen(
-                    member: member,
-                    myUserId: _myUserId,
-                  ),
-                ),
-              );
-            },
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 7),
-              decoration: BoxDecoration(
-                color: AppColors.primarySoft,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.primaryOutline, width: 1),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Lihat Profil',
-                    style: AppTextStyles.labelMd.copyWith(
-                      color: AppColors.primary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(width: 3),
-                  const Icon(Icons.arrow_forward_rounded,
-                      color: AppColors.primary, size: 11),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   // ── Stats Banner ──────────────────────────────────────────────────────────
   Widget _buildStatsBanner() {
@@ -1798,7 +1616,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Row(
             children: [
               _bottomNavItem(0, Icons.home_outlined, Icons.home_rounded, 'Beranda'),
-              _bottomNavItem(1, Icons.search_rounded, Icons.search_rounded, 'Cari'),
+              _bottomNavItem(1, Icons.person_search_outlined, Icons.person_search_rounded, 'Talenta'),
               _bottomNavItem(2, Icons.groups_outlined, Icons.groups_rounded, 'MyTeam'),
               _bottomNavItem(3, Icons.assignment_outlined, Icons.assignment_rounded, 'Status'),
               _bottomNavItem(4, Icons.person_outline_rounded, Icons.person_rounded, 'Profil'),
