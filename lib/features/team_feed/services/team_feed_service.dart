@@ -5,6 +5,7 @@ import '../../../core/storage/storage_service.dart';
 import '../../../core/network/api_client.dart';
 import '../models/feed_team_model.dart';
 import '../models/team_application_model.dart';
+import '../models/my_application_model.dart';
 import '../../talent_search/models/talent_member_model.dart';
 
 /// Service untuk endpoint Tim dan Talenta Anggota MyTeam
@@ -180,6 +181,69 @@ class TeamFeedService {
           .toList();
     }
     throw Exception(json['message'] ?? 'Gagal memuat data anggota.');
+  }
+
+  /// GET /api/v1/applications/my-applications (FR-20: Riwayat Status Pengajuan Saya — Rafa Gian Atthari)
+  static Future<MyApplicationsResult> getMyApplications({
+    String? status,
+  }) async {
+    final token = await StorageService.getToken() ?? '';
+    final userId = await StorageService.getUserId() ?? '';
+
+    final queryParams = <String, String>{};
+    if (status != null && status.isNotEmpty && status.toLowerCase() != 'semua') {
+      queryParams['status'] = status.toLowerCase();
+    }
+
+    final uri = Uri.parse('${AppConfig.baseUrl}/applications/my-applications')
+        .replace(queryParameters: queryParams.isEmpty ? null : queryParams);
+
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (token.isNotEmpty) 'Authorization': 'Bearer $token',
+      if (userId.isNotEmpty) 'x-user-id': userId,
+    };
+
+    late final http.Response resp;
+    try {
+      resp = await http
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 15));
+    } catch (_) {
+      throw Exception('Tidak dapat terhubung ke server.');
+    }
+
+    final json = jsonDecode(resp.body) as Map<String, dynamic>;
+    if (resp.statusCode == 200 && json['success'] == true) {
+      return MyApplicationsResult.fromJson(json);
+    }
+    throw Exception(json['message'] ?? 'Gagal memuat status pengajuan saya.');
+  }
+
+  /// GET /api/v1/notifications (Inbox Notifikasi Universal — Modul 4 & 5)
+  static Future<List<Map<String, dynamic>>> fetchNotifications() async {
+    final token = await StorageService.getToken() ?? '';
+    final userId = await StorageService.getUserId() ?? '';
+
+    final uri = Uri.parse('${AppConfig.baseUrl}/notifications');
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (token.isNotEmpty) 'Authorization': 'Bearer $token',
+      if (userId.isNotEmpty) 'x-user-id': userId,
+    };
+
+    try {
+      final resp = await http
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 15));
+      final json = jsonDecode(resp.body) as Map<String, dynamic>;
+      if (resp.statusCode == 200 && json['success'] == true) {
+        return List<Map<String, dynamic>>.from(json['data'] ?? []);
+      }
+    } catch (_) {}
+    return [];
   }
 }
 

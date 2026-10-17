@@ -14,6 +14,7 @@ import '../widgets/form_medsos_dialog.dart';
 import '../widgets/profile_skeleton.dart';
 import '../../models/tim_diikuti_model.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../team_feed/views/screens/my_applications_screen.dart';
 
 /// Layar Profil Mahasiswa — MyTeam (Modul 1: FR-01 s/d FR-07)
 /// Mengimplementasikan arsitektur MVVM murni dengan ProfileViewModel
@@ -1082,6 +1083,23 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                       const SizedBox(height: 8),
                       // GROUP 3: APLIKASI & AKUN
                       _buildSettingsSectionHeader('APLIKASI & AKUN'),
+                      _buildSettingsTile(
+                        icon: Icons.assignment_outlined,
+                        iconColor: AppColors.primary,
+                        iconBg: AppColors.primarySoft,
+                        title: 'Status Pengajuan Bergabung Saya',
+                        subtitle: 'Pantau respon & hasil lamaran bergabung tim',
+                        trailingBadge: 'FR-20',
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const MyApplicationsScreen(),
+                            ),
+                          );
+                        },
+                      ),
                       _buildSettingsTile(
                         icon: Icons.info_outline_rounded,
                         iconColor: const Color(0xFF455A64),

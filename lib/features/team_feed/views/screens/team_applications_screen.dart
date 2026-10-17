@@ -5,6 +5,7 @@ import '../../../../core/config/app_config.dart';
 import '../../models/team_application_model.dart';
 import '../../services/team_feed_service.dart';
 import '../../../team_management/views/widgets/team_status_badge.dart';
+import 'application_detail_screen.dart';
 
 /// Layar Daftar Pengajuan Bergabung Masuk Tim — FR-17
 /// PIC Modul 3: Rafa Gian Atthari (2411522002)
@@ -561,7 +562,8 @@ class _TeamApplicationsScreenState extends State<TeamApplicationsScreen> {
               ),
               Expanded(
                 child: InkWell(
-                  onTap: () => _showDetailModal(app),
+                  onTap: () => _openApplicationDetail(app),
+                  onLongPress: () => _showDetailModal(app),
                   child: Padding(
                     padding: const EdgeInsets.all(14),
                     child: Column(
@@ -794,7 +796,7 @@ class _TeamApplicationsScreenState extends State<TeamApplicationsScreen> {
                               const SizedBox(width: 8),
                             ],
                             OutlinedButton.icon(
-                              onPressed: () => _showDetailModal(app),
+                              onPressed: () => _openApplicationDetail(app),
                               icon: const Icon(
                                 Icons.remove_red_eye_outlined,
                                 size: 14,
@@ -832,6 +834,23 @@ class _TeamApplicationsScreenState extends State<TeamApplicationsScreen> {
         ),
       ),
     );
+  }
+
+  // ── Navigasi Layar Penuh Detail Pengajuan (FR-18) ─────────────────────────
+  Future<void> _openApplicationDetail(TeamApplicationModel app) async {
+    final updatedStatus = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ApplicationDetailScreen(
+          idPengajuan: app.idPengajuanBergabungTim,
+          initialApplication: app,
+        ),
+      ),
+    );
+
+    if (updatedStatus != null && mounted) {
+      _loadApplications();
+    }
   }
 
   // ── Detail Pengajuan Modal (FR-18 Preview & Keputusan FR-19) ───────────────
@@ -1047,7 +1066,31 @@ class _TeamApplicationsScreenState extends State<TeamApplicationsScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
+
+                      // Tombol Layar Penuh Detail & Portofolio (FR-18)
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            _openApplicationDetail(app);
+                          },
+                          icon: const Icon(Icons.folder_shared_outlined, size: 16),
+                          label: const Text('Buka Profil & Portofolio Lengkap (FR-18)'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primary,
+                            side: const BorderSide(color: AppColors.primaryOutline),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
 
                       // Aksi Keputusan (FR-19)
                       if (app.isMenunggu) ...[
@@ -1212,7 +1255,7 @@ class _TeamApplicationsScreenState extends State<TeamApplicationsScreen> {
     );
   }
 
-  // ── Konfirmasi Keputusan (Terima / Tolak) ──────────────────────────────────
+  // ── Konfirmasi Keputusan (Terima / Tolak — FR-19 DESIGN.md 3.8) ────────────
   Future<void> _confirmDecision(TeamApplicationModel app, String status) async {
     final isAccept = status == 'diterima';
     final confirmed = await showDialog<bool>(
@@ -1220,61 +1263,153 @@ class _TeamApplicationsScreenState extends State<TeamApplicationsScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+        contentPadding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: isAccept
-                    ? AppColors.statusSuccessBg
+                    ? AppColors.primarySoft
                     : AppColors.statusDangerBg,
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                isAccept ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                isAccept ? Icons.verified_user_rounded : Icons.warning_amber_rounded,
                 color: isAccept
-                    ? AppColors.statusSuccessText
-                    : AppColors.statusDangerText,
-                size: 22,
+                    ? AppColors.primaryContainer
+                    : const Color(0xFFDC2626),
+                size: 24,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                isAccept ? 'Terima Pelamar?' : 'Tolak Pengajuan?',
-                style: AppTextStyles.titleMd.copyWith(
+                isAccept ? 'Terima Calon Anggota?' : 'Tolak Pengajuan?',
+                style: AppTextStyles.headlineMd.copyWith(
                   fontWeight: FontWeight.w700,
-                  fontSize: 16,
+                  fontSize: 17,
+                  color: AppColors.text,
                 ),
               ),
             ),
           ],
         ),
-        content: Text(
-          isAccept
-              ? 'Mahasiswa ${app.namaPengguna} akan langsung ditambahkan ke dalam anggota tim untuk posisi "${app.posisi}".'
-              : 'Apakah Anda yakin ingin menolak pengajuan bergabung dari ${app.namaPengguna}?',
-          style: AppTextStyles.bodyMd.copyWith(color: AppColors.textMuted),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isAccept
-                  ? AppColors.primary
-                  : AppColors.statusDangerText,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isAccept ? const Color(0xFFF0FDF4) : const Color(0xFFFEF2F2),
                 borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isAccept ? const Color(0xFFBBF7D0) : const Color(0xFFFECACA),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        isAccept ? Icons.person_outline_rounded : Icons.person_rounded,
+                        size: 14,
+                        color: isAccept ? AppColors.primary : const Color(0xFFDC2626),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          app.namaPengguna,
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            color: isAccept ? AppColors.primaryDark : const Color(0xFF991B1B),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 5),
+                  Row(
+                    children: [
+                      const Icon(Icons.badge_outlined, size: 14, color: AppColors.textMuted),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Posisi: ${app.posisi}',
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.text,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-            child: Text(isAccept ? 'Ya, Terima' : 'Ya, Tolak'),
+            const SizedBox(height: 12),
+            Text(
+              isAccept
+                  ? 'Mahasiswa ini akan langsung ditambahkan ke dalam daftar Anggota Tim dan mendapatkan notifikasi penerimaan.'
+                  : 'Pelamar tidak akan ditambahkan ke tim dan sistem akan mengirimkan notifikasi penolakan.',
+              style: AppTextStyles.bodySm.copyWith(
+                color: AppColors.textMuted,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 44,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.textMuted,
+                      side: const BorderSide(color: AppColors.border),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text('Batal', style: TextStyle(fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: SizedBox(
+                  height: 44,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isAccept
+                          ? AppColors.primaryContainer
+                          : const Color(0xFFDC2626),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Text(
+                      isAccept ? 'Terima Anggota' : 'Tolak Pengajuan',
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -1293,19 +1428,55 @@ class _TeamApplicationsScreenState extends State<TeamApplicationsScreen> {
         status: status,
       );
       if (mounted) {
+        // Perbarui status item secara instan di dalam memori tanpa menunggu reload
+        if (_result != null) {
+          final updatedList =
+              List<TeamApplicationModel>.from(_result!.applications);
+          final idx = updatedList.indexWhere(
+            (a) => a.idPengajuanBergabungTim == idPengajuan,
+          );
+          if (idx != -1) {
+            updatedList[idx] = updatedList[idx].copyWith(
+              statusPengajuan: status,
+            );
+            setState(() {
+              _result = _result!.copyWith(applications: updatedList);
+            });
+          }
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              status == 'diterima'
-                  ? 'Pengajuan berhasil diterima! Pelamar telah menjadi anggota tim.'
-                  : 'Pengajuan telah ditolak.',
+            content: Row(
+              children: [
+                Icon(
+                  status == 'diterima'
+                      ? Icons.check_circle_rounded
+                      : Icons.info_outline_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    status == 'diterima'
+                        ? 'Pengajuan berhasil diterima! Pelamar telah menjadi anggota tim.'
+                        : 'Pengajuan telah ditolak.',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
             ),
             backgroundColor: status == 'diterima'
-                ? AppColors.statusSuccessText
-                : AppColors.statusDangerText,
+                ? AppColors.primaryDark
+                : const Color(0xFFB91C1C),
             behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            duration: const Duration(seconds: 3),
           ),
         );
+
+        // Muat ulang ringkasan & kuota tim secara konsisten
         _loadApplications();
       }
     } catch (e) {
@@ -1313,7 +1484,7 @@ class _TeamApplicationsScreenState extends State<TeamApplicationsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.toString().replaceFirst('Exception: ', '')),
-            backgroundColor: AppColors.statusDangerText,
+            backgroundColor: const Color(0xFFDC2626),
             behavior: SnackBarBehavior.floating,
           ),
         );

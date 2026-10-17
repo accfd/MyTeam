@@ -13,6 +13,7 @@ import '../../../talent_search/views/screens/talent_search_screen.dart';
 import '../../../talent_search/views/screens/received_invitations_screen.dart';
 import '../../../talent_search/views/screens/member_detail_screen.dart';
 import 'team_feed_detail_screen.dart';
+import 'my_applications_screen.dart';
 
 /// Home Screen — MyTeam
 /// Feed utama: Rekomendasi Tim, Talenta Mahasiswa, CTA Buat Tim
@@ -235,6 +236,33 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       actions: [
         Container(
+          margin: const EdgeInsets.only(right: 8),
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: IconButton(
+            padding: EdgeInsets.zero,
+            icon: const Icon(
+              Icons.assignment_outlined,
+              color: AppColors.primary,
+              size: 20,
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const MyApplicationsScreen(),
+                ),
+              );
+            },
+            tooltip: 'Status Pengajuan Saya (FR-20)',
+          ),
+        ),
+        Container(
           margin: const EdgeInsets.only(right: 16),
           width: 38,
           height: 38,
@@ -283,6 +311,7 @@ class _HomeScreenState extends State<HomeScreen> {
           SliverToBoxAdapter(child: _buildSearchBar()),
           SliverToBoxAdapter(child: _buildKategoriChips()),
           SliverToBoxAdapter(child: _buildActiveFilters()),
+          SliverToBoxAdapter(child: _buildMyApplicationsQuickBanner()),
           SliverToBoxAdapter(child: _buildCtaBanner()),
           SliverToBoxAdapter(
               child: _buildSectionHeader('Feed Tim & Rekomendasi Kegiatan')),
@@ -912,6 +941,120 @@ class _HomeScreenState extends State<HomeScreen> {
       _selectedKeahlian = null;
     });
     _loadTeams(search: '');
+  }
+
+  // ── Quick Banner: Status Pengajuan Saya (FR-20 — Rafa Gian Atthari) ─────
+  Widget _buildMyApplicationsQuickBanner() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const MyApplicationsScreen(),
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.primaryOutline),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppColors.primarySoft,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.assignment_turned_in_rounded,
+                    color: AppColors.primary,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Status Pengajuan Saya',
+                            style: AppTextStyles.titleMd.copyWith(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.text,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primarySoft,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'FR-20',
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.primaryDark,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Pantau respon ketua tim & hasil lamaran bergabung',
+                        style: AppTextStyles.bodySm.copyWith(
+                          fontSize: 11,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 12,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   // ── CTA Banner ────────────────────────────────────────────────────────────

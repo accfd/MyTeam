@@ -10,6 +10,7 @@ import '../../../team_feed/views/screens/team_applications_screen.dart';
 import '../../../team_management/services/team_management_service.dart';
 import '../../../team_management/views/widgets/team_status_badge.dart';
 import 'team_detail_view_screen.dart';
+import '../../../team_feed/views/screens/my_applications_screen.dart';
 
 /// Halaman Notifikasi Undangan (FR-24 + FR-24b + FR-25)
 /// Tab 1 — Undangan Masuk (FR-24): GET /applications/received-invitations
@@ -46,6 +47,9 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
   bool _loadingTeamApps = true;
   String? _errorTeamApps;
 
+  // ── Notifikasi Sistem (FR-20) ─────────────────────────────────────────────
+  List<Map<String, dynamic>> _systemNotifications = [];
+
   @override
   void initState() {
     super.initState();
@@ -59,7 +63,17 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
       _loadReceived(),
       _loadSent(),
       _loadTeamApplications(),
+      _loadNotifications(),
     ]);
+  }
+
+  Future<void> _loadNotifications() async {
+    try {
+      final notifs = await TeamFeedService.fetchNotifications();
+      if (mounted) {
+        setState(() => _systemNotifications = notifs);
+      }
+    } catch (_) {}
   }
 
   @override
@@ -436,6 +450,31 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
         ),
         actions: [
           Container(
+            margin: const EdgeInsets.only(right: 8),
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              icon: const Icon(
+                Icons.assignment_outlined,
+                color: AppColors.primary,
+                size: 20,
+              ),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const MyApplicationsScreen(),
+                ),
+              ),
+              tooltip: 'Status Pengajuan Saya (FR-20)',
+            ),
+          ),
+          Container(
             margin: const EdgeInsets.only(right: 16),
             width: 38,
             height: 38,
@@ -455,6 +494,7 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
                 _loadReceived(),
                 _loadSent(),
                 _loadTeamApplications(),
+                _loadNotifications(),
               ]),
               tooltip: 'Segarkan',
             ),
@@ -552,15 +592,22 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
     if (_received.isEmpty) {
       return RefreshIndicator(
         color: AppColors.primaryContainer,
-        onRefresh: _loadReceived,
+        onRefresh: () => Future.wait([
+          _loadReceived(),
+          _loadNotifications(),
+        ]),
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            if (_systemNotifications.isNotEmpty) ...[
+              _buildNotificationSection(),
+              const SizedBox(height: 14),
+            ],
             if (pendingTeamAppsCount > 0) ...[
               _buildIncomingApplicationsAlertBanner(pendingTeamAppsCount),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
             ],
-            const SizedBox(height: 40),
+            const SizedBox(height: 32),
             Center(
               child: _buildEmptyState(
                 icon: Icons.mail_outline_rounded,
@@ -583,10 +630,17 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
 
     return RefreshIndicator(
       color: AppColors.primaryContainer,
-      onRefresh: _loadReceived,
+      onRefresh: () => Future.wait([
+        _loadReceived(),
+        _loadNotifications(),
+      ]),
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          if (_systemNotifications.isNotEmpty) ...[
+            _buildNotificationSection(),
+            const SizedBox(height: 14),
+          ],
           if (pendingTeamAppsCount > 0) ...[
             _buildIncomingApplicationsAlertBanner(pendingTeamAppsCount),
             const SizedBox(height: 12),
@@ -1461,6 +1515,152 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // ── Notifikasi Sistem Status Pengajuan (FR-20) ───────────────────────────
+  Widget _buildNotificationSection() {
+    final statusNotifs = _systemNotifications.where((n) {
+      final type = n['jenis_notifikasi']?.toString() ?? '';
+      return type == 'pengajuan_diterima' || type == 'pengajuan_ditolak';
+    }).toList();
+
+    if (statusNotifs.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader(
+          'Pemberitahuan Status Pengajuan',
+          statusNotifs.length,
+          AppColors.primary,
+        ),
+        const SizedBox(height: 8),
+        ...statusNotifs.map((notif) => _buildNotificationCard(notif)),
+      ],
+    );
+  }
+
+  Widget _buildNotificationCard(Map<String, dynamic> notif) {
+    final type = notif['jenis_notifikasi']?.toString() ?? '';
+    final message = notif['pesan_notifikasi']?.toString() ?? '';
+    final isDiterima = type == 'pengajuan_diterima';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: isDiterima ? const Color(0xFFF0FDF4) : const Color(0xFFFEF2F2),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isDiterima ? const Color(0xFFBBF7D0) : const Color(0xFFFECACA),
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x06000000),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const MyApplicationsScreen(),
+              ),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: isDiterima
+                        ? const Color(0xFFDCFCE7)
+                        : const Color(0xFFFEE2E2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isDiterima
+                        ? Icons.check_circle_rounded
+                        : Icons.cancel_rounded,
+                    color: isDiterima
+                        ? const Color(0xFF15803D)
+                        : const Color(0xFFDC2626),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              isDiterima
+                                  ? 'Pengajuan Bergabung Diterima! 🎉'
+                                  : 'Pengajuan Bergabung Ditolak',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                                color: isDiterima
+                                    ? const Color(0xFF15803D)
+                                    : const Color(0xFFDC2626),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isDiterima
+                                  ? const Color(0xFFBBF7D0)
+                                  : const Color(0xFFFECACA),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'Lihat Status',
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        message,
+                        style: AppTextStyles.bodySm.copyWith(
+                          fontSize: 11.5,
+                          color: AppColors.text,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 13,
+                  color: AppColors.textMuted,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
