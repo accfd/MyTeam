@@ -1092,7 +1092,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                         iconBg: AppColors.primarySoft,
                         title: 'Status Pengajuan Bergabung Saya',
                         subtitle: 'Pantau respon & hasil lamaran bergabung tim',
-                        trailingBadge: 'FR-20',
+                        trailingBadge: 'Status',
                         onTap: () {
                           Navigator.pop(ctx);
                           Navigator.push(

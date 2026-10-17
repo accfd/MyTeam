@@ -181,18 +181,20 @@ class _StatusHubScreenState extends State<StatusHubScreen>
   }) {
     final isSelected = _subTabCtrl.index == index;
     return Expanded(
+      flex: isSelected ? 4 : 2,
       child: GestureDetector(
         onTap: () => setState(() => _subTabCtrl.animateTo(index)),
+        behavior: HitTestBehavior.opaque,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeInOutCubic,
           decoration: BoxDecoration(
             color: isSelected ? Colors.white : Colors.transparent,
             borderRadius: BorderRadius.circular(9),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
+                      color: Colors.black.withValues(alpha: 0.08),
                       blurRadius: 4,
                       offset: const Offset(0, 1),
                     ),
@@ -207,21 +209,26 @@ class _StatusHubScreenState extends State<StatusHubScreen>
                 size: 17,
                 color: isSelected ? AppColors.primary : AppColors.textMuted,
               ),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: AppTextStyles.labelMd.copyWith(
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected ? AppColors.primary : AppColors.textMuted,
-                  fontSize: 12.5,
+              if (isSelected) ...[
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    label,
+                    style: AppTextStyles.labelMd.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                      fontSize: 12.5,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              ),
+              ],
               if (badgeCount > 0) ...[
                 const SizedBox(width: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primary : AppColors.textMuted,
+                    color: isSelected ? AppColors.primary : AppColors.textMuted.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(99),
                   ),
                   child: Text(

@@ -471,7 +471,7 @@ class _ReceivedInvitationsScreenState extends State<ReceivedInvitationsScreen>
                   builder: (_) => const MyApplicationsScreen(),
                 ),
               ),
-              tooltip: 'Status Pengajuan Saya (FR-20)',
+              tooltip: 'Status Pengajuan Saya',
             ),
           ),
           Container(

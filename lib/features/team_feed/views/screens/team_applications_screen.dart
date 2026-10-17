@@ -1077,7 +1077,7 @@ class _TeamApplicationsScreenState extends State<TeamApplicationsScreen> {
                             _openApplicationDetail(app);
                           },
                           icon: const Icon(Icons.folder_shared_outlined, size: 16),
-                          label: const Text('Buka Profil & Portofolio Lengkap (FR-18)'),
+                          label: const Text('Buka Profil & Portofolio Lengkap'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.primary,
                             side: const BorderSide(color: AppColors.primaryOutline),
