@@ -9,12 +9,12 @@
 | **Nama Proyek** | MyTeam – Aplikasi Mobile Pencarian dan Pembentukan Tim Mahasiswa Unand |
 | **Mata Kuliah** | Pemrograman Aplikasi Mobile (PAM) |
 | **Program Studi / Fakultas** | Sistem Informasi / Teknologi Informasi, Universitas Andalas |
-| **Versi Dokumen** | **1.0.0 (Final Academic Contract)** |
-| **Tanggal Terbit** | 11 Oktober 2026 |
-| **Acuan Dokumen** | Product Requirements Document (PRD MyTeam Versi 1.0) |
+| **Versi Dokumen** | **1.1.0 (Contract-First Architecture & Flow Mapping)** |
+| **Tanggal Terbit** | 17 Oktober 2026 |
+| **Acuan Dokumen** | Product Requirements Document (PRD MyTeam Versi 1.1) & DESIGN.md v1.1.0 |
 | **Base URL Development** | `http://10.0.2.2:8000/api/v1` (Android Emulator) / `http://localhost:8000/api/v1` |
 | **Protokol Komunikasi** | RESTful JSON & Multipart Form-Data over HTTP/HTTPS |
-| **Anggota Tim (4 Mahasiswa)** | 1. **Fuadi Dhiyaulhaq** (2411522001) — *PIC Modul 1*<br>2. **Nayla Puspita Sari** (2411521007) — *PIC Modul 2*<br>3. **Rafa Gian Atthari** (2411522014) — *PIC Modul 3*<br>4. **Diva Ramadhani** (2411521017) — *PIC Modul 4* |
+| **Anggota Tim & PIC** | 1. **Fuadi Dhiyaulhaq** (2411522001) — *PIC Modul 1*<br>2. **Nayla Puspita Sari** (2411521007) — *PIC Modul 2*<br>3. **Rafa Gian Atthari** (2411522014) — *PIC Modul 3*<br>4. **Diva Ramadhani** (2411521017) — *PIC Modul 4* |
 
 ---
 
@@ -25,43 +25,43 @@ Dokumen ini merupakan kontrak resmi antarmuka pemrograman aplikasi (*API Specifi
 ### 1.1 Aturan & Prinsip Arsitektur
 1. **Stateless Authentication:** Seluruh endpoint privat diwajibkan menyertakan *JSON Web Token (JWT)* pada HTTP header `Authorization: Bearer <token>`.
 2. **Kesesuaian NFR-06 (Tanpa Firebase):** Penyimpanan file (foto profil dan dokumen tim seperti poster/panduan) ditangani langsung oleh file server backend lokal, bukan Firebase Storage.
-3. **Kesesuaian NFR-07 (Integritas & Konsistensi Data):** Operasi penghapusan tim (`DELETE /teams/{id}`) secara otomatis menghapus atau menonaktifkan relasi kebutuhan tim, dokumen pendukung, anggota tim, serta pengajuan terkait.
+3. **Kesesuaian NFR-07 (Integritas & Konsistensi Data):** Operasi penghapusan tim (`DELETE /teams/{id}`) secara otomatis menghapus atau menonaktifkan relasi kebutuhan tim, dokumen pendukung, anggota tim, serta pengajuan terkait (*cascade consistency*).
 4. **Respon Seragam:** Seluruh respon API menggunakan pembungkus (*envelope*) standar dengan status HTTP semantik (RFC 7231).
 
 ---
 
-## 2. Matriks Keterlacakan Kebutuhan (FR Traceability Matrix)
+## 2. Matriks Keterlacakan Kebutuhan & Alur Pengguna (FR & User Flow Traceability Matrix)
 
-Matriks berikut memetakan 25 Kebutuhan Fungsional (*Functional Requirements*) dari PRD v1.0 ke endpoint API yang bersesuaian, beserta penanggung jawab (*PIC*) modul:
+Matriks berikut memetakan 25 Kebutuhan Fungsional (*Functional Requirements*) dari PRD v1.1 dan 4 Kode User Flow (**UF-01 s.d UF-04**) ke endpoint API yang bersesuaian, beserta penanggung jawab (*PIC*) modul:
 
-| Kode FR | Deskripsi Kebutuhan Fungsional PRD v1.0 | HTTP Method | Endpoint API | PIC Modul |
-| :---: | :--- | :---: | :--- | :---: |
-| **FR-01** | Mengelola data diri (deskripsi singkat, kontak, prodi, fakultas, IPK) | `GET`, `PUT` | `/profile/data-diri` | Fuadi (M1) |
-| **FR-02** | Mengelola media sosial (nama & tautan) | `GET`, `POST`, `PUT`, `DELETE` | `/profile/media-sosial` | Fuadi (M1) |
-| **FR-03** | Mengelola minat (nama minat & deskripsi) | `GET`, `POST`, `PUT`, `DELETE` | `/profile/minat` | Fuadi (M1) |
-| **FR-04** | Mengelola keahlian (nama keahlian & deskripsi) | `GET`, `POST`, `PUT`, `DELETE` | `/profile/keahlian` | Fuadi (M1) |
-| **FR-05** | Mengelola pengalaman (nama kegiatan, peran, tahun, deskripsi) | `GET`, `POST`, `PUT`, `DELETE` | `/profile/pengalaman` | Fuadi (M1) |
-| **FR-06** | Melihat informasi tim yang diikuti (nama tim, kegiatan, kategori, posisi) | `GET` | `/profile/detail/{id_pengguna}` | Fuadi (M1) |
-| **FR-07** | Sistem mengirim notifikasi aktivitas data riwayat diri | *Auto-event* | `/notifications` | Fuadi (M1) |
-| **FR-08** | Membuat tim baru & mengunggah dokumen pendukung (poster/panduan) | `POST` | `/teams` | Nayla (M2) |
-| **FR-09** | Melihat daftar tim yang dibuat atau diikuti sebagai anggota dan detailnya | `GET` | `/teams/my-teams`, `/teams/{id}` | Nayla (M2) |
-| **FR-10** | Mengubah informasi & dokumen tim (kategori kegiatan dikunci) | `PUT` | `/teams/{id}` | Nayla (M2) |
-| **FR-11** | Menghapus tim yang telah dibuat | `DELETE` | `/teams/{id}` | Nayla (M2) |
-| **FR-12** | Menerima notifikasi saat ada pengajuan bergabung ke tim | *Auto-event* | `/notifications` | Nayla (M2) |
-| **FR-13** | Melihat feed tim atau kegiatan terbaru | `GET` | `/teams/feed` | Rafa (M3) |
-| **FR-14** | Pencarian dan penyaringan tim berdasarkan kriteria | `GET` | `/teams/feed?search=&kategori=&keahlian=` | Rafa (M3) |
-| **FR-15** | Melihat detail tim dari hasil pencarian | `GET` | `/teams/feed/{id_tim}` | Rafa (M3) |
-| **FR-16** | Mengajukan bergabung ke tim dengan **posisi yang dilamar** & pesan | `POST` | `/applications/join-team` | Rafa (M3) |
-| **FR-17** | Pembuat tim melihat daftar pengajuan bergabung | `GET` | `/teams/{id_tim}/applications` | Rafa (M3) |
-| **FR-18** | Pembuat tim melihat detail pengajuan (posisi dilamar & profil pelamar) | `GET` | `/applications/join-team/{id}` | Rafa (M3) |
-| **FR-19** | Pembuat tim menerima atau menolak pengajuan bergabung | `PATCH` | `/applications/join-team/{id}/status` | Rafa (M3) |
-| **FR-20** | Melihat status pengajuan & notifikasi pembaruan status | `GET`, *Event* | `/applications/my-applications` | Rafa (M3) |
-| **FR-21** | Mencari calon anggota dengan kata kunci nama/program studi/NIM, filter keahlian/minat, dan jumlah pengalaman pada hasil | `GET` | `/members/search` | Diva (M4) |
-| **FR-22** | Melihat detail profil calon anggota dari hasil pencarian | `GET` | `/profile/detail/{id_pengguna}` | Diva (M4) |
-| **FR-23** | Pembuat tim mengajukan permintaan (undangan) ke calon anggota | `POST` | `/applications/invite-member` | Diva (M4) |
-| **FR-24** | Calon anggota melihat detail tim & menerima/menolak undangan | `GET`, `PATCH` | `/applications/received-invitations`, `/applications/received-invitations/{id}/status` | Diva (M4) |
-| **FR-24b** | Pembuat tim melihat status undangan terkirim (menunggu/diterima/ditolak) | `GET` | `/applications/sent-invitations` | Diva (M4) |
-| **FR-25** | Notifikasi otomatis ketika undangan dikirim atau direspons | *Auto-event* | Dibuat pada alur FR-23 dan FR-24; bukan endpoint pengelolaan notifikasi | Diva (M4) |
+| Kode FR | Deskripsi Kebutuhan Fungsional PRD v1.1 | User Flow Terkait | HTTP Method | Endpoint API | PIC Modul |
+| :---: | :--- | :---: | :---: | :--- | :---: |
+| **FR-01** | Mengelola data diri (deskripsi singkat, kontak, prodi, fakultas, IPK) | UF-01, UF-02, UF-03, UF-04 | `GET`, `PUT` | `/profile/data-diri` | Fuadi (M1) |
+| **FR-02** | Mengelola media sosial (nama & tautan) | UF-03, UF-04 | `GET`, `POST`, `PUT`, `DELETE` | `/profile/media-sosial` | Fuadi (M1) |
+| **FR-03** | Mengelola minat (nama minat & deskripsi) | UF-02, UF-04 | `GET`, `POST`, `PUT`, `DELETE` | `/profile/minat` | Fuadi (M1) |
+| **FR-04** | Mengelola keahlian (nama keahlian & deskripsi) | UF-02, UF-03 | `GET`, `POST`, `PUT`, `DELETE` | `/profile/keahlian` | Fuadi (M1) |
+| **FR-05** | Mengelola pengalaman (nama kegiatan, peran, tahun, deskripsi) | UF-01, UF-02, UF-03 | `GET`, `POST`, `PUT`, `DELETE` | `/profile/pengalaman` | Fuadi (M1) |
+| **FR-06** | Melihat informasi tim yang diikuti (nama tim, kegiatan, kategori, posisi) | UF-01, UF-03, UF-04 | `GET` | `/profile/detail/{id_pengguna}` | Fuadi (M1) |
+| **FR-07** | Sistem mengirim notifikasi aktivitas data riwayat diri | UF-01, UF-02, UF-03, UF-04 | *Auto-event* | `/notifications` | Fuadi (M1) |
+| **FR-08** | Membuat tim baru & mengunggah dokumen pendukung (poster/panduan) | UF-01 | `POST` | `/teams` | Nayla (M2) |
+| **FR-09** | Melihat daftar tim yang dibuat atau diikuti sebagai anggota dan detailnya | UF-01, UF-02 | `GET` | `/teams/my-teams`, `/teams/{id}` | Nayla (M2) |
+| **FR-10** | Mengubah informasi & dokumen tim (kategori kegiatan dikunci) | UF-01 | `PUT` | `/teams/{id}` | Nayla (M2) |
+| **FR-11** | Menghapus tim yang telah dibuat | *Maintenance* | `DELETE` | `/teams/{id}` | Nayla (M2) |
+| **FR-12** | Menerima notifikasi saat ada pengajuan bergabung ke tim | UF-01 | *Auto-event* | `/notifications` | Nayla (M2) |
+| **FR-13** | Melihat feed tim atau kegiatan terbaru | UF-03 | `GET` | `/teams/feed` | Rafa (M3) |
+| **FR-14** | Pencarian dan penyaringan tim berdasarkan kriteria | UF-03 | `GET` | `/teams/feed?search=&kategori=&keahlian=` | Rafa (M3) |
+| **FR-15** | Melihat detail tim dari hasil pencarian | UF-03 | `GET` | `/teams/feed/{id_tim}` | Rafa (M3) |
+| **FR-16** | Mengajukan bergabung ke tim dengan **posisi yang dilamar** & pesan | UF-03 | `POST` | `/applications/join-team` | Rafa (M3) |
+| **FR-17** | Pembuat tim melihat daftar pengajuan bergabung | UF-01 | `GET` | `/teams/{id_tim}/applications` | Rafa (M3) |
+| **FR-18** | Pembuat tim melihat detail pengajuan (posisi dilamar & profil pelamar) | UF-01 | `GET` | `/applications/join-team/{id}` | Rafa (M3) |
+| **FR-19** | Pembuat tim menerima atau menolak pengajuan bergabung | UF-01 | `PATCH` | `/applications/join-team/{id}/status` | Rafa (M3) |
+| **FR-20** | Melihat status pengajuan & notifikasi pembaruan status | UF-03 | `GET`, *Event* | `/applications/my-applications` | Rafa (M3) |
+| **FR-21** | Mencari calon anggota dengan kata kunci nama/NIM/program studi, memfilter keahlian dan minat | UF-02 | `GET` | `/members/search` | Diva (M4) |
+| **FR-22** | Melihat detail profil calon anggota dari hasil pencarian | UF-02 | `GET` | `/profile/detail/{id_pengguna}` | Diva (M4) |
+| **FR-23** | Pembuat tim mengundang calon anggota dengan memilih posisi yang masih berkuota dan pesan undangan | UF-02 | `GET`, `POST` | `/teams/my-teams`, `/applications/invite-member` | Diva (M4) |
+| **FR-24** | Calon anggota melihat detail tim/posisi dan menerima/menolak undangan (kuota penuh -> ditolak otomatis) | UF-04 | `GET`, `PATCH` | `/applications/received-invitations`, status | Diva (M4) |
+| **FR-24b**| Pembuat tim melihat status undangan terkirim (menunggu/diterima/ditolak) | UF-02 | `GET` | `/applications/sent-invitations` | Diva (M4) |
+| **FR-25** | Notifikasi dua arah: calon anggota diundang & pembuat tim direspons | UF-02, UF-04 | *Auto-event* | `/notifications` | Diva (M4) |
 
 ---
 
@@ -80,7 +80,7 @@ Authorization: Bearer <jwt_access_token>
 * **Status Tim:** `'terbuka'`, `'ditutup'`
 * **Jenis Dokumen Pendukung:** `'poster'`, `'panduan'`
 * **Status Pengajuan / Undangan:** `'menunggu'`, `'diterima'`, `'ditolak'`
-* **Jenis Notifikasi:** `'riwayat_diri_diperbarui'`, `'pengajuan_masuk'`, `'pengajuan_diterima'`, `'pengajuan_ditolak'`, `'undangan_masuk'`, `'undangan_diterima'`, `'undangan_ditolak'`
+* **Jenis Notifikasi:** `'riwayat_diri_diperbarui'`, `'pengajuan_masuk'`, `'pengajuan_diterima'`, `'pengajuan_ditolak'`, `'undangan_masuk'`, `'respon_undangan'`
 
 ### 3.3 Struktur Respon Standar
 
@@ -634,16 +634,33 @@ Authorization: Bearer <jwt_access_token>
 
 ---
 
-### MODUL 4: PENCARIAN ANGGOTA, REKRUTMEN & NOTIFIKASI (PIC: Diva Ramadhani)
+### MODUL 4: PENCARIAN ANGGOTA, PENGAJUAN ANGGOTA & NOTIFIKASI UNDANGAN (PIC: Diva Ramadhani)
+
+**Ruang lingkup:** pembuat tim mencari calon anggota (nama, NIM, program studi, keahlian, minat), meninjau profilnya, mengirim undangan lewat form *Ajak Bergabung ke Tim*, dan memantau undangan terkirim. Calon anggota mengelola undangan masuk (terima/tolak). Notifikasi dibuat otomatis oleh server pada setiap pengiriman dan respons undangan.
+
+| Layar Flutter | Fitur | Endpoint yang dipakai |
+| :--- | :--- | :--- |
+| `TalentSearchScreen` | Pencarian + filter keahlian/minat + reset filter (FR-21) | `GET /members/search` |
+| `MemberDetailScreen` | Detail calon anggota (FR-22) | `GET /profile/detail/{id_pengguna}` |
+| `_InviteBottomSheet` (dibuka dari tombol *Ajak Bergabung ke Tim*) | Form pilih tim, posisi, pesan; Kirim/Batal (FR-23) | `GET /teams/my-teams`, `POST /applications/invite-member` |
+| `ReceivedInvitationsScreen` tab **Undangan Masuk** | Lihat undangan, detail tim, terima/tolak (FR-24) | `GET /applications/received-invitations`, `PATCH /applications/received-invitations/{id}/status`, `GET /teams/feed/{id_tim}` |
+| `ReceivedInvitationsScreen` tab **Undangan Terkirim** | Pantau status undangan terkirim (FR-24b) | `GET /applications/sent-invitations` |
+| *(otomatis di server)* | Notifikasi undangan & respons (FR-25) | Dibuat pada `POST /applications/invite-member` dan `PATCH .../status` |
+| Ikon **Notifikasi** di navigasi bawah (`HomeScreen`) | Badge jumlah notifikasi belum dibaca (FR-25) | `GET /notifications/unread-count`, `PATCH /notifications/read-all` |
 
 #### 4.4.1 Pencarian Calon Anggota (FR-21)
 * **Endpoint:** `GET /members/search`
 * **Akses:** Terautentikasi
 * **Query Parameters:**
-  * `q` (string, optional): Kata kunci yang dicocokkan dengan nama mahasiswa, program studi, atau NIM.
-  * `keahlian` (string, optional): Filter keahlian spesifik (misal: `Python`).
-  * `minat` (string, optional): Filter minat spesifik.
-  * `page`, `limit` (pagination).
+
+| Parameter | Tipe | Wajib | Keterangan |
+| :--- | :--- | :---: | :--- |
+| `q` | string | Tidak | Kata kunci yang dicocokkan (`LIKE %q%`) dengan **nama**, **program studi**, atau **NIM**. |
+| `keahlian` | string | Tidak | Filter keahlian (tidak peka huruf besar/kecil, cocok sebagian). Pada aplikasi dipilih lewat chip *Filter Keahlian*. |
+| `minat` | string | Tidak | Filter minat (aturan sama dengan `keahlian`). Pada aplikasi dipilih lewat chip *Filter Minat*. |
+| `page`, `limit` | integer | Tidak | Paginasi. Default `page=1`, `limit=20`. |
+
+* **Aturan:** semua parameter yang diisi digabung dengan logika **AND**. Filter `keahlian`/`minat` diterapkan setelah data diambil, sehingga paginasi dihitung dari hasil yang sudah terfilter. **Reset filter** dilakukan di sisi aplikasi (tombol hapus filter / reset pada kondisi hasil kosong) dengan memanggil ulang endpoint tanpa `keahlian`/`minat`. Opsi chip filter dibentuk dari daftar keahlian dan minat pada hasil pencarian tanpa filter. Pengguna yang sedang login tidak dikecualikan dari hasil; upaya mengundang diri sendiri ditolak di sisi aplikasi.
 * **Respon Sukses (200 OK):**
 ```json
 {
@@ -654,32 +671,26 @@ Authorization: Bearer <jwt_access_token>
       "id_pengguna": "usr_nayla_04",
       "nim": "2411521007",
       "nama_pengguna": "Nayla Puspita Sari",
+      "foto_profil": "profiles/usr_nayla_04.jpg",
       "program_studi": "Sistem Informasi",
       "fakultas": "Teknologi Informasi",
-      "foto_profil": "profiles/usr_nayla_04.jpg",
-      "keahlian": [
-        "Python & Pandas",
-        "Scientific Writing"
-      ],
-      "minat": [
-        "Data Science & Analytics",
-        "Riset Ilmiah & PKM"
-      ],
+      "ipk": 3.88,
+      "deskripsi_singkat": "Peneliti muda di bidang Data Science dan Analisis Sistem.",
+      "keahlian": ["Python & Pandas", "Scientific Writing"],
+      "minat": ["Data Science & Analytics", "Riset Ilmiah & PKM"],
       "total_pengalaman": 1
     }
   ],
-  "pagination": {
-    "current_page": 1,
-    "per_page": 20,
-    "total_records": 1,
-    "total_pages": 1
-  }
+  "pagination": { "current_page": 1, "per_page": 20, "total_records": 1, "total_pages": 1 }
 }
 ```
+* `program_studi`, `fakultas`, `ipk`, dan `deskripsi_singkat` bernilai `null` jika pengguna belum mengisi data diri. `total_pengalaman` menampilkan jumlah pengalaman sebagai informasi profil (bukan kriteria filter). **Respon Gagal:** `500` untuk kesalahan server.
 
 #### 4.4.2 Detail Profil Calon Anggota (FR-22)
-* **Endpoint:** `GET /profile/detail/{id_pengguna}`
-* **Respon Sukses (200 OK):** Data dikembalikan di dalam objek `data`, dengan `pengguna`, `data_diri`, `media_sosial`, `minat`, `keahlian`, `pengalaman`, dan `tim_yang_diikuti`. Nilai `data_diri` dapat `null` jika belum tersedia.
+* **Endpoint:** `GET /profile/detail/{id_pengguna}` (endpoint yang sama dengan FR-06)
+* **Akses:** Terautentikasi
+* **Penggunaan di aplikasi:** dibuka dari kartu hasil pencarian (`MemberDetailScreen`). Layar menampilkan ringkasan jumlah keahlian/minat/pengalaman, deskripsi singkat, prodi dan IPK, media sosial & portofolio, minat, keahlian, riwayat pengalaman, serta tim yang diikuti. Tombol **Ajak Bergabung ke Tim** pada layar ini membuka form FR-23.
+* **Respon Sukses (200 OK):** data dikembalikan di dalam objek `data`, dengan `pengguna`, `data_diri`, `media_sosial`, `minat`, `keahlian`, `pengalaman`, dan `tim_yang_diikuti`. Nilai `data_diri` dapat `null` jika belum tersedia.
 ```json
 {
   "success": true,
@@ -720,9 +731,19 @@ Authorization: Bearer <jwt_access_token>
 }
 ```
 
-#### 4.4.3 Undangan Rekrutmen ke Calon Anggota (FR-23)
+
+#### 4.4.3 Pengajuan Bergabung: Kirim Undangan ke Calon Anggota (FR-23)
+**Alur form (`_InviteBottomSheet`):** pembuat tim menekan tombol **Ajak Bergabung ke Tim** pada detail calon anggota, lalu mengisi:
+1. **Pilih Tim:** dari `GET /teams/my-teams`, hanya tim dengan `peran = "pemilik"` (tim yang dibuat pengguna). Jika hanya ada satu tim, tim terpilih otomatis.
+2. **Posisi yang Ditawarkan:** dropdown berisi hanya posisi yang masih memiliki kuota (`jumlah_anggota_dibutuhkan` dikurangi jumlah `anggota_tim` pada posisi tersebut). Posisi yang sudah penuh tidak ditampilkan.
+3. **Pesan Undangan:** teks bebas.
+4. Tombol **Kirim Undangan** atau **Batal** (menutup form tanpa memanggil API).
+
+Validasi di aplikasi: tim, posisi, dan pesan wajib diisi; pengguna tidak dapat mengundang dirinya sendiri.
+
 * **Endpoint:** `POST /applications/invite-member`
-* **Validasi:** `id_tim`, `id_pengguna`, `posisi`, dan `pesan_pengajuan` wajib diisi. Posisi harus sesuai kebutuhan tim dan kuotanya belum terpenuhi. Calon anggota yang sudah menjadi anggota tim yang sama tidak dapat diundang lagi.
+* **Akses:** Terautentikasi
+* **Validasi server:** pengirim diambil dari token JWT dan **harus pembuat (pemilik) tim**. `id_tim`, `id_pengguna`, `posisi`, dan `pesan_pengajuan` wajib diisi. Calon anggota harus terdaftar dan bukan pengirim sendiri. Posisi harus ada pada `Kebutuhan_Anggota_Tim` tim tersebut (tidak peka huruf besar/kecil) dan kuotanya belum terpenuhi. Calon anggota yang sudah menjadi anggota tim, atau masih memiliki undangan `menunggu` dari tim yang sama, tidak dapat diundang lagi.
 * **Request Body:**
 ```json
 {
@@ -746,14 +767,25 @@ Authorization: Bearer <jwt_access_token>
   }
 }
 ```
-* **Kesalahan validasi:** field wajib yang tidak lengkap menghasilkan `422 Unprocessable Entity`.
-* **Konflik (409 Conflict) saat mengirim undangan:** terjadi jika calon anggota sudah menjadi anggota tim atau posisi tidak tersedia/kuotanya sudah penuh. Dalam kondisi ini undangan tidak dibuat. Ini berbeda dari kuota yang baru penuh setelah undangan terkirim: jika calon anggota memilih menerima undangan tersebut, backend mengubah status undangan menjadi `"ditolak"` dan mengembalikan `200 OK` dengan pesan kuota penuh (lihat FR-24).
+* **Aksi sistem (satu transaksi):** menyimpan undangan ke `Pengajuan_Anggota` dengan status `menunggu` dan membuat notifikasi `undangan_masuk` untuk calon anggota dengan isi: Anda menerima undangan untuk bergabung ke "{nama_tim}" sebagai {posisi}.
+* **Respon Gagal:**
 
-#### 4.4.4 Respon Calon Anggota terhadap Undangan (FR-24 — Tab Undangan Masuk)
-Pada antarmuka pengguna **Notifikasi Undangan**, calon anggota dapat membuka tab **"Undangan Masuk"** untuk melihat tim-tim yang mengajak mereka bergabung dan memberikan keputusan (*Terima* / *Tolak*).
+| Kode | Kondisi |
+| :---: | :--- |
+| `401` | Token tidak ada/tidak valid. |
+| `403` | Pengirim bukan pembuat tim. |
+| `404` | Tim atau calon anggota tidak ditemukan. |
+| `422` | Field wajib tidak lengkap, atau mengundang diri sendiri. |
+| `409` | Calon sudah anggota tim, masih ada undangan `menunggu` dari tim yang sama, atau posisi tidak tersedia/kuota penuh (undangan tidak dibuat). |
+| `500` | Kesalahan server. |
 
-* **Daftar Undangan Masuk:** `GET /applications/received-invitations?id_pengguna={id_pengguna}`
-* **Akses:** Terautentikasi (Calon Anggota)
+Kondisi `409` kuota ini berbeda dari kuota yang baru penuh setelah undangan terkirim (lihat FR-24).
+
+#### 4.4.4 Kelola Undangan Masuk: Terima / Tolak (FR-24)
+Calon anggota membuka menu **Notifikasi** lalu tab **Undangan Masuk** (`ReceivedInvitationsScreen`). Undangan dikelompokkan menjadi **Menunggu Keputusan** dan **Riwayat Undangan**. Menekan kartu undangan membuka detail tim pengundang (`TeamDetailViewScreen`: tentang tim, posisi yang dibutuhkan, anggota tim, dokumen pendukung) lewat `GET /teams/feed/{id_tim}`. Tombol **Terima**/**Tolak** menampilkan dialog konfirmasi sebelum memanggil API.
+
+* **Daftar Undangan Masuk:** `GET /applications/received-invitations`
+* **Akses:** Terautentikasi (calon anggota). Identitas diambil dari token JWT. Parameter `id_pengguna` bersifat opsional dan, bila dikirim, harus sama dengan pemilik token (jika berbeda: `403`). Daftar memuat semua status, diurutkan dari yang terbaru. Tanpa token: `401`.
 * **Respon Sukses (200 OK):**
 ```json
 {
@@ -764,39 +796,31 @@ Pada antarmuka pengguna **Notifikasi Undangan**, calon anggota dapat membuka tab
       "id_tim": "tim_pkm_02",
       "id_pengguna": "usr_fuadi_01",
       "posisi": "Mobile App Developer",
-      "pesan_pengajuan": "Halo Fuadi, kami melihat portofolio dan riwayat pengalaman mobile development Anda di MyTeam. Tim riset PKM Pangan kami sangat membutuhkan keahlian Anda untuk modul mobile data collection. Apakah Anda bersedia bergabung?",
+      "pesan_pengajuan": "Halo Fuadi, kami melihat portofolio dan riwayat pengalaman mobile development Anda di MyTeam. Apakah Anda bersedia bergabung?",
       "status_pengajuan": "menunggu",
       "waktu_pengajuan": "2026-10-09T11:00:00.000Z",
       "nama_tim": "Inovator Pangan Unand",
       "nama_kegiatan": "Program Kreativitas Mahasiswa Riset Eksakta (PKM-RE) 2026",
       "kategori_kegiatan": "Penelitian",
-      "deskripsi_tim": "Proyek riset interdisipliner untuk membangun model kecerdasan buatan dan aplikasi mobile pemantau kestabilan pasokan komoditas pangan lokal Sumatera Barat."
+      "deskripsi_tim": "Proyek riset interdisipliner untuk membangun model kecerdasan buatan dan aplikasi mobile pemantau pasokan komoditas pangan lokal Sumatera Barat."
     }
   ]
 }
 ```
 
-* **Aksi Keputusan Calon Anggota:** `PATCH /applications/received-invitations/{id_pengajuan_anggota}/status`
-* **Request Body:**
-```json
-{
-  "status_pengajuan": "diterima"
-}
-```
-*(Nilai valid: `"diterima"` atau `"ditolak"`)*
-* Saat status `"diterima"` dan kuota posisi masih tersedia, backend menambahkan calon anggota ke `Anggota_Tim` menggunakan posisi yang ditawarkan, lalu menyimpan status `"diterima"`.
-* Jika kuota posisi telah penuh saat undangan dijawab, backend tetap menyelesaikan respons dengan HTTP `200 OK`, mengubah status undangan menjadi `"ditolak"`, dan mengembalikan pesan yang menyebutkan posisi tersebut. Calon anggota tidak dimasukkan ke `Anggota_Tim`.
-* Pembaruan status, penambahan anggota (jika diterima), dan notifikasi kepada pembuat tim diproses dalam satu transaksi.
-* Aplikasi menampilkan pesan respons dari backend dan memuat ulang daftar undangan agar status akhir, termasuk status `"ditolak"` otomatis, terlihat pada kartu undangan.
+* **Aksi Keputusan:** `PATCH /applications/received-invitations/{id_pengajuan_anggota}/status` (hanya calon anggota yang diundang; tanpa token `401`, bukan penerima undangan `403`)
+* **Request Body:** `{ "status_pengajuan": "diterima" }` (nilai valid: `"diterima"` atau `"ditolak"`)
+* **Aturan (satu transaksi):**
+  * `diterima` dan kuota posisi masih tersedia: calon anggota ditambahkan ke `Anggota_Tim` pada posisi yang ditawarkan, status menjadi `diterima`.
+  * `diterima` tetapi kuota posisi sudah penuh: tetap `200 OK`, status otomatis menjadi `ditolak`, pesan menyebut posisi tersebut, dan calon anggota tidak dimasukkan ke tim.
+  * `ditolak`: status menjadi `ditolak`.
+  * Pada kedua keputusan, server membuat notifikasi `respon_undangan` untuk pemilik tim (lihat FR-25).
 * **Respon Sukses (200 OK):**
 ```json
 {
   "success": true,
   "message": "Undangan berhasil di-diterima.",
-  "data": {
-    "id_pengajuan_anggota": "pga_01",
-    "status_pengajuan": "diterima"
-  }
+  "data": { "id_pengajuan_anggota": "pga_01", "status_pengajuan": "diterima" }
 }
 ```
 * **Respon ketika kuota penuh (200 OK):**
@@ -804,19 +828,16 @@ Pada antarmuka pengguna **Notifikasi Undangan**, calon anggota dapat membuka tab
 {
   "success": true,
   "message": "Kuota untuk posisi \"Mobile App Developer\" sudah penuh. Undangan otomatis ditolak.",
-  "data": {
-    "id_pengajuan_anggota": "pga_01",
-    "status_pengajuan": "ditolak"
-  }
+  "data": { "id_pengajuan_anggota": "pga_01", "status_pengajuan": "ditolak" }
 }
 ```
-* Status selain `"diterima"` atau `"ditolak"` menghasilkan `400`; undangan tidak ditemukan menghasilkan `404`; undangan yang sudah pernah direspons menghasilkan `409`.
-* Pada kedua respons keputusan tersebut, backend membuat notifikasi untuk pemilik tim dengan `jenis_notifikasi: "respon_undangan"`. Jika kuota penuh, isi notifikasi menyebut respons `"ditolak"`.
+* **Respon Gagal:** `401` token tidak valid; `403` bukan penerima undangan; `400` status selain `diterima`/`ditolak`; `404` undangan tidak ditemukan; `409` undangan sudah pernah direspons, calon anggota sudah menjadi anggota tim, atau undangan lama belum memiliki posisi; `500` kesalahan server. Aplikasi menampilkan pesan dari server lalu memuat ulang daftar.
 
-#### 4.4.5 Pemantauan Undangan Terkirim dan Notifikasi Respons (FR-25)
-* **Endpoint:** `GET /applications/sent-invitations?id_pengguna={id_pengguna}`
-* **Akses:** Pembuat tim.
-* **Deskripsi:** Mengambil undangan yang dikirim oleh tim milik pengguna tersebut, termasuk posisi, calon anggota, dan status (`menunggu`, `diterima`, atau `ditolak`). Pada alur yang sama, sistem membuat notifikasi secara otomatis: `undangan_masuk` untuk calon anggota setelah undangan dikirim melalui FR-23, dan `respon_undangan` untuk pembuat tim setelah calon anggota merespons melalui FR-24. Jika kuota posisi penuh ketika undangan diterima, status akhir menjadi `ditolak` dan notifikasi kepada pembuat tim mengikuti status tersebut.
+#### 4.4.5 Kelola Undangan Terkirim (FR-24b)
+Pembuat tim membuka tab **Undangan Terkirim** pada layar yang sama. Layar menampilkan ringkasan jumlah **Menunggu / Diterima / Ditolak** dan daftar undangan yang dikelompokkan menurut status.
+
+* **Endpoint:** `GET /applications/sent-invitations`
+* **Akses:** Pembuat tim. Identitas diambil dari token JWT; `id_pengguna` opsional dan harus sama dengan pemilik token (jika berbeda: `403`; tanpa token: `401`). Mengambil undangan dari semua tim yang dimiliki pengguna tersebut.
 * **Respon Sukses (200 OK):**
 ```json
 {
@@ -841,6 +862,25 @@ Pada antarmuka pengguna **Notifikasi Undangan**, calon anggota dapat membuka tab
   ]
 }
 ```
+
+#### 4.4.6 Notifikasi Undangan (FR-25)
+Notifikasi dibuat otomatis oleh server (tanpa endpoint pembuatan) dan disimpan di tabel `Notifikasi`:
+
+| Pemicu | Penerima | `jenis_notifikasi` | Contoh isi (`pesan_notifikasi`) |
+| :--- | :--- | :--- | :--- |
+| `POST /applications/invite-member` | Calon anggota | `undangan_masuk` | Anda menerima undangan untuk bergabung ke "Inovator Pangan Unand" sebagai Mobile App Developer. |
+| `PATCH .../received-invitations/{id}/status` | Pemilik tim | `respon_undangan` | Fuadi Dhiyaulhaq telah diterima undangan bergabung ke tim "Inovator Pangan Unand" sebagai Mobile App Developer. |
+
+Setiap notifikasi menyimpan `id_pengajuan_anggota` dan `status_dibaca` (default `false`). Notifikasi dibaca lewat endpoint bersama berikut. Identitas pengguna diambil dari token JWT (tanpa token: `401`); `id_pengguna` pada query hanya dipakai sebagai cadangan jika token tidak dikirim.
+
+| Endpoint | Fungsi | Respon |
+| :--- | :--- | :--- |
+| `GET /notifications` | Daftar notifikasi milik pengguna, terbaru dahulu | `200` + array notifikasi |
+| `GET /notifications/unread-count` | Jumlah notifikasi belum dibaca (badge ikon Notifikasi) | `200` `{ "data": { "unread_count": 2 } }` |
+| `PATCH /notifications/read-all` | Menandai semua notifikasi milik pengguna sudah dibaca | `200` `{ "data": { "updated": 2 } }` |
+| `PATCH /notifications/{id}/read` | Menandai satu notifikasi sudah dibaca (hanya milik sendiri) | `200`; `404` jika bukan milik pengguna |
+
+**Badge pada aplikasi:** ikon **Notifikasi** di navigasi bawah menampilkan jumlah `unread_count`. Angka disegarkan saat aplikasi dibuka, saat berpindah tab, dan tiap 30 detik. Membuka (atau meninggalkan) tab Notifikasi memanggil `PATCH /notifications/read-all` sehingga badge kembali ke 0. Status undangan juga ditampilkan langsung pada tab **Undangan Masuk** dan **Undangan Terkirim**; jika kuota penuh saat undangan diterima, isi notifikasi mengikuti status akhir `ditolak`.
 
 ---
 

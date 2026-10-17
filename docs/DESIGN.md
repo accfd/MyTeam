@@ -10,13 +10,13 @@
 | **Aplikasi Target** | MyTeam – Platform Kolaborasi dan Pembentukan Tim Mahasiswa Unand |
 | **Mata Kuliah** | Pemrograman Aplikasi Mobile (PAM) |
 | **Fakultas / Kampus** | Teknologi Informasi, Universitas Andalas |
-| **Versi Dokumen** | **1.0.0 (Official Design Guide)** |
-| **Tanggal Terbit** | 11 Oktober 2026 |
-| **Dokumen Acuan** | PRD MyTeam Versi 1.0 & API Specification Contract Versi 1.0.0 |
+| **Versi Dokumen** | **1.1.0 (Official Design Guide & Flow Architecture)** |
+| **Tanggal Terbit** | 17 Oktober 2026 |
+| **Dokumen Acuan** | PRD MyTeam Versi 1.1 & API Specification Contract Versi 1.1.0 |
 | **Tipografi Utama** | Google Font: **Inter** |
 | **Warna Utama Brand** | **Unand Emerald Green** (`#008000` / `#006400`) |
 | **Aset Logo Utama** | `assets/images/logo-MyTeam.png` (Dimensi: 1254 × 1254 px) |
-| **Anggota Tim (4 Mahasiswa)** | 1. **Fuadi Dhiyaulhaq** (2411522001) — *PIC Modul 1*<br>2. **Nayla Puspita Sari** (2411521007) — *PIC Modul 2*<br>3. **Rafa Gian Atthari** (2411522014) — *PIC Modul 3*<br>4. **Diva Ramadhani** (2411521017) — *PIC Modul 4* |
+| **Anggota Tim & PIC** | 1. **Fuadi Dhiyaulhaq** (2411522001) — *PIC Modul 1*<br>2. **Nayla Puspita Sari** (2411521007) — *PIC Modul 2*<br>3. **Rafa Gian Atthari** (2411522014) — *PIC Modul 3*<br>4. **Diva Ramadhani** (2411521017) — *PIC Modul 4* |
 
 ---
 
@@ -168,7 +168,7 @@ Kedalaman antarmuka dibangun dengan perpaduan garis tepi hairline (`1px solid #E
 ---
 
 ### 3.2 Kartu Profil Kandidat (*Candidate Card — Modul 1 & 4*)
-Diterapkan pada fitur pencarian calon anggota (FR-22) dan detail profil (FR-23):
+Diterapkan pada fitur pencarian calon anggota (FR-21), detail profil (FR-22), dan alur talent scouting (UF-02 & UF-04):
 * **Struktur Kartu:**
   * **Baris Atas:** Lingkaran foto profil berdiameter `44px` (dengan inisial fallback), nama mahasiswa (`title-md`), dan subtitle program studi/fakultas (`body-sm`, warna `#6B7280`).
   * **Baris Tengah:** Deskripsi diri singkat / minat, diikuti deretan chip pil horizontal (misal: `Flutter`, `UI/UX`, `Python`).
@@ -177,14 +177,14 @@ Diterapkan pada fitur pencarian calon anggota (FR-22) dan detail profil (FR-23):
 ---
 
 ### 3.3 Kartu Lowongan Tim (*Project Vacancy Card — Modul 2 & 3*)
-Diterapkan pada Feed Tim (FR-14) dan Hasil Pencarian Tim (FR-15):
+Diterapkan pada Feed Tim (FR-13), Hasil Pencarian Tim (FR-14), Detail Tim (FR-15), dan alur lamaran (UF-01 & UF-03):
 * **Aksen Visual Khas:** Terdapat garis penanda vertikal tebal `3.5px` di sisi kiri kartu dengan warna `#008000`.
 * **Struktur Kartu:**
   * **Badge Kategori:** Pill di kanan atas (misal: `Lomba` latar `#FEF3C7`, atau `Penelitian` latar `#DBEAFE`).
   * **Header:** Nama tim (`title-md`) dan nama kegiatan lomba/PKM (`body-sm` `#6B7280`).
   * **Status Kuota Anggota:** Stack lingkaran avatar yang sudah terisi dan pill kapasitas (misal: "Sisa 1 Posisi" merah jika mendesak, atau "2 Posisi Terbuka" hijau).
   * **Tags Posisi:** Chip berisi nama role yang dicari (misal: `Mobile Developer`, `Hardware Specialist`).
-  * **Aksi:** Tombol "Ajukan Bergabung" yang membuka bottom sheet pemilihan posisi yang dilamar (FR-17).
+  * **Aksi:** Tombol "Ajukan Bergabung" yang membuka bottom sheet pemilihan posisi yang dilamar (FR-16).
 
 ---
 
@@ -398,13 +398,56 @@ abstract final class AppTextStyles {
 
 ## 5. Ringkasan Sinkronisasi Desain Antarmuka
 
-| Aspek Desain | Keselarasan dengan PRD v1.0 | Keselarasan dengan API Contract |
+| Aspek Desain | Keselarasan dengan PRD v1.1 | Keselarasan dengan API Contract v1.1 |
 | :--- | :--- | :--- |
 | **Formulir Pengalaman** | Tidak ada field upload gambar/media; input hanya Nama Kegiatan, Peran, Tahun, dan Deskripsi. | Sesuai `POST /profile/pengalaman` (`deskripsi_pengalaman`). |
-| **Pengajuan Bergabung** | Modal pemilihan posisi yang dibuka sebelum mengirim pesan pengajuan. | Sesuai `POST /applications/join-team` (wajib parameter `posisi`). |
-| **Badge Status** | Tiga warna standar: Kuning (menunggu), Hijau (diterima), Merah (ditolak). | Sesuai enum field `status_pengajuan` pada database. |
+| **Pengajuan Bergabung** | Modal bottom sheet pemilihan posisi yang dibuka sebelum mengirim pesan pengajuan. | Sesuai `POST /applications/join-team` (wajib parameter `posisi`). |
+| **Badge Status** | Tiga warna standar: Kuning (`menunggu`), Hijau (`diterima`), Merah (`ditolak`). | Sesuai enum field `status_pengajuan` pada database. |
 | **Dokumen Tim** | Tampilan lampiran PDF/Gambar untuk poster kegiatan dan pedoman teknis tim. | Sesuai entitas `Dokumen_Pendukung` (`poster` / `panduan`). |
 
 ---
 
+## 6. Pemetaan Alur Layar Antarmuka dengan User Flow Ber-kode (UF-01 s.d UF-04)
+
+Sistem antarmuka pengguna (UI/UX) MyTeam mengikat setiap alur pengguna secara visual melintasi 4 modul pengembang:
+
+```text
+                               ┌──────────────────────────────────────────────────┐
+                               │           LAYAR SPLASH & AUTENTIKASI             │
+                               │ [UF-01.1 / 02.1 / 03.1 / 04.1] — Modul 1 (Fuadi) │
+                               └────────────────────────┬─────────────────────────┘
+                                                        │
+                                                        ▼
+                        ┌────────────────────────────────────────────────────────────────┐
+                        │      BILAH NAVIGASI UTAMA (5 TAB INSTAGRAM-STYLE FLAT BAR)     │
+                        ├──────────────────┬─────────────────┬─────────────┬─────────────┤
+                        │ Tab Beranda (M3) │ Tab Cari (M4)   │Tab MyTeam(M2│Tab Profil(M1│
+                        └────────┬─────────┴────────┬────────┴──────┬──────┴──────┬──────┘
+                                 │                  │               │             │
+        ┌────────────────────────┘                  │               │             └─────────────────────────┐
+        ▼                                           ▼               ▼                                       ▼
+┌───────────────────────┐            ┌──────────────────────┐ ┌──────────────────────┐           ┌──────────────────────┐
+│ [UF-03] PENCARI TIM   │            │ [UF-02] CARI ANGGOTA │ │ [UF-01] PEMBUAT TIM  │           │ [UF-04] UNDANGAN     │
+│ (PIC: Rafa Gian - M3) │            │ (PIC: Diva - M4)     │ │ (PIC: Nayla - M2)    │           │ (PIC: Diva & Fuadi)  │
+├───────────────────────┤            ├──────────────────────┤ ├──────────────────────┤           ├──────────────────────┤
+│ 1. Home Feed Tim      │            │ 1. Talent Search Bar │ │ 1. Form Buat Tim Baru│           │ 1. Notifikasi / Tab  │
+│ 2. Filter Kategori/Pos│            │ 2. Chip Filter Skill │ │ 2. Native File Picker│           │    Undangan Masuk    │
+│ 3. Team Detail Modal  │            │ 3. Candidate Card    │ │ 3. Kelola Anggota Tim│           │ 2. Card Undangan Tim │
+│ 4. Apply Position Form│            │ 4. Dialog Undang Tim │ │ 4. Applicant List    │           │ 3. Tombol Aksi       │
+│ 5. My Applications Tab│            │ 5. Sent Invites Tab  │ │ 5. Modal Review & ACC│           │    Terima / Tolak    │
+└───────────────────────┘            └──────────────────────┘ └──────────────────────┘           └──────────────────────┘
+```
+
+### 6.1 Matriks Transisi Layar UI Berdasarkan Kode User Flow
+
+| Kode User Flow | Modul & PIC Utama | Transisi Antarmuka & Layar yang Terlibat | Indikator Visual & Komponen Kunci |
+| :---: | :--- | :--- | :--- |
+| **`UF-01`** | **Modul 2** *(Nayla)*<br>+ Modul 3 & 1 | `LoginScreen` → `TeamManagementScreen` → `CreateTeamForm` → `TeamDetailScreen` → `ApplicantListSheet` → `CandidateProfileDialog` | • FAB Hijau "Buat Tim"<br>• File picker poster<br>• Badge pelamar baru (`#FEF9C3`)<br>• Tombol aksi terima (`#008000`) |
+| **`UF-02`** | **Modul 4** *(Diva)*<br>+ Modul 1 & 2 | `LoginScreen` → `TalentSearchScreen` → `CandidateProfileView` → `InviteToTeamBottomSheet` → `SentInvitationsTab` | • Search bar 48px ber-focus emerald<br>• Chip horizontal skill<br>• Candidate card 44px avatar<br>• Selector tim & posisi berkuota |
+| **`UF-03`** | **Modul 3** *(Rafa)*<br>+ Modul 2 & 1 | `LoginScreen` → `HomeFeedScreen` → `FilterModal` → `TeamDetailScreen` → `ApplyPositionBottomSheet` → `MyApplicationsTab` | • Left accent border 3.5px hijau<br>• Badge kategori (Lomba/Riset)<br>• Dropdown pilihan posisi lowongan<br>• Pill status (`menunggu`, `diterima`) |
+| **`UF-04`** | **Modul 4** *(Diva)*<br>+ Modul 1 & 2 | `LoginScreen` → `NotificationsScreen` / `ReceivedInvitationsTab` → `TeamDetailPreview` → Dialog Konfirmasi → `ProfileScreen` | • Badge notifikasi merah pada AppBar<br>• Banner kuota posisi terbuka/penuh<br>• Tombol ganda Terima (`#008000`) & Tolak (`#DC2626`) |
+
+---
+
 *Panduan desain ini resmi digunakan sebagai acuan visual seluruh anggota kelompok dalam pembuatan antarmuka aplikasi MyTeam.*
+
