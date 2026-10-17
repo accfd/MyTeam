@@ -2,7 +2,12 @@
 // DBML (Database Markup Language) - ERD Specification
 // Docs: https://dbml.dbdiagram.io/docs
 // Project: MyTeam – Aplikasi Mobile Pencarian dan Pembentukan Tim Mahasiswa Unand
-// Acuan: schema_myteam.sql, PRD v1.0, & API Specification Contract v1.0.0
+// Acuan: schema_myteam.sql, PRD v1.1, & API Specification Contract v1.1.0
+// PIC Modul:
+//   - Modul 1: Fuadi Dhiyaulhaq (2411522001) - Profil & Autentikasi
+//   - Modul 2: Nayla Puspita Sari (2411521007) - Buat & Kelola Tim
+//   - Modul 3: Rafa Gian Atthari (2411522014) - Feed Tim & Pengajuan Bergabung
+//   - Modul 4: Diva Ramadhani (2411521017) - Talent Search & Undangan Anggota
 // =============================================================================
 
 Project MyTeam {
@@ -10,12 +15,16 @@ Project MyTeam {
   Note: '''
     # MyTeam Database ERD
     Platform Mobile Pencarian & Pembentukan Tim Mahasiswa Universitas Andalas.
-    Mendukung alur dua arah: Pencari Tim & Pencari Anggota.
+    Mendukung alur dua arah ber-kode resmi:
+      - UF-01: Pencari Anggota Menerima Pengajuan Masuk (Inbound Application)
+      - UF-02: Pencari Anggota Mengundang Calon Anggota (Outbound Invitation)
+      - UF-03: Pencari Tim Melamar ke Tim (Outbound Application)
+      - UF-04: Calon Anggota Menerima & Merespons Undangan (Inbound Invitation)
   '''
 }
 
 // -----------------------------------------------------------------------------
-// BLOK 1: MODUL 1 — PENGGUNA, PROFIL, DAN DATA RIWAYAT DIRI
+// BLOK 1: MODUL 1 — PIC: FUADI DHIYAULHAQ (PROFIL & RIWAYAT DIRI)
 // -----------------------------------------------------------------------------
 
 Table Pengguna {
@@ -85,7 +94,8 @@ Table Data_Pengalaman {
 }
 
 // -----------------------------------------------------------------------------
-// BLOK 2: MODUL 2 — DATA TIM, KEBUTUHAN, DAN DOKUMEN PENDUKUNG
+// BLOK 2: MODUL 2 — PIC: NAYLA PUSPITA SARI (DATA TIM & KEBUTUHAN KUOTA)
+// Alur Terkait: UF-01 (Inbound), UF-02 (Outbound), UF-03 (Apply), UF-04 (Invite)
 // -----------------------------------------------------------------------------
 
 Table Data_Tim {
@@ -99,7 +109,7 @@ Table Data_Tim {
   created_at timestamp [default: `now()`]
   updated_at timestamp [default: `now()`]
 
-  Note: 'Informasi tim yang dibentuk oleh mahasiswa (FR-09 s/d FR-12)'
+  Note: 'Informasi tim yang dibentuk oleh mahasiswa (FR-08 s/d FR-12)'
 }
 
 Table Kebutuhan_Anggota_Tim {
@@ -136,20 +146,26 @@ Table Anggota_Tim {
 }
 
 // -----------------------------------------------------------------------------
-// BLOK 3: MODUL 3 & 4 — PENGAJUAN BERGABUNG, PENGAJUAN ANGGOTA & NOTIFIKASI
+// BLOK 3: MODUL 3 — PIC: RAFA GIAN ATTHARI (PENGAJUAN BERGABUNG KE TIM)
+// Alur Terkait: UF-01 (Menerima Pengajuan) & UF-03 (Pencari Tim Melamar)
 // -----------------------------------------------------------------------------
 
 Table Pengajuan_Bergabung_Tim {
   id_pengajuan_bergabung_tim varchar(36) [primary key]
   id_tim varchar(36) [not null, note: 'Tim yang dilamar']
   id_pengguna varchar(36) [not null, note: 'Pelamar (Pencari Tim)']
-  posisi varchar(100) [not null, note: 'Wajib: Posisi yang dilamar (FR-17 refinement)']
+  posisi varchar(100) [not null, note: 'Wajib: Posisi yang dilamar (FR-16)']
   pesan_pengajuan text [not null, note: 'Pesan motivasi / alasan melamar']
   waktu_pengajuan timestamp [default: `now()`]
   status_pengajuan varchar(20) [not null, default: 'menunggu', note: 'menunggu | diterima | ditolak']
 
-  Note: 'Lamaran pencari tim ke tim yang dibuka (FR-17)'
+  Note: 'Lamaran pencari tim ke tim yang dibuka (FR-16 s/d FR-20)'
 }
+
+// -----------------------------------------------------------------------------
+// BLOK 4: MODUL 4 — PIC: DIVA RAMADHANI (TALENT SCOUTING & UNDANGAN ANGGOTA)
+// Alur Terkait: UF-02 (Mengundang Kandidat) & UF-04 (Merespons Undangan)
+// -----------------------------------------------------------------------------
 
 Table Pengajuan_Anggota {
   id_pengajuan_anggota varchar(36) [primary key]
@@ -160,8 +176,12 @@ Table Pengajuan_Anggota {
   waktu_pengajuan timestamp [default: `now()`]
   status_pengajuan varchar(20) [not null, default: 'menunggu', note: 'menunggu | diterima | ditolak; kuota penuh saat diterima menyebabkan status ditolak']
 
-  Note: 'Undangan rekrutmen dari pembuat tim ke kandidat; saat diterima, anggota ditambahkan ke Anggota_Tim jika kuota posisi tersedia (FR-23, FR-24)'
+  Note: 'Undangan rekrutmen dari pembuat tim ke kandidat; saat diterima, anggota ditambahkan ke Anggota_Tim jika kuota posisi tersedia (FR-23 s/d FR-25, Alur UF-02 & UF-04)'
 }
+
+// -----------------------------------------------------------------------------
+// BLOK 5: NOTIFIKASI TERPUSAT (LINTAS MODUL 1, 2, 3, 4)
+// -----------------------------------------------------------------------------
 
 Table Notifikasi {
   id_notifikasi varchar(36) [primary key]
