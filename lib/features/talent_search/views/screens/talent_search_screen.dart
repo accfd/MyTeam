@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/storage/storage_service.dart';
 import '../../models/talent_member_model.dart';
-import '../../services/talent_search_service.dart';
+import '../../viewmodels/talent_search_viewmodel.dart';
 import 'member_detail_screen.dart';
 
 /// Halaman Pencarian Talenta (Tab "Cari" — Bottom Nav Index 1)
 /// FR-21: Pencarian calon anggota berdasarkan nama, keahlian, minat, prodi
-/// PIC Modul 4: Diva Ramadhani (2411521017)
+/// Mengadopsi arsitektur MVVM murni dengan TalentSearchViewModel
 class TalentSearchScreen extends StatefulWidget {
   const TalentSearchScreen({super.key});
 
@@ -22,105 +21,38 @@ class _TalentSearchScreenState extends State<TalentSearchScreen>
   @override
   bool get wantKeepAlive => true;
 
-  // ── Controllers & State ──────────────────────────────────────────────────
+  // ── Controllers & ViewModel ──────────────────────────────────────────────
   final _searchCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
   final _focusNode = FocusNode();
+  final _viewModel = TalentSearchViewModel();
 
-  String _myUserId = '';
-  List<TalentMemberModel> _members = [];
-  bool _isLoading = false;
-  bool _hasSearched = false;
-  String? _errorMsg;
-
-  // ── Active filters ────────────────────────────────────────────────────────
-  String? _activeFilterKeahlian;
-  String? _activeFilterMinat;
-
-  // ── Dynamic filter options (diekstrak dari hasil search) ─────────────────
-  List<String> _dynamicKeahlian = [];
-  List<String> _dynamicMinat = [];
+  // Helper getters dari ViewModel
+  List<TalentMemberModel> get _members => _viewModel.members;
+  bool get _isLoading => _viewModel.isLoading;
+  bool get _hasSearched => _viewModel.hasSearched;
+  String? get _errorMsg => _viewModel.errorMessage;
+  String? get _activeFilterKeahlian => _viewModel.activeFilterKeahlian;
+  String? get _activeFilterMinat => _viewModel.activeFilterMinat;
+  List<String> get _dynamicKeahlian => _viewModel.dynamicKeahlian;
+  List<String> get _dynamicMinat => _viewModel.dynamicMinat;
+  bool get _hasActiveFilter => _viewModel.hasActiveFilter;
+  String get _myUserId => _viewModel.myUserId;
 
   @override
   void initState() {
     super.initState();
-    _init();
-  }
-
-  Future<void> _init() async {
-    _myUserId = await StorageService.getUserId() ?? '';
-    await _loadAll();
-  }
-
-  Future<void> _loadAll({String? q, String? keahlian, String? minat}) async {
-    if (!mounted) return;
-    setState(() {
-      _isLoading = true;
-      _errorMsg = null;
-    });
-    try {
-      final results = await TalentSearchService.searchMembers(
-        q: q,
-        keahlian: keahlian,
-        minat: minat,
-      );
-      if (mounted) {
-        setState(() {
-          _members = _myUserId.isNotEmpty
-              ? results.where((m) => m.idPengguna != _myUserId).toList()
-              : results;
-          // Rebuild filter options dari hasil fetch (hanya saat load tanpa filter aktif)
-          if (keahlian == null && minat == null) {
-            _rebuildFilterOptions(_members);
-          }
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _errorMsg = e.toString().replaceFirst('Exception: ', ''));
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+    _viewModel.init();
   }
 
   void _onSearch() {
-    final q = _searchCtrl.text.trim();
-    setState(() => _hasSearched = q.isNotEmpty || _hasActiveFilter);
-    _loadAll(
-      q: q.isNotEmpty ? q : null,
-      keahlian: _activeFilterKeahlian,
-      minat: _activeFilterMinat,
-    );
+    _viewModel.onSearch(_searchCtrl.text);
     _focusNode.unfocus();
   }
 
   void _clearFilters() {
-    setState(() {
-      _searchCtrl.clear();
-      _activeFilterKeahlian = null;
-      _activeFilterMinat = null;
-      _hasSearched = false;
-    });
-    _loadAll();
-  }
-
-  bool get _hasActiveFilter =>
-      _activeFilterKeahlian != null || _activeFilterMinat != null;
-
-  // ── Ekstrak filter unik dari data mahasiswa ──────────────────────────────
-  void _rebuildFilterOptions(List<TalentMemberModel> members) {
-    final keahlianSet = <String>{};
-    final minatSet = <String>{};
-    for (final m in members) {
-      keahlianSet.addAll(m.keahlian);
-      minatSet.addAll(m.minat);
-    }
-    final sortedKeahlian = keahlianSet.toList()..sort();
-    final sortedMinat = minatSet.toList()..sort();
-    // Batasi max 20 agar UI tidak overflow
-    _dynamicKeahlian = sortedKeahlian.take(20).toList();
-    _dynamicMinat = sortedMinat.take(20).toList();
+    _searchCtrl.clear();
+    _viewModel.clearFilters();
   }
 
   @override
@@ -128,6 +60,7 @@ class _TalentSearchScreenState extends State<TalentSearchScreen>
     _searchCtrl.dispose();
     _scrollCtrl.dispose();
     _focusNode.dispose();
+    _viewModel.dispose();
     super.dispose();
   }
 
@@ -137,25 +70,30 @@ class _TalentSearchScreenState extends State<TalentSearchScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.dark,
-      child: Scaffold(
-        backgroundColor: AppColors.background,
-        body: CustomScrollView(
-          controller: _scrollCtrl,
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          slivers: [
-            SliverToBoxAdapter(child: _buildHeader()),
-            SliverToBoxAdapter(child: _buildSearchBar()),
-            SliverToBoxAdapter(child: _buildKeahlianRow()),
-            SliverToBoxAdapter(child: _buildMinatRow()),
-            if (_hasActiveFilter)
-              SliverToBoxAdapter(child: _buildActiveFilterBanner()),
-            SliverToBoxAdapter(child: _buildResultsSection()),
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
-          ],
-        ),
-      ),
+    return ListenableBuilder(
+      listenable: _viewModel,
+      builder: (context, _) {
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: SystemUiOverlayStyle.dark,
+          child: Scaffold(
+            backgroundColor: AppColors.background,
+            body: CustomScrollView(
+              controller: _scrollCtrl,
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              slivers: [
+                SliverToBoxAdapter(child: _buildHeader()),
+                SliverToBoxAdapter(child: _buildSearchBar()),
+                SliverToBoxAdapter(child: _buildKeahlianRow()),
+                SliverToBoxAdapter(child: _buildMinatRow()),
+                if (_hasActiveFilter)
+                  SliverToBoxAdapter(child: _buildActiveFilterBanner()),
+                SliverToBoxAdapter(child: _buildResultsSection()),
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -344,10 +282,7 @@ class _TalentSearchScreenState extends State<TalentSearchScreen>
               final isSelected = _activeFilterKeahlian == k;
               return GestureDetector(
                 onTap: () {
-                  setState(() {
-                    _activeFilterKeahlian = isSelected ? null : k;
-                  });
-                  _onSearch();
+                  _viewModel.toggleFilterKeahlian(k, _searchCtrl.text);
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
@@ -441,10 +376,7 @@ class _TalentSearchScreenState extends State<TalentSearchScreen>
               final isSelected = _activeFilterMinat == m;
               return GestureDetector(
                 onTap: () {
-                  setState(() {
-                    _activeFilterMinat = isSelected ? null : m;
-                  });
-                  _onSearch();
+                  _viewModel.toggleFilterMinat(m, _searchCtrl.text);
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
@@ -711,7 +643,7 @@ class _TalentSearchScreenState extends State<TalentSearchScreen>
                       color: AppColors.statusDangerText)),
             ),
             TextButton(
-              onPressed: _loadAll,
+              onPressed: () => _viewModel.loadMembers(),
               child: Text('Coba Lagi',
                   style: AppTextStyles.labelMd.copyWith(
                       color: AppColors.statusDangerText)),

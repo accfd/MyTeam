@@ -6,6 +6,7 @@ import '../../models/talent_member_model.dart';
 import '../../services/talent_search_service.dart';
 
 /// Modal Bottom Sheet Formulir Pengajuan Ajakan Bergabung ke Tim
+/// Menampilkan umpan balik validasi langsung (inline) agar tidak terhalang oleh modal
 class InviteMemberBottomSheet extends StatefulWidget {
   final TalentMemberModel member;
 
@@ -25,12 +26,18 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
   String? _teamsErrorMsg;
   String? _selectedTeamId;
   String? _selectedPosition;
+  String? _inlineError;
   bool _submitting = false;
 
   @override
   void initState() {
     super.initState();
     _loadMyTeams();
+    _msgCtrl.addListener(() {
+      if (_inlineError != null) {
+        setState(() => _inlineError = null);
+      }
+    });
   }
 
   @override
@@ -53,26 +60,39 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
           teams.where((t) => t.statusTim.toLowerCase() != 'selesai').toList();
 
       setState(() {
-        _myTeams = eligible.map((t) => {
-          'id_tim': t.idTim,
-          'nama_tim': t.namaTim,
-          'nama_kegiatan': t.namaKegiatan,
-          'kebutuhan_tim': t.kebutuhanTim.map((k) {
-            final terisiCount = t.anggotaTim
-                .where((a) =>
-                    a.posisi.trim().toLowerCase() ==
-                    k.posisiDibutuhkan.trim().toLowerCase())
-                .length;
-            return {
-              'posisi_dibutuhkan': k.posisiDibutuhkan,
-              'kuota': k.jumlahAnggotaDibutuhkan,
-              'terisi': terisiCount,
-            };
-          }).toList(),
+        _myTeams = eligible.map((t) {
+          final isAlreadyMember = t.anggotaTim.any(
+            (a) => a.idPengguna == widget.member.idPengguna,
+          );
+
+          return {
+            'id_tim': t.idTim,
+            'nama_tim': t.namaTim,
+            'nama_kegiatan': t.namaKegiatan,
+            'is_already_member': isAlreadyMember,
+            'kebutuhan_tim': t.kebutuhanTim.map((k) {
+              final terisiCount = t.anggotaTim
+                  .where((a) =>
+                      a.posisi.trim().toLowerCase() ==
+                      k.posisiDibutuhkan.trim().toLowerCase())
+                  .length;
+              return {
+                'posisi_dibutuhkan': k.posisiDibutuhkan,
+                'kuota': k.jumlahAnggotaDibutuhkan,
+                'terisi': terisiCount,
+              };
+            }).toList(),
+          };
         }).toList();
 
         if (_myTeams.isNotEmpty) {
-          _selectedTeamId = _myTeams.first['id_tim'];
+          // Cari tim pertama yang calon anggota belum bergabung di dalamnya
+          final availableTeam = _myTeams.firstWhere(
+            (t) => t['is_already_member'] != true,
+            orElse: () => _myTeams.first,
+          );
+          _selectedTeamId = availableTeam['id_tim'];
+
           final pos = _availablePositions;
           if (pos.isNotEmpty) {
             _selectedPosition = pos.keys.first;
@@ -87,6 +107,12 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
         _loadingTeams = false;
       });
     }
+  }
+
+  bool get _isSelectedTeamAlreadyMember {
+    final team = _myTeams.where((item) => item['id_tim'] == _selectedTeamId);
+    if (team.isEmpty) return false;
+    return team.first['is_already_member'] == true;
   }
 
   Map<String, int> get _availablePositions {
@@ -108,13 +134,20 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
   }
 
   Future<void> _sendInvitation() async {
+    setState(() => _inlineError = null);
+
+    if (_isSelectedTeamAlreadyMember) {
+      setState(() {
+        _inlineError =
+            'Mahasiswa ini sudah terdaftar sebagai anggota resmi di tim ini.';
+      });
+      return;
+    }
+
     if (_selectedTeamId == null || _selectedPosition == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pilih tim dan posisi terlebih dahulu.'),
-          backgroundColor: AppColors.statusDangerText,
-        ),
-      );
+      setState(() {
+        _inlineError = 'Harap pilih tim dan posisi terlebih dahulu.';
+      });
       return;
     }
 
@@ -145,14 +178,11 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
       );
     } catch (e) {
       if (!mounted) return;
-      setState(() => _submitting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: AppColors.statusDangerText,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      setState(() {
+        _submitting = false;
+        // Tampilkan error secara inline agar terbaca jelas oleh pengguna tanpa terhalang bottom sheet
+        _inlineError = e.toString().replaceFirst('Exception: ', '');
+      });
     }
   }
 
@@ -282,16 +312,26 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
                     ),
                   ),
                   items: _myTeams.map((t) {
+                    final bool isAlready = t['is_already_member'] == true;
                     return DropdownMenuItem<String>(
                       value: t['id_tim'],
-                      child: Text(t['nama_tim'],
-                          style: AppTextStyles.bodySm
-                              .copyWith(fontWeight: FontWeight.w600)),
+                      child: Text(
+                        isAlready
+                            ? '${t['nama_tim']} (Sudah Bergabung)'
+                            : t['nama_tim'],
+                        style: AppTextStyles.bodySm.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: isAlready
+                              ? AppColors.textMuted
+                              : AppColors.text,
+                        ),
+                      ),
                     );
                   }).toList(),
                   onChanged: (val) {
                     setState(() {
                       _selectedTeamId = val;
+                      _inlineError = null;
                       final pos = _availablePositions;
                       _selectedPosition =
                           pos.isNotEmpty ? pos.keys.first : null;
@@ -299,6 +339,40 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
                   },
                 ),
                 const SizedBox(height: 14),
+
+                // Peringatan jika calon anggota sudah bergabung
+                if (_isSelectedTeamAlreadyMember) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.statusPendingBg,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                          color: AppColors.statusPendingText
+                              .withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.info_outline_rounded,
+                            color: AppColors.statusPendingText, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Mahasiswa ini sudah terdaftar sebagai anggota resmi pada tim ini.',
+                            style: AppTextStyles.bodySm.copyWith(
+                              color: AppColors.statusPendingText,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                ],
 
                 // Pilih Posisi
                 Text('Pilih Posisi Ditawarkan',
@@ -338,7 +412,10 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
                       );
                     }).toList(),
                     onChanged: (val) {
-                      setState(() => _selectedPosition = val);
+                      setState(() {
+                        _selectedPosition = val;
+                        _inlineError = null;
+                      });
                     },
                   ),
                 const SizedBox(height: 14),
@@ -363,14 +440,51 @@ class _InviteMemberBottomSheetState extends State<InviteMemberBottomSheet> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
+
+                // ── Inline Error Alert Box (Terlihat Jelas Tanpa Terhalang Modal) ──
+                if (_inlineError != null) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.statusDangerBg,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: AppColors.statusDangerText
+                            .withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.error_outline_rounded,
+                            color: AppColors.statusDangerText, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _inlineError!,
+                            style: AppTextStyles.bodySm.copyWith(
+                              color: AppColors.statusDangerText,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
 
                 // Tombol Kirim Undangan
                 SizedBox(
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
-                    onPressed: _submitting ? null : _sendInvitation,
+                    onPressed: (_submitting || _isSelectedTeamAlreadyMember)
+                        ? null
+                        : _sendInvitation,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(
