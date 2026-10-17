@@ -110,14 +110,35 @@ router.get('/detail/:id_pengguna', async (req, res) => {
       [id_pengguna]
     );
 
-    // Tim yang diikuti (FR-06)
+    // Tim yang diikuti (FR-06: mencakup tim yang dibuat sendiri sebagai Ketua Tim & tim yang diikuti sebagai anggota)
     const [tim] = await db.query(`
-      SELECT at.id_anggota_tim, dt.id_tim, dt.nama_tim, dt.nama_kegiatan, dt.kategori_kegiatan, at.posisi
+      SELECT 
+        dt.id_tim AS id_anggota_tim, 
+        dt.id_tim, 
+        dt.nama_tim, 
+        dt.nama_kegiatan, 
+        dt.kategori_kegiatan, 
+        'Ketua Tim' AS posisi,
+        dt.created_at AS waktu
+      FROM Data_Tim dt
+      WHERE dt.id_pengguna = ?
+
+      UNION
+
+      SELECT 
+        at.id_anggota_tim, 
+        dt.id_tim, 
+        dt.nama_tim, 
+        dt.nama_kegiatan, 
+        dt.kategori_kegiatan, 
+        at.posisi,
+        at.joined_at AS waktu
       FROM Anggota_Tim at
       JOIN Data_Tim dt ON at.id_tim = dt.id_tim
-      WHERE at.id_pengguna = ?
-      ORDER BY at.joined_at DESC
-    `, [id_pengguna]);
+      WHERE at.id_pengguna = ? AND dt.id_pengguna != ?
+
+      ORDER BY waktu DESC
+    `, [id_pengguna, id_pengguna, id_pengguna]);
 
     return res.status(200).json({
       success: true,
