@@ -20,8 +20,9 @@ import '../../../team_feed/views/screens/my_applications_screen.dart';
 /// Mengimplementasikan arsitektur MVVM murni dengan ProfileViewModel
 class ProfileScreen extends StatefulWidget {
   final String? idPenggunaOverride;
+  final bool showAppBar;
 
-  const ProfileScreen({super.key, this.idPenggunaOverride});
+  const ProfileScreen({super.key, this.idPenggunaOverride, this.showAppBar = true});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -52,7 +53,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
+      appBar: widget.showAppBar
+          ? AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -159,7 +161,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             ),
           ),
         ],
-      ),
+      )
+    : null,
       body: ListenableBuilder(
         listenable: _viewModel,
         builder: (context, _) {

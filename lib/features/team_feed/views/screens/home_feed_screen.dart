@@ -10,8 +10,9 @@ import '../../services/team_feed_service.dart';
 import '../../../profile/views/screens/profile_screen.dart';
 import '../../../team_management/views/screens/team_management_screen.dart';
 import '../../../talent_search/views/screens/talent_search_screen.dart';
-import '../../../talent_search/views/screens/received_invitations_screen.dart';
 import '../../../talent_search/views/screens/member_detail_screen.dart';
+import '../../../../core/widgets/main_header_app_bar.dart';
+import '../../../status/views/screens/status_hub_screen.dart';
 import 'team_feed_detail_screen.dart';
 import 'my_applications_screen.dart';
 
@@ -123,7 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
       value: SystemUiOverlayStyle.dark,
       child: Scaffold(
         backgroundColor: AppColors.background,
-        appBar: _currentTab == 4 ? null : _buildAppBar(),
+        appBar: _buildAppBar(),
         body: AnimatedSwitcher(
           duration: const Duration(milliseconds: 250),
           switchInCurve: Curves.easeOutCubic,
@@ -147,150 +148,45 @@ class _HomeScreenState extends State<HomeScreen> {
         // FR-21, FR-22, FR-23 — Modul 4 Diva Ramadhani
         return const TalentSearchScreen();
       case 2:
-        return const TeamManagementScreen();
+        return const TeamManagementScreen(showAppBar: false);
       case 3:
-        // FR-24: Undangan Masuk + FR-25: Respon undangan & notifikasi
-        return const ReceivedInvitationsScreen();
+        // Tab Status: Menggabungkan Undangan Masuk (Alur D) & Lamaran Saya (Alur A)
+        return const StatusHubScreen();
       case 4:
-        return const ProfileScreen();
+        return const ProfileScreen(showAppBar: false);
       default:
         return const SizedBox.shrink();
     }
   }
 
-  // ── AppBar ────────────────────────────────────────────────────────────────
-  PreferredSizeWidget? _buildAppBar() {
-    switch (_currentTab) {
-      case 0:
-        return _buildBrandedAppBar('Feed & Rekomendasi Kegiatan');
-      case 1:
-        // TalentSearchScreen manages its own header; AppBar still shown above
-        return _buildBrandedAppBar('Eksplorasi & Pencarian Talenta');
-      case 2:
-      case 4:
-        return null;
-      case 3:
-        // ReceivedInvitationsScreen has its own AppBar
-        return null;
-      default:
-        return null;
-    }
+  // ── Unified MainHeaderAppBar untuk 5 Layar Utama ──────────────────────────
+  String _getSubtitleForTab(int tab) {
+    return switch (tab) {
+      0 => 'Eksplorasi Tim Lomba',
+      1 => 'Pencarian Calon Anggota',
+      2 => 'Kelola Tim Anda',
+      3 => 'Status Lamaran & Undangan',
+      4 => 'Portofolio & Riwayat Diri',
+      _ => 'Pencarian & Pembentukan Tim',
+    };
   }
 
-  PreferredSizeWidget _buildBrandedAppBar(String subtitle) {
-    return AppBar(
-      backgroundColor: Colors.white,
-      elevation: 0,
-      scrolledUnderElevation: 1,
-      shadowColor: AppColors.border,
-      automaticallyImplyLeading: false,
-      titleSpacing: 20,
-      title: Row(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.12),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: Image.asset(
-                'assets/images/logo-MyTeam.png',
-                width: 36,
-                height: 36,
-                fit: BoxFit.cover,
-              ),
-            ),
+  PreferredSizeWidget _buildAppBar() {
+    return MainHeaderAppBar(
+      subtitle: _getSubtitleForTab(_currentTab),
+      onRefresh: () {
+        if (_currentTab == 0) {
+          _loadTeams();
+          _loadMembers();
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Halaman diperbarui.'),
+            duration: Duration(seconds: 1),
+            behavior: SnackBarBehavior.floating,
           ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'MyTeam',
-                style: AppTextStyles.headlineMd.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 20,
-                  letterSpacing: -0.3,
-                ),
-              ),
-              Text(
-                subtitle,
-                style: AppTextStyles.labelSm.copyWith(
-                  color: AppColors.textMuted,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-      actions: [
-        Container(
-          margin: const EdgeInsets.only(right: 8),
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: AppColors.background,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: IconButton(
-            padding: EdgeInsets.zero,
-            icon: const Icon(
-              Icons.assignment_outlined,
-              color: AppColors.primary,
-              size: 20,
-            ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const MyApplicationsScreen(),
-                ),
-              );
-            },
-            tooltip: 'Status Pengajuan Saya (FR-20)',
-          ),
-        ),
-        Container(
-          margin: const EdgeInsets.only(right: 16),
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: AppColors.background,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: IconButton(
-            padding: EdgeInsets.zero,
-            icon: const Icon(Icons.refresh_rounded, color: AppColors.primary, size: 20),
-            onPressed: () {
-              if (_currentTab == 0) {
-                _loadTeams();
-                _loadMembers();
-              }
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Halaman diperbarui.'),
-                  duration: Duration(seconds: 1),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
-            tooltip: 'Segarkan Halaman',
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -1923,7 +1819,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _bottomNavItem(0, Icons.home_outlined, Icons.home_rounded, 'Beranda'),
               _bottomNavItem(1, Icons.search_rounded, Icons.search_rounded, 'Cari'),
               _bottomNavItem(2, Icons.groups_outlined, Icons.groups_rounded, 'MyTeam'),
-              _bottomNavItem(3, Icons.notifications_none_rounded, Icons.notifications_rounded, 'Notifikasi'),
+              _bottomNavItem(3, Icons.assignment_outlined, Icons.assignment_rounded, 'Status'),
               _bottomNavItem(4, Icons.person_outline_rounded, Icons.person_rounded, 'Profil'),
             ],
           ),

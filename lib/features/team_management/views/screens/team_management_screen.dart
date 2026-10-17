@@ -12,7 +12,8 @@ import 'team_management_detail_screen.dart';
 
 /// Halaman Daftar Tim Saya — FR-09 & FR-11
 class TeamManagementScreen extends StatefulWidget {
-  const TeamManagementScreen({super.key});
+  final bool showAppBar;
+  const TeamManagementScreen({super.key, this.showAppBar = true});
 
   @override
   State<TeamManagementScreen> createState() => _TeamManagementScreenState();
@@ -126,7 +127,7 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: _buildAppBar(),
+      appBar: widget.showAppBar ? _buildAppBar() : null,
       body: ListenableBuilder(
         listenable: _vm,
         builder: (context, _) {

@@ -6,13 +6,13 @@ import '../../../auth/models/auth_user_model.dart';
 /// Widget Header Profil Horizontal (Avatar di kiri, Nama & NIM di kanan, Tombol Pengaturan)
 class ProfileHeaderCard extends StatelessWidget {
   final AuthUserModel user;
-  final VoidCallback onGantiFoto;
+  final VoidCallback? onGantiFoto;
   final VoidCallback? onSettings;
 
   const ProfileHeaderCard({
     super.key,
     required this.user,
-    required this.onGantiFoto,
+    this.onGantiFoto,
     this.onSettings,
   });
 
@@ -51,19 +51,20 @@ class ProfileHeaderCard extends StatelessWidget {
                       )
                     : null,
               ),
-              InkWell(
-                onTap: onGantiFoto,
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  padding: const EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
+              if (onGantiFoto != null)
+                InkWell(
+                  onTap: onGantiFoto,
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: const Icon(Icons.camera_alt_rounded, size: 13, color: Colors.white),
                   ),
-                  child: const Icon(Icons.camera_alt_rounded, size: 13, color: Colors.white),
                 ),
-              ),
             ],
           ),
           const SizedBox(width: 14),
