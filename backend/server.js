@@ -57,11 +57,15 @@ app.use((req, res) => {
   });
 });
 
-// Menjalankan Server
-app.listen(PORT, () => {
-  console.log(`=================================================`);
-  console.log(`🚀 Server Backend MyTeam aktif di Port ${PORT}`);
-  console.log(`🌐 Localhost URL : http://localhost:${PORT}`);
-  console.log(`📱 Emulator URL  : http://10.0.2.2:${PORT}/api/v1`);
-  console.log(`=================================================`);
-});
+// Menjalankan Server secara lokal / dedicated
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`=================================================`);
+    console.log(`🚀 Server Backend MyTeam aktif di Port ${PORT}`);
+    console.log(`🌐 Localhost URL : http://localhost:${PORT}`);
+    console.log(`📱 Emulator URL  : http://10.0.2.2:${PORT}/api/v1`);
+    console.log(`=================================================`);
+  });
+}
+
+module.exports = app;
