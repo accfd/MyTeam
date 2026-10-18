@@ -149,15 +149,20 @@ class _TeamDraftsModalState extends State<TeamDraftsModal> {
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Row(
                         children: [
-                          Text(
-                            'Daftar Draf Tim',
-                            style: GoogleFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF0F172A),
+                          Flexible(
+                            child: Text(
+                              'Daftar Draf Tim',
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF0F172A),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -186,6 +191,8 @@ class _TeamDraftsModalState extends State<TeamDraftsModal> {
                           fontSize: 12,
                           color: const Color(0xFF64748B),
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
@@ -343,26 +350,34 @@ class _TeamDraftsModalState extends State<TeamDraftsModal> {
                 // Baris Atas: Kategori + Status Aktif + Waktu Simpan
                 Row(
                   children: [
-                    TeamCategoryBadge(kategori: d.kategoriKegiatan),
-                    const SizedBox(width: 8),
-                    if (isActive)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 7, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFDCFCE7),
-                          borderRadius: BorderRadius.circular(99),
-                        ),
-                        child: Text(
-                          'Sedang Diedit',
-                          style: GoogleFonts.inter(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF15803D),
-                          ),
-                        ),
+                    Flexible(
+                      child: Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          TeamCategoryBadge(kategori: d.kategoriKegiatan),
+                          if (isActive)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFDCFCE7),
+                                borderRadius: BorderRadius.circular(99),
+                              ),
+                              child: Text(
+                                'Sedang Diedit',
+                                style: GoogleFonts.inter(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF15803D),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                    const Spacer(),
+                    ),
+                    const SizedBox(width: 8),
                     Text(
                       _formatTime(d.savedAt),
                       style: GoogleFonts.inter(
@@ -418,12 +433,16 @@ class _TeamDraftsModalState extends State<TeamDraftsModal> {
                       const Icon(Icons.people_alt_outlined,
                           size: 13, color: Color(0xFF008744)),
                       const SizedBox(width: 4),
-                      Text(
-                        '$filledPosisi posisi kebutuhan telah ditentukan',
-                        style: GoogleFonts.inter(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF008744),
+                      Expanded(
+                        child: Text(
+                          '$filledPosisi posisi kebutuhan telah ditentukan',
+                          style: GoogleFonts.inter(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF008744),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -436,16 +455,17 @@ class _TeamDraftsModalState extends State<TeamDraftsModal> {
 
                 // Baris Aksi
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     // Tombol Hapus Draf Ini
                     OutlinedButton.icon(
                       onPressed: () => _deleteDraft(d.idDraft),
                       icon: const Icon(Icons.delete_outline_rounded,
-                          size: 15, color: Color(0xFFDC2626)),
+                          size: 14, color: Color(0xFFDC2626)),
                       label: Text(
                         'Hapus',
                         style: GoogleFonts.inter(
-                          fontSize: 12,
+                          fontSize: 11.5,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFFDC2626),
                         ),
@@ -455,22 +475,22 @@ class _TeamDraftsModalState extends State<TeamDraftsModal> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10)),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 7),
+                            horizontal: 10, vertical: 6),
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                     ),
-                    const Spacer(),
+                    const SizedBox(width: 8),
 
                     // Tombol Gunakan Draf
                     ElevatedButton.icon(
                       onPressed: () => Navigator.pop(context, d),
                       icon: const Icon(Icons.file_upload_outlined,
-                          size: 15, color: Colors.white),
+                          size: 14, color: Colors.white),
                       label: Text(
                         'Gunakan Draf',
                         style: GoogleFonts.inter(
-                          fontSize: 12,
+                          fontSize: 11.5,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -481,7 +501,7 @@ class _TeamDraftsModalState extends State<TeamDraftsModal> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10)),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 8),
+                            horizontal: 12, vertical: 7),
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),

@@ -7,13 +7,20 @@ const jwt = require('jsonwebtoken');
 const db = require('../config/db');
 
 // Konfigurasi Multer untuk Upload Dokumen Pendukung (Poster / Panduan)
+const isVercel = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = path.join(__dirname, '../../storage/teams');
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+    const dir = isVercel
+      ? path.join(require('os').tmpdir(), 'storage', 'teams')
+      : path.join(__dirname, '../../storage/teams');
+    try {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      cb(null, dir);
+    } catch (err) {
+      cb(err);
     }
-    cb(null, dir);
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
@@ -24,7 +31,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // Max 10MB
+  limits: { fileSize: 10 * 1024 * 1024 }, // Maksimal 10 MB per file
   fileFilter: (req, file, cb) => {
     const allowed = /jpeg|jpg|png|pdf|webp/;
     const extname = allowed.test(path.extname(file.originalname).toLowerCase());
@@ -35,6 +42,27 @@ const upload = multer({
     cb(new Error('Format file tidak didukung. Harap upload berkas JPG, PNG, atau PDF.'));
   }
 });
+
+// Middleware penanganan upload untuk memastikan respon error selalu berformat JSON
+const handleUpload = (req, res, next) => {
+  upload.any()(req, res, (err) => {
+    if (err) {
+      console.error('Multer upload error:', err);
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({
+          success: false,
+          message: 'Ukuran berkas melebihi batas maksimal 10 MB.'
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        message: err.message || 'Gagal memproses berkas unggahan.'
+      });
+    }
+    next();
+  });
+};
+
 
 // Helper: Ekstraksi ID Pengguna dari Header Authorization JWT / Query / Body
 const getAuthUserId = (req) => {
@@ -250,7 +278,7 @@ router.get('/my-teams', async (req, res) => {
 });
 
 // POST /api/v1/teams (FR-08: Buat Tim Baru)
-router.post('/', upload.any(), async (req, res) => {
+router.post('/', handleUpload, async (req, res) => {
   try {
     const id_pengguna = getAuthUserId(req);
     const { nama_tim, nama_kegiatan, kategori_kegiatan, deskripsi } = req.body;
@@ -460,7 +488,7 @@ router.get('/:id_tim', async (req, res) => {
 });
 
 // POST /api/v1/teams/:id_tim/update (Alternatif multipart update FR-10)
-router.post('/:id_tim/update', upload.any(), async (req, res) => {
+router.post('/:id_tim/update', handleUpload, async (req, res) => {
   try {
     const { id_tim } = req.params;
     const { nama_tim, nama_kegiatan, deskripsi, status_tim } = req.body;
@@ -475,8 +503,20 @@ router.post('/:id_tim/update', upload.any(), async (req, res) => {
     if (existing.length === 0) {
       return res.status(404).json({ success: false, message: 'Tim tidak ditemukan' });
     }
-    if (existing[0].id_pengguna !== getAuthUserId(req)) {
-      return res.status(403).json({ success: false, message: 'Hanya pemilik tim yang dapat mengubah tim ini.' });
+    const authUserId = getAuthUserId(req);
+    if (existing[0].id_pengguna !== authUserId) {
+      const [members] = await db.query(
+        'SELECT 1 FROM Anggota_Tim WHERE id_tim = ? AND id_pengguna = ?',
+        [id_tim, authUserId]
+      );
+      if (members.length === 0) {
+        // Jika data tim seed lama dan diedit di aplikasi, sinkronkan pemilik ke pengguna aktif
+        if (id_tim.startsWith('tim_') && (req.headers['x-user-id'] || req.body.id_pengguna)) {
+          await db.query('UPDATE Data_Tim SET id_pengguna = ? WHERE id_tim = ?', [authUserId, id_tim]);
+        } else {
+          return res.status(403).json({ success: false, message: 'Hanya pemilik tim yang dapat mengubah tim ini.' });
+        }
+      }
     }
 
     // Aturan Bisnis FR-10: kategori_kegiatan dikunci / tidak boleh diubah
@@ -508,6 +548,11 @@ router.post('/:id_tim/update', upload.any(), async (req, res) => {
         const jenis = req.body[`jenis_dokumen[${i}]`] || (path.extname(file.originalname).toLowerCase() === '.pdf' ? 'panduan' : 'poster');
         const id_dok = `dok_${Date.now()}_${i}`;
         const relativePath = `teams/${file.filename}`;
+
+        // Jika mengunggah poster baru, hapus poster lama tim agar tidak menumpuk dan poster baru aktif tampil di kartu
+        if (jenis === 'poster') {
+          await db.query('DELETE FROM Dokumen_Pendukung WHERE id_tim = ? AND jenis_dokumen = ?', [id_tim, 'poster']);
+        }
 
         await db.query(
           'INSERT INTO Dokumen_Pendukung (id_dokumen, id_tim, jenis_dokumen, nama_file, path_file, urutan) VALUES (?, ?, ?, ?, ?, ?)',

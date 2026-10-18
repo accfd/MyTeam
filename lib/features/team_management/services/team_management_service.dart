@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/constants/api_endpoints.dart';
 import '../../../core/network/api_client.dart';
@@ -56,15 +57,42 @@ class TeamManagementService {
 
     _attachDocuments(request, dokumenFiles);
 
-    final streamed = await request.send();
+    final streamed = await request.send().timeout(
+      const Duration(seconds: 30),
+      onTimeout: () => throw Exception(
+        'Koneksi ke server timeout (waktu habis). Periksa koneksi internet Anda.',
+      ),
+    );
     final response = await http.Response.fromStream(streamed);
-    final data = jsonDecode(response.body);
+
+    dynamic data;
+    try {
+      data = jsonDecode(response.body);
+    } catch (_) {
+      if (response.statusCode == 413) {
+        throw Exception(
+          'Ukuran berkas melebihi batas maksimal server (Maksimal 10 MB per berkas).',
+        );
+      }
+      if (response.statusCode == 500) {
+        throw Exception(
+          'Server backend cloud (Vercel) mengalami kendala saat menyimpan berkas fisik ke disk serverless (Error 500). '
+          'Anda dapat mempublikasikan tim tanpa lampiran berkas atau jalankan server backend lokal.',
+        );
+      }
+      throw Exception(
+        'Server mengembalikan respon tidak valid (Status HTTP ${response.statusCode}).',
+      );
+    }
 
     if ((response.statusCode == 201 || response.statusCode == 200) &&
+        data is Map<String, dynamic> &&
         data['success'] == true) {
       return TeamModel.fromJson(data['data'] as Map<String, dynamic>);
     }
-    throw Exception(data['message'] ?? 'Gagal membuat tim.');
+    throw Exception(
+      (data is Map ? data['message'] : null) ?? 'Gagal membuat tim.',
+    );
   }
 
   // FR-10: Update informasi tim (kategori dikunci)
@@ -92,14 +120,42 @@ class TeamManagementService {
 
     _attachDocuments(request, dokumenFiles);
 
-    final streamed = await request.send();
+    final streamed = await request.send().timeout(
+      const Duration(seconds: 30),
+      onTimeout: () => throw Exception(
+        'Koneksi ke server timeout (waktu habis). Periksa koneksi internet Anda.',
+      ),
+    );
     final response = await http.Response.fromStream(streamed);
-    final data = jsonDecode(response.body);
 
-    if (response.statusCode == 200 && data['success'] == true) {
+    dynamic data;
+    try {
+      data = jsonDecode(response.body);
+    } catch (_) {
+      if (response.statusCode == 413) {
+        throw Exception(
+          'Ukuran berkas melebihi batas maksimal server (Maksimal 10 MB per berkas).',
+        );
+      }
+      if (response.statusCode == 500) {
+        throw Exception(
+          'Server backend cloud (Vercel) mengalami kendala saat menyimpan berkas fisik ke disk serverless (Error 500). '
+          'Anda dapat memperbarui tim tanpa dokumen baru atau jalankan server backend lokal.',
+        );
+      }
+      throw Exception(
+        'Server mengembalikan respon tidak valid (Status HTTP ${response.statusCode}).',
+      );
+    }
+
+    if (response.statusCode == 200 &&
+        data is Map<String, dynamic> &&
+        data['success'] == true) {
       return TeamModel.fromJson(data['data'] as Map<String, dynamic>);
     }
-    throw Exception(data['message'] ?? 'Gagal memperbarui tim.');
+    throw Exception(
+      (data is Map ? data['message'] : null) ?? 'Gagal memperbarui tim.',
+    );
   }
 
   // FR-11: Hapus tim
@@ -118,13 +174,18 @@ class TeamManagementService {
     required String endpoint,
   }) async {
     final token = await StorageService.getToken();
+    final userId = await StorageService.getUserId();
     final request = http.MultipartRequest(
       method,
       Uri.parse('${AppConfig.baseUrl}$endpoint'),
     );
-    if (token != null) {
+    request.headers['Accept'] = 'application/json';
+    if (token != null && token.isNotEmpty) {
       request.headers['Authorization'] = 'Bearer $token';
-      request.headers['Accept'] = 'application/json';
+    }
+    if (userId != null && userId.isNotEmpty) {
+      request.headers['x-user-id'] = userId;
+      request.fields['id_pengguna'] = userId;
     }
     return request;
   }
@@ -136,11 +197,21 @@ class TeamManagementService {
     if (files == null || files.isEmpty) return;
     for (int i = 0; i < files.length; i++) {
       final f = files[i];
+      // Tentukan MIME type secara eksplisit agar multer di backend tidak error
+      final ext = f.name.split('.').last.toLowerCase();
+      final mimeType = switch (ext) {
+        'pdf' => MediaType('application', 'pdf'),
+        'png' => MediaType('image', 'png'),
+        'jpg' || 'jpeg' => MediaType('image', 'jpeg'),
+        'webp' => MediaType('image', 'webp'),
+        _ => MediaType('application', 'octet-stream'),
+      };
       request.files.add(
         http.MultipartFile.fromBytes(
           'dokumen_pendukung',
           f.bytes,
           filename: f.name,
+          contentType: mimeType,
         ),
       );
       request.fields['jenis_dokumen[$i]'] = f.jenis;

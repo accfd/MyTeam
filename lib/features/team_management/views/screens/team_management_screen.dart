@@ -58,45 +58,49 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
           style: AppTextStyles.bodyMd,
         ),
         actions: [
-          // Batal (50%)
-          Expanded(
-            child: OutlinedButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                side: const BorderSide(color: AppColors.border),
-              ),
-              child: Text(
-                'Batal',
-                style: AppTextStyles.labelLg.copyWith(
-                  color: AppColors.textMuted,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          // Hapus (50%)
-          Expanded(
-            child: ElevatedButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.statusDangerText,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+          Row(
+            children: [
+              // Batal (50%)
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    side: const BorderSide(color: AppColors.border),
+                  ),
+                  child: Text(
+                    'Batal',
+                    style: AppTextStyles.labelLg.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                  ),
                 ),
               ),
-              child: const Text(
-                'Hapus',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
+              const SizedBox(width: 10),
+              // Hapus (50%)
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.statusDangerText,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Hapus',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
         ],
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -359,6 +363,7 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   count > 1
@@ -368,6 +373,8 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
                     color: const Color(0xFF14532D),
                     fontWeight: FontWeight.w700,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -383,6 +390,7 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
               ],
             ),
           ),
+          const SizedBox(width: 8),
           ElevatedButton(
             onPressed: _openDraftsModal,
             style: ElevatedButton.styleFrom(
@@ -412,48 +420,30 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
       onRefresh: _vm.loadMyTeams,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          // Jika layar lebar (> 600px seperti laptop/desktop/tablet), tampilkan Grid 2 atau 3 kolom
-          if (constraints.maxWidth > 600) {
-            final crossAxisCount = constraints.maxWidth > 960 ? 3 : 2;
-            return GridView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: crossAxisCount,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                mainAxisExtent: 295,
-              ),
-              itemCount: _vm.myTeams.length,
-              itemBuilder: (_, i) {
-                final team = _vm.myTeams[i];
-                return TeamCard(
-                  team: team,
-                  onTap: () => _navigateToDetail(team.idTim),
-                  onEdit: team.isOwner ? () => _openEditModal(team) : null,
-                  onDelete: team.isOwner
-                      ? () => _confirmDelete(team.idTim, team.namaTim)
-                      : null,
-                );
-              },
-            );
-          }
-
-          // Layar mobile standar: List vertikal dengan kartu petak
-          return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+          // Semua layar tampil GridView: mobile = 2 kolom, tablet = 2-3 kolom, desktop = 3 kolom
+          final crossAxisCount = constraints.maxWidth > 960
+              ? 3
+              : constraints.maxWidth > 600
+                  ? 2
+                  : 2; // mobile juga 2 kolom
+          return GridView.builder(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 100),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              mainAxisExtent: 248,
+            ),
             itemCount: _vm.myTeams.length,
             itemBuilder: (_, i) {
               final team = _vm.myTeams[i];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 14),
-                child: TeamCard(
-                  team: team,
-                  onTap: () => _navigateToDetail(team.idTim),
-                  onEdit: team.isOwner ? () => _openEditModal(team) : null,
-                  onDelete: team.isOwner
-                      ? () => _confirmDelete(team.idTim, team.namaTim)
-                      : null,
-                ),
+              return TeamCard(
+                team: team,
+                onTap: () => _navigateToDetail(team.idTim),
+                onEdit: team.isOwner ? () => _openEditModal(team) : null,
+                onDelete: team.isOwner
+                    ? () => _confirmDelete(team.idTim, team.namaTim)
+                    : null,
               );
             },
           );
@@ -463,13 +453,45 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
   }
 
   Widget _buildFAB() {
-    return FloatingActionButton.extended(
-      onPressed: _navigateToCreate,
-      backgroundColor: AppColors.primary,
-      foregroundColor: Colors.white,
-      elevation: 6,
-      icon: const Icon(Icons.add_rounded),
-      label: Text('Buat Tim', style: AppTextStyles.labelLg),
+    return Container(
+      height: 52,
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.38),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(26),
+          onTap: () => _navigateToCreate(),
+          child: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.add_rounded, color: Colors.white, size: 22),
+                SizedBox(width: 8),
+                Text(
+                  'Buat Tim',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Inter',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 

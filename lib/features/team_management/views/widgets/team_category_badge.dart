@@ -36,7 +36,7 @@ class TeamCategoryBadge extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(99),
@@ -44,11 +44,15 @@ class TeamCategoryBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 11, color: text),
-          const SizedBox(width: 4),
+          Icon(icon, size: 10.5, color: text),
+          const SizedBox(width: 3),
           Text(
             kategori,
-            style: AppTextStyles.labelSm.copyWith(color: text),
+            style: AppTextStyles.labelSm.copyWith(
+              color: text,
+              fontWeight: FontWeight.w600,
+              fontSize: 9.5,
+            ),
           ),
         ],
       ),

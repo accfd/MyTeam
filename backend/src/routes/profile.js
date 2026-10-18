@@ -7,13 +7,20 @@ const jwt = require('jsonwebtoken');
 const db = require('../config/db');
 
 // Konfigurasi Multer untuk Upload Foto Profil
+const isVercel = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = path.join(__dirname, '../../storage/profiles');
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+    const dir = isVercel
+      ? path.join(require('os').tmpdir(), 'storage', 'profiles')
+      : path.join(__dirname, '../../storage/profiles');
+    try {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      cb(null, dir);
+    } catch (err) {
+      cb(err);
     }
-    cb(null, dir);
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);

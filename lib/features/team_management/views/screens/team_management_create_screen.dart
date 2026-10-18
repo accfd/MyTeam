@@ -204,14 +204,14 @@ class _TeamManagementCreateScreenState
     super.dispose();
   }
 
-  // ── FILE PICKER (PDF + JPG + PNG) — Universal Web & Native
+  // ── FILE PICKER (PDF + JPG + PNG) dengan Preview Konfirmasi
   Future<void> _pickDocument() async {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
         allowMultiple: true,
-        withData: true, // Wajib: memuat bytes file langsung di Web & Desktop/Mobile
+        withData: true,
       );
       if (result == null || result.files.isEmpty) return;
 
@@ -219,15 +219,12 @@ class _TeamManagementCreateScreenState
         Uint8List? bytes = f.bytes;
         String? filePath;
 
-        // DI WEB: Jangan pernah akses f.path karena akan melempar exception
         if (!kIsWeb) {
           try {
             filePath = f.path;
             if (bytes == null && filePath != null) {
               final ioFile = File(filePath);
-              if (await ioFile.exists()) {
-                bytes = await ioFile.readAsBytes();
-              }
+              if (await ioFile.exists()) bytes = await ioFile.readAsBytes();
             }
           } catch (e) {
             debugPrint('Error membaca file native path: $e');
@@ -235,67 +232,252 @@ class _TeamManagementCreateScreenState
         }
 
         if (bytes == null || bytes.isEmpty) continue;
+
+        // Validasi ukuran maksimal 10 MB
+        const maxBytes = 10 * 1024 * 1024;
+        if (bytes.length > maxBytes) {
+          if (mounted) {
+            final sizeInMb = (bytes.length / (1024 * 1024)).toStringAsFixed(1);
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('Berkas "${f.name}" ($sizeInMb MB) melebihi batas maksimal 10 MB.'),
+              backgroundColor: const Color(0xFFD32F2F),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 4),
+            ));
+          }
+          continue;
+        }
+
         final ext = (f.extension ?? '').toLowerCase();
         final jenis = ext == 'pdf' ? 'panduan' : 'poster';
+
+        // ── Tampilkan dialog preview sebelum menambahkan file
         if (mounted) {
-          setState(() {
-            _dokumenFiles.add(PlatformUploadFile(
-              name: f.name,
-              bytes: bytes!,
-              path: kIsWeb ? null : filePath,
-              jenis: jenis,
-            ));
-          });
+          final confirmed = await _showFilePreviewDialog(
+            fileName: f.name,
+            bytes: bytes,
+            isPdf: ext == 'pdf',
+            sizeBytes: bytes.length,
+          );
+          if (confirmed == true && mounted) {
+            setState(() {
+              _dokumenFiles.add(PlatformUploadFile(
+                name: f.name,
+                bytes: bytes!,
+                path: kIsWeb ? null : filePath,
+                jenis: jenis,
+              ));
+            });
+          }
         }
       }
     } catch (e) {
       debugPrint('Error FilePicker: $e');
-      // Fallback: jika FilePicker mengalami kendala, gunakan ImagePicker
+      // Fallback: gunakan ImagePicker
       try {
         final picker = ImagePicker();
         final images = await picker.pickMultiImage();
         if (images.isNotEmpty) {
           for (final img in images) {
             final bytes = await img.readAsBytes();
-            if (mounted) {
-              setState(() {
-                _dokumenFiles.add(PlatformUploadFile(
-                  name: img.name,
-                  bytes: bytes,
-                  path: kIsWeb ? null : img.path,
-                  jenis: 'poster',
+            if (bytes.length > 10 * 1024 * 1024) {
+              if (mounted) {
+                final sizeInMb = (bytes.length / (1024 * 1024)).toStringAsFixed(1);
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text('Foto "${img.name}" ($sizeInMb MB) melebihi batas 10 MB.'),
+                  backgroundColor: const Color(0xFFD32F2F),
+                  behavior: SnackBarBehavior.floating,
                 ));
-              });
+              }
+              continue;
             }
-          }
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Foto poster berhasil dipilih via fallback picker.',
-                ),
-                behavior: SnackBarBehavior.floating,
-                duration: Duration(seconds: 4),
-              ),
-            );
+            if (mounted) {
+              final confirmed = await _showFilePreviewDialog(
+                fileName: img.name,
+                bytes: bytes,
+                isPdf: false,
+                sizeBytes: bytes.length,
+              );
+              if (confirmed == true && mounted) {
+                setState(() {
+                  _dokumenFiles.add(PlatformUploadFile(
+                    name: img.name,
+                    bytes: bytes,
+                    path: kIsWeb ? null : img.path,
+                    jenis: 'poster',
+                  ));
+                });
+              }
+            }
           }
           return;
         }
       } catch (_) {}
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Gagal memilih dokumen: $e',
-            ),
-            backgroundColor: AppColors.statusDangerText,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 5),
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Gagal memilih dokumen: $e'),
+          backgroundColor: AppColors.statusDangerText,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 5),
+        ));
       }
     }
+  }
+
+  // ── Dialog Preview File Sebelum Upload
+  Future<bool?> _showFilePreviewDialog({
+    required String fileName,
+    required Uint8List bytes,
+    required bool isPdf,
+    required int sizeBytes,
+  }) {
+    final sizeLabel = sizeBytes < 1024 * 1024
+        ? '${(sizeBytes / 1024).toStringAsFixed(1)} KB'
+        : '${(sizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                border: Border(bottom: BorderSide(color: Color(0xFFBBF7D0))),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isPdf ? const Color(0xFFFEE2E2) : const Color(0xFFE0F2FE),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      isPdf ? Icons.picture_as_pdf_rounded : Icons.image_rounded,
+                      size: 20,
+                      color: isPdf ? const Color(0xFFDC2626) : const Color(0xFF0284C7),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Preview Berkas',
+                          style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: const Color(0xFF14532D)),
+                        ),
+                        Text(
+                          isPdf ? 'Dokumen PDF' : 'Gambar Poster',
+                          style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF166534)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Preview Area
+            Container(
+              width: double.infinity,
+              constraints: const BoxConstraints(maxHeight: 280),
+              color: const Color(0xFFF8FAFC),
+              child: isPdf
+                  ? Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEE2E2),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Icon(Icons.picture_as_pdf_rounded, size: 48, color: Color(0xFFDC2626)),
+                          ),
+                          const SizedBox(height: 14),
+                          Text('Berkas PDF tidak dapat dipratinjau.', style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B))),
+                          const SizedBox(height: 4),
+                          Text('Berkas akan ditambahkan sebagai panduan tim.', style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF94A3B8))),
+                        ],
+                      ),
+                    )
+                  : Image.memory(bytes, fit: BoxFit.contain, errorBuilder: (_, _, _) =>
+                      const Icon(Icons.broken_image_rounded, size: 48, color: AppColors.textMuted)),
+            ),
+
+            // Info bar
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              color: const Color(0xFFF1F5F9),
+              child: Row(
+                children: [
+                  const Icon(Icons.insert_drive_file_outlined, size: 14, color: AppColors.textMuted),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      fileName,
+                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFF334155)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(sizeLabel, style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w500)),
+                ],
+              ),
+            ),
+
+            // Tombol Aksi
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        side: const BorderSide(color: AppColors.border),
+                      ),
+                      child: Text('Batal', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF008744),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      child: Text('Tambahkan', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _removeDocument(int index) {
@@ -358,22 +540,28 @@ class _TeamManagementCreateScreenState
           await TeamDraftService.deleteDraft(_activeDraftId!);
         }
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tim berhasil dibuat dan dipublikasikan! 🎉'),
-            backgroundColor: Color(0xFF008744),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text('Tim berhasil dibuat dan dipublikasikan! 🎉'),
+              backgroundColor: Color(0xFF008744),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
         Navigator.pop(context, true);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(widget.viewModel.saveError ?? 'Gagal membuat tim.'),
-            backgroundColor: AppColors.statusDangerText,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        final errorMsg = widget.viewModel.saveError ?? 'Gagal membuat tim.';
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(errorMsg),
+              backgroundColor: AppColors.statusDangerText,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 4),
+            ),
+          );
       }
     }
   }
@@ -417,11 +605,9 @@ class _TeamManagementCreateScreenState
               ),
             ),
           ),
-
-          // ── Bottom CTA Bar (Pinned)
-          _buildBottomBar(),
         ],
       ),
+      bottomNavigationBar: _buildBottomBar(),
     );
   }
 
@@ -437,10 +623,11 @@ class _TeamManagementCreateScreenState
       ),
       titleSpacing: 0,
       title: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 32,
-            height: 32,
+            width: 30,
+            height: 30,
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: const Color(0xFF008744),
@@ -452,56 +639,75 @@ class _TeamManagementCreateScreenState
               errorBuilder: (context, error, stackTrace) => const Icon(
                 Icons.groups_rounded,
                 color: Colors.white,
-                size: 20,
+                size: 18,
               ),
             ),
           ),
-          const SizedBox(width: 10),
-          Text(
-            'Create Team',
-            style: GoogleFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF0F172A),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              'Buat Tim',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF0F172A),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
       ),
       actions: [
-        // Tombol Lihat Draf (menampilkan total jumlah draf)
+        // Tombol Lihat Draf (Icon button dengan badge ringkas agar hemat tempat)
         if (_totalDraftsCount > 0)
           Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: InkWell(
-              onTap: _openDraftsModal,
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFDCFCE7),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF86EFAC)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
+            padding: const EdgeInsets.only(right: 4),
+            child: IconButton(
+              tooltip: 'Draf ($_totalDraftsCount)',
+              padding: const EdgeInsets.all(4),
+              constraints: const BoxConstraints(),
+              onPressed: _openDraftsModal,
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDCFCE7),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF86EFAC)),
+                    ),
+                    child: const Icon(
                       Icons.drafts_rounded,
-                      size: 15,
+                      size: 17,
                       color: Color(0xFF008744),
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Draf ($_totalDraftsCount)',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF008744),
+                  ),
+                  Positioned(
+                    top: -4,
+                    right: -4,
+                    child: Container(
+                      padding: const EdgeInsets.all(2.5),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF008744),
+                        shape: BoxShape.circle,
+                      ),
+                      constraints:
+                          const BoxConstraints(minWidth: 15, minHeight: 15),
+                      child: Center(
+                        child: Text(
+                          '$_totalDraftsCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -511,27 +717,28 @@ class _TeamManagementCreateScreenState
           padding: const EdgeInsets.only(right: 12),
           child: InkWell(
             onTap: () => _saveDraft(),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 5.5),
               decoration: BoxDecoration(
                 color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFCBD5E1)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(
                     Icons.bookmark_border_rounded,
-                    size: 15,
+                    size: 14,
                     color: Color(0xFF008744),
                   ),
-                  const SizedBox(width: 5),
+                  const SizedBox(width: 4),
                   Text(
-                    _activeDraftId != null ? 'Update Draf' : 'Simpan Draft',
+                    _activeDraftId != null ? 'Update Draf' : 'Simpan Draf',
                     style: GoogleFonts.inter(
-                      fontSize: 12,
+                      fontSize: 11.5,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF1E293B),
                     ),
@@ -549,7 +756,7 @@ class _TeamManagementCreateScreenState
   Widget _buildDraftBanner() {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 10, 16, 4),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       decoration: BoxDecoration(
         color: const Color(0xFFF0FDF4),
         borderRadius: BorderRadius.circular(12),
@@ -570,6 +777,7 @@ class _TeamManagementCreateScreenState
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   'Tersedia $_totalDraftsCount draf tersimpan',
@@ -578,6 +786,8 @@ class _TeamManagementCreateScreenState
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF14532D),
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   _latestDraft == null || _latestDraft!.namaTim.isEmpty
@@ -593,6 +803,7 @@ class _TeamManagementCreateScreenState
               ],
             ),
           ),
+          const SizedBox(width: 8),
           TextButton(
             onPressed: _openDraftsModal,
             style: TextButton.styleFrom(
@@ -605,12 +816,12 @@ class _TeamManagementCreateScreenState
                   borderRadius: BorderRadius.circular(8)),
             ),
             child: Text(
-              'Lihat Semua',
+              'Lihat',
               style: GoogleFonts.inter(
                   fontSize: 11, fontWeight: FontWeight.w700),
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 4),
           IconButton(
             icon: const Icon(Icons.close, size: 16, color: Color(0xFF166534)),
             padding: EdgeInsets.zero,
@@ -1124,69 +1335,82 @@ class _TeamManagementCreateScreenState
         ),
         const SizedBox(height: 16),
 
-        // Daftar berkas terpilih
+        // Daftar berkas terpilih dengan preview
         if (_dokumenFiles.isNotEmpty) ...[
           ...List.generate(_dokumenFiles.length, (i) {
             final doc = _dokumenFiles[i];
             final isPdf = doc.name.toLowerCase().endsWith('.pdf');
+            final isImage = !isPdf;
             return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              margin: const EdgeInsets.only(bottom: 10),
               decoration: BoxDecoration(
                 color: const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFFE2E8F0)),
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(7),
-                    decoration: BoxDecoration(
-                      color: isPdf
-                          ? const Color(0xFFFEE2E2)
-                          : const Color(0xFFE0F2FE),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      isPdf ? Icons.picture_as_pdf : Icons.image,
-                      color: isPdf
-                          ? const Color(0xFFDC2626)
-                          : const Color(0xFF0284C7),
-                      size: 18,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          doc.name,
-                          style: GoogleFonts.inter(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF0F172A),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                  // Preview area
+                  if (isImage)
+                    ClipRRect(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                      child: Image.memory(
+                        Uint8List.fromList(doc.bytes),
+                        width: double.infinity,
+                        height: 160,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => Container(
+                          height: 80,
+                          color: const Color(0xFFE0F2FE),
+                          child: const Center(child: Icon(Icons.broken_image_rounded, color: AppColors.textMuted)),
                         ),
-                        Text(
-                          isPdf ? 'BERKAS PDF' : 'GAMBAR POSTER',
-                          style: GoogleFonts.inter(
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF64748B),
+                      ),
+                    ),
+                  // Info row
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(7),
+                          decoration: BoxDecoration(
+                            color: isPdf ? const Color(0xFFFEE2E2) : const Color(0xFFE0F2FE),
+                            borderRadius: BorderRadius.circular(8),
                           ),
+                          child: Icon(
+                            isPdf ? Icons.picture_as_pdf : Icons.image_rounded,
+                            color: isPdf ? const Color(0xFFDC2626) : const Color(0xFF0284C7),
+                            size: 18,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                doc.name,
+                                style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w600, color: const Color(0xFF0F172A)),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                '${isPdf ? 'BERKAS PDF' : 'GAMBAR POSTER'} • ${doc.formattedSize}',
+                                style: GoogleFonts.inter(fontSize: 9.5, fontWeight: FontWeight.w600, color: const Color(0xFF64748B)),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFDC2626)),
+                          onPressed: () => _removeDocument(i),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          tooltip: 'Hapus berkas',
                         ),
                       ],
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close,
-                        size: 18, color: Color(0xFF64748B)),
-                    onPressed: () => _removeDocument(i),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
                   ),
                 ],
               ),

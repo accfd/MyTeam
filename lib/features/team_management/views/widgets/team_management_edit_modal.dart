@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -55,6 +56,7 @@ class _TeamManagementEditModalState extends State<TeamManagementEditModal> {
 
   final List<PlatformUploadFile> _newDokumenFiles = [];
   final _formKey = GlobalKey<FormState>();
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -110,17 +112,45 @@ class _TeamManagementEditModalState extends State<TeamManagementEditModal> {
         }
 
         if (bytes == null || bytes.isEmpty) continue;
+
+        // Validasi ukuran berkas maksimal 10 MB (10 * 1024 * 1024 bytes)
+        const maxBytes = 10 * 1024 * 1024;
+        if (bytes.length > maxBytes) {
+          if (mounted) {
+            final sizeInMb = (bytes.length / (1024 * 1024)).toStringAsFixed(1);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Berkas "${f.name}" ($sizeInMb MB) melebihi batas maksimal 10 MB.',
+                ),
+                backgroundColor: const Color(0xFFD32F2F),
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          }
+          continue;
+        }
+
         final ext = (f.extension ?? '').toLowerCase();
         final jenis = ext == 'pdf' ? 'panduan' : 'poster';
         if (mounted) {
-          setState(() {
-            _newDokumenFiles.add(PlatformUploadFile(
-              name: f.name,
-              bytes: bytes!,
-              path: kIsWeb ? null : filePath,
-              jenis: jenis,
-            ));
-          });
+          final confirmed = await _showFilePreviewDialog(
+            fileName: f.name,
+            bytes: bytes,
+            isPdf: ext == 'pdf',
+            sizeBytes: bytes.length,
+          );
+          if (confirmed == true && mounted) {
+            setState(() {
+              _newDokumenFiles.add(PlatformUploadFile(
+                name: f.name,
+                bytes: bytes!,
+                path: kIsWeb ? null : filePath,
+                jenis: jenis,
+              ));
+            });
+          }
         }
       }
     } catch (e) {
@@ -131,15 +161,39 @@ class _TeamManagementEditModalState extends State<TeamManagementEditModal> {
         if (images.isNotEmpty) {
           for (final img in images) {
             final bytes = await img.readAsBytes();
+            if (bytes.length > 10 * 1024 * 1024) {
+              if (mounted) {
+                final sizeInMb =
+                    (bytes.length / (1024 * 1024)).toStringAsFixed(1);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Foto "${img.name}" ($sizeInMb MB) melebihi batas 10 MB.',
+                    ),
+                    backgroundColor: const Color(0xFFD32F2F),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+              continue;
+            }
             if (mounted) {
-              setState(() {
-                _newDokumenFiles.add(PlatformUploadFile(
-                  name: img.name,
-                  bytes: bytes,
-                  path: kIsWeb ? null : img.path,
-                  jenis: 'poster',
-                ));
-              });
+              final confirmed = await _showFilePreviewDialog(
+                fileName: img.name,
+                bytes: bytes,
+                isPdf: false,
+                sizeBytes: bytes.length,
+              );
+              if (confirmed == true && mounted) {
+                setState(() {
+                  _newDokumenFiles.add(PlatformUploadFile(
+                    name: img.name,
+                    bytes: bytes,
+                    path: kIsWeb ? null : img.path,
+                    jenis: 'poster',
+                  ));
+                });
+              }
             }
           }
           return;
@@ -160,8 +214,219 @@ class _TeamManagementEditModalState extends State<TeamManagementEditModal> {
     }
   }
 
+  // ── Dialog Preview File Sebelum Upload di Modal Edit
+  Future<bool?> _showFilePreviewDialog({
+    required String fileName,
+    required Uint8List bytes,
+    required bool isPdf,
+    required int sizeBytes,
+  }) {
+    final sizeLabel = sizeBytes < 1024 * 1024
+        ? '${(sizeBytes / 1024).toStringAsFixed(1)} KB'
+        : '${(sizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                border: Border(bottom: BorderSide(color: Color(0xFFBBF7D0))),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isPdf ? const Color(0xFFFEE2E2) : const Color(0xFFE0F2FE),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      isPdf ? Icons.picture_as_pdf_rounded : Icons.image_rounded,
+                      size: 20,
+                      color: isPdf ? const Color(0xFFDC2626) : const Color(0xFF0284C7),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Preview Berkas',
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF14532D),
+                          ),
+                        ),
+                        Text(
+                          isPdf ? 'Dokumen PDF' : 'Gambar Poster',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            color: const Color(0xFF166534),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: double.infinity,
+              constraints: const BoxConstraints(maxHeight: 280),
+              color: const Color(0xFFF8FAFC),
+              child: isPdf
+                  ? Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEE2E2),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Icon(
+                              Icons.picture_as_pdf_rounded,
+                              size: 48,
+                              color: Color(0xFFDC2626),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            'Berkas PDF tidak dapat dipratinjau.',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: const Color(0xFF64748B),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Berkas akan ditambahkan sebagai panduan tim.',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              color: const Color(0xFF94A3B8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : Image.memory(
+                      bytes,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, _, _) => const Icon(
+                        Icons.broken_image_rounded,
+                        size: 48,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+            ),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              color: const Color(0xFFF1F5F9),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.insert_drive_file_outlined,
+                    size: 14,
+                    color: AppColors.textMuted,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      fileName,
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF334155),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    sizeLabel,
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: AppColors.textMuted,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        side: const BorderSide(color: AppColors.border),
+                      ),
+                      child: Text(
+                        'Batal',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF008744),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        'Tambahkan',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _handleUpdate() async {
     if (!_formKey.currentState!.validate()) return;
+    setState(() => _errorMessage = null);
 
     final success = await widget.viewModel.updateTeam(
       idTim: widget.team.idTim,
@@ -174,15 +439,21 @@ class _TeamManagementEditModalState extends State<TeamManagementEditModal> {
     );
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(success
-            ? 'Tim berhasil diperbarui.'
-            : (widget.viewModel.saveError ?? 'Gagal memperbarui tim.')),
-        backgroundColor:
-            success ? AppColors.statusSuccessText : AppColors.statusDangerText,
-        behavior: SnackBarBehavior.floating,
-      ));
-      if (success) Navigator.pop(context, true);
+      if (success) {
+        Navigator.pop(context, true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Tim berhasil diperbarui.'),
+            backgroundColor: AppColors.statusSuccessText,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        setState(() {
+          _errorMessage =
+              widget.viewModel.saveError ?? 'Gagal memperbarui tim.';
+        });
+      }
     }
   }
 
@@ -283,6 +554,41 @@ class _TeamManagementEditModalState extends State<TeamManagementEditModal> {
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
                   children: [
+                    if (_errorMessage != null) ...[
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 14),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.statusDangerBg,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.statusDangerText
+                                .withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.error_outline_rounded,
+                              color: AppColors.statusDangerText,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                _errorMessage!,
+                                style: AppTextStyles.bodySm.copyWith(
+                                  color: AppColors.statusDangerText,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+
                     // ── INFO: Kategori dikunci (FR-10)
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -614,18 +920,30 @@ class _TeamManagementEditModalState extends State<TeamManagementEditModal> {
                           child: Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(8),
+                                width: 44,
+                                height: 44,
                                 decoration: BoxDecoration(
                                   color: AppColors.primarySoft,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: Icon(
-                                  isPdf
-                                      ? Icons.picture_as_pdf_rounded
-                                      : Icons.image_rounded,
-                                  color: AppColors.primary,
-                                  size: 20,
-                                ),
+                                clipBehavior: Clip.antiAlias,
+                                child: isPdf
+                                    ? const Center(
+                                        child: Icon(
+                                          Icons.picture_as_pdf_rounded,
+                                          color: Color(0xFFDC2626),
+                                          size: 22,
+                                        ),
+                                      )
+                                    : Image.memory(
+                                        Uint8List.fromList(doc.bytes),
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, _, _) => const Icon(
+                                          Icons.image_rounded,
+                                          color: AppColors.primary,
+                                          size: 20,
+                                        ),
+                                      ),
                               ),
                               const SizedBox(width: 10),
                               Expanded(

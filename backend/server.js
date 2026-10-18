@@ -11,6 +11,12 @@ const path = require('path');
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+const isVercel = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+if (isVercel) {
+  const os = require('os');
+  app.use('/storage/teams', express.static(path.join(os.tmpdir(), 'storage', 'teams')));
+  app.use('/storage/profiles', express.static(path.join(os.tmpdir(), 'storage', 'profiles')));
+}
 app.use('/storage', express.static(path.join(__dirname, 'storage')));
 
 // Rute Pengujian Status Server (Health Check)
@@ -54,6 +60,24 @@ app.use((req, res) => {
   res.status(404).json({
     success: false,
     message: `Endpoint ${req.method} ${req.originalUrl} tidak ditemukan pada server MyTeam.`
+  });
+});
+
+// Global Error Handler (memastikan respon error selalu berformat JSON, bukan halaman HTML)
+app.use((err, req, res, next) => {
+  console.error('Unhandled server error:', err);
+  if (res.headersSent) {
+    return next(err);
+  }
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(413).json({
+      success: false,
+      message: 'Ukuran berkas melebihi batas maksimal 10 MB.'
+    });
+  }
+  return res.status(err.status || 500).json({
+    success: false,
+    message: err.message || 'Terjadi kesalahan pada server backend.'
   });
 });
 
