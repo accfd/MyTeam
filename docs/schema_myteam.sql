@@ -45,13 +45,17 @@ SET FOREIGN_KEY_CHECKS = 1;
 CREATE TABLE Pengguna (
     id_pengguna VARCHAR(36) NOT NULL,
     nim VARCHAR(10) NOT NULL,
-    kata_sandi VARCHAR(255) NOT NULL,
+    kata_sandi VARCHAR(255) NULL,
     nama_pengguna VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NULL,
+    google_id VARCHAR(100) NULL,
     foto_profil VARCHAR(255) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id_pengguna),
-    UNIQUE KEY uq_pengguna_nim (nim)
+    UNIQUE KEY uq_pengguna_nim (nim),
+    UNIQUE KEY uq_pengguna_email (email),
+    UNIQUE KEY uq_pengguna_google_id (google_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

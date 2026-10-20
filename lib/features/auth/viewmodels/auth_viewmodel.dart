@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/auth_user_model.dart';
 import '../services/auth_service.dart';
+import '../services/google_auth_service.dart';
 
 /// ViewModel untuk mengelola state autentikasi (MVVM)
 class AuthViewModel extends ChangeNotifier {
@@ -33,6 +34,7 @@ class AuthViewModel extends ChangeNotifier {
   Future<bool> register({
     required String nim,
     required String namaPengguna,
+    required String email,
     required String kataSandi,
     required String kataSandiKonfirmasi,
   }) async {
@@ -44,6 +46,7 @@ class AuthViewModel extends ChangeNotifier {
       _currentUser = await AuthService.register(
         nim: nim,
         namaPengguna: namaPengguna,
+        email: email,
         kataSandi: kataSandi,
         kataSandiKonfirmasi: kataSandiKonfirmasi,
       );
@@ -57,4 +60,32 @@ class AuthViewModel extends ChangeNotifier {
       return false;
     }
   }
+
+  /// Login / Daftar menggunakan akun Google Mahasiswa UNAND
+  Future<bool> signInWithGoogle() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final idToken = await GoogleAuthService.signIn();
+      if (idToken == null) {
+        // Pengguna membatalkan proses sign-in
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      _currentUser = await AuthService.loginWithGoogle(idToken);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceFirst('Exception: ', '');
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
 }
+

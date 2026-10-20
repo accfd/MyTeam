@@ -10,6 +10,34 @@ class Validators {
     return null;
   }
 
+  static String? validateUnandEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Email mahasiswa UNAND wajib diisi';
+    }
+    final email = value.trim().toLowerCase();
+    if (!email.endsWith('@student.unand.ac.id')) {
+      return 'Wajib menggunakan email resmi (@student.unand.ac.id)';
+    }
+    return null;
+  }
+
+  static String? validateNimOrEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'NIM atau Email Kampus wajib diisi';
+    }
+    final trimmed = value.trim().toLowerCase();
+    if (trimmed.contains('@')) {
+      if (!trimmed.endsWith('@student.unand.ac.id')) {
+        return 'Email harus berakhiran @student.unand.ac.id';
+      }
+      return null;
+    }
+    if (trimmed.length < 8) {
+      return 'NIM minimal 8 karakter';
+    }
+    return null;
+  }
+
   static String? validateRequired(String? value, String fieldName) {
     if (value == null || value.trim().isEmpty) {
       return '$fieldName wajib diisi';

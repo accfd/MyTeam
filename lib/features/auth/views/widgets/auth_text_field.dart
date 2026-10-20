@@ -13,6 +13,8 @@ class AuthTextField extends StatelessWidget {
   final VoidCallback? onToggleVisibility;
   final TextInputType keyboardType;
   final String? Function(String?)? validator;
+  final bool readOnly;
+  final String? helperText;
 
   const AuthTextField({
     super.key,
@@ -25,6 +27,8 @@ class AuthTextField extends StatelessWidget {
     this.onToggleVisibility,
     this.keyboardType = TextInputType.text,
     this.validator,
+    this.readOnly = false,
+    this.helperText,
   });
 
   @override
@@ -32,21 +36,48 @@ class AuthTextField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: AppTextStyles.labelMd.copyWith(color: AppColors.text, fontSize: 13),
+        Row(
+          children: [
+            Text(
+              label,
+              style: AppTextStyles.labelMd.copyWith(color: AppColors.text, fontSize: 13),
+            ),
+            if (readOnly) ...[
+              const SizedBox(width: 6),
+              const Icon(Icons.lock_outline, size: 13, color: AppColors.textMuted),
+              const SizedBox(width: 4),
+              Text(
+                '(Terkunci otomatis)',
+                style: AppTextStyles.bodySm.copyWith(
+                  color: AppColors.textMuted,
+                  fontSize: 11.5,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ],
         ),
         const SizedBox(height: 6),
         TextFormField(
           controller: controller,
+          readOnly: readOnly,
           obscureText: isPassword ? obscureText : false,
           keyboardType: keyboardType,
-          style: AppTextStyles.bodyMd,
+          style: AppTextStyles.bodyMd.copyWith(
+            color: readOnly ? const Color(0xFF374151) : AppColors.text,
+            fontWeight: readOnly ? FontWeight.w600 : FontWeight.normal,
+          ),
           validator: validator,
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: AppTextStyles.bodySm.copyWith(color: AppColors.textMuted),
-            prefixIcon: Icon(prefixIcon, color: AppColors.textMuted, size: 20),
+            helperText: helperText,
+            helperStyle: AppTextStyles.bodySm.copyWith(color: AppColors.textMuted, fontSize: 11.5),
+            prefixIcon: Icon(
+              prefixIcon,
+              color: readOnly ? AppColors.primary : AppColors.textMuted,
+              size: 20,
+            ),
             suffixIcon: isPassword
                 ? IconButton(
                     icon: Icon(
@@ -56,21 +87,26 @@ class AuthTextField extends StatelessWidget {
                     ),
                     onPressed: onToggleVisibility,
                   )
-                : null,
+                : (readOnly
+                    ? const Icon(Icons.lock_rounded, color: AppColors.textMuted, size: 18)
+                    : null),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: readOnly ? const Color(0xFFF3F4F6) : Colors.white,
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderSide: BorderSide(color: readOnly ? const Color(0xFFE5E7EB) : AppColors.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderSide: BorderSide(color: readOnly ? const Color(0xFFE5E7EB) : AppColors.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+              borderSide: BorderSide(
+                color: readOnly ? const Color(0xFFE5E7EB) : AppColors.primary,
+                width: readOnly ? 1.0 : 1.5,
+              ),
             ),
           ),
         ),

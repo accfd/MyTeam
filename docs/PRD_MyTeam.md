@@ -100,67 +100,16 @@ MyTeam bertujuan menyediakan aplikasi mobile bagi mahasiswa Universitas Andalas 
 
 ---
 
-### 2.4 User Flow (Koreksi & Kodifikasi Terstruktur)
+### 2.4 Alur Pengguna (User Flow)
 
-> **Catatan Klarifikasi Alur:**
-> Pada draft sebelumnya terdapat 5 butir karena butir *"Pencari Anggota (mengirim undangan)"* terduplikasi secara tidak sengaja. Pada aplikasi MyTeam, secara fundamental terdapat **2 Peran Pengguna** (*Pencari Anggota* dan *Pencari Tim*) dengan **4 Jalur Alur Utama (2 Peran × 2 Arah Alur)**.
-> Setiap alur kini dibakukan dengan kode unik resmi (**UF-01 s.d UF-04**) beserta rincian sub-langkah dan modul penanggung jawabnya:
+Berikut adalah 4 alur kerja utama aplikasi MyTeam yang memetakan interaksi nyata antara Pencari Tim dan Pencari Anggota (Pembuat Tim) yang telah diimplementasikan penuh sesuai arsitektur modul dan tanggung jawab tiap PIC:
 
-#### A. Peran: Pencari Anggota (Pembuat Tim)
-
-##### [UF-01] Pencari Anggota: Menerima Pengajuan Masuk (Inbound Application)
-Alur ketika pembuat tim membuka lowongan anggota, menerima lamaran dari pencari tim yang tertarik, menyeleksi kandidat, dan menerima anggota ke dalam tim.
-
-* **UF-01.1** [Modul 1]: Buka Aplikasi & Login menggunakan NIM/Kata Sandi.
-* **UF-01.2** [Modul 2]: Navigasi ke menu Tim Saya → Klik tombol *"Buat Tim Baru"*.
-* **UF-01.3** [Modul 2]: Mengisi data tim (nama kegiatan, kategori lomba/riset, deskripsi, form posisi yang dibutuhkan & kuota) dan mengunggah poster/panduan lomba.
-* **UF-01.4** [Modul 2]: Tim berhasil dibuat dan berstatus aktif/terbuka (*open recruitment*).
-* **UF-01.5** [Modul 3]: Menerima notifikasi bahwa ada mahasiswa yang mengajukan diri bergabung ke tim.
-* **UF-01.6** [Modul 3]: Membuka daftar pengajuan bergabung (*applicant list*) pada detail tim terkait.
-* **UF-01.7** [Modul 1 & 3]: Melihat rincian pengajuan (posisi dilamar, pesan pengajuan) dan meninjau profil lengkap calon anggota (IPK, keahlian, riwayat pengalaman).
-* **UF-01.8** [Modul 3 & 2]: Menekan aksi *"Terima Pengajuan"* → Sistem otomatis memasukkan pelamar ke entitas `Anggota_Tim` pada posisi yang dilamar, mengurangi sisa kuota kebutuhan posisi, dan pembentukan tim berhasil/berkembang.
-
-##### [UF-02] Pencari Anggota: Mencari & Mengundang Calon Anggota (Outbound Invitation)
-Alur ketika pembuat tim secara aktif mencari mahasiswa berkeahlian tertentu di kampus (*talent scouting*) dan mengirimkan undangan resmi untuk bergabung ke dalam timnya.
-
-* **UF-02.1** [Modul 1]: Buka Aplikasi & Login menggunakan NIM/Kata Sandi.
-* **UF-02.2** [Modul 4]: Navigasi ke menu *"Cari Calon Anggota"* pada bilah navigasi utama.
-* **UF-02.3** [Modul 4]: Memasukkan kata kunci pencarian atau memfilter berdasarkan keahlian (*skill*), minat, atau kata kunci pengalaman.
-* **UF-02.4** [Modul 1 & 4]: Membuka profil detail calon anggota yang dinilai potensial untuk melihat rekam jejak akademik dan portofolionya.
-* **UF-02.5** [Modul 2 & 4]: Menekan tombol *"Undang ke Tim"* → Memilih tim yang dimiliki dan memilih posisi yang masih memiliki kuota terbuka.
-* **UF-02.6** [Modul 4]: Menulis pesan ajakan bergabung dan mengirimkan undangan (*Pengajuan_Anggota* terbuat dengan status `menunggu`).
-* **UF-02.7** [Modul 4]: Memantau status undangan pada daftar undangan terkirim (*pending / accepted / rejected*).
-* **UF-02.8** [Modul 1 & 4]: Menerima notifikasi ketika calon anggota merespons undangan. Jika diterima, calon anggota resmi tercatat sebagai `Anggota_Tim` (Modul 2) dan alur selesai.
-
----
-
-#### B. Peran: Pencari Tim (Calon Anggota)
-
-##### [UF-03] Pencari Tim: Mencari & Melamar ke Tim (Outbound Application)
-Alur ketika seorang mahasiswa ingin berpartisipasi dalam suatu kegiatan/lomba dan secara mandiri mencari tim yang membuka posisi yang relevan dengan keahliannya.
-
-* **UF-03.1** [Modul 1]: Buka Aplikasi & Login, memastikan data riwayat diri (profil, skill, pengalaman) sudah terisi lengkap sebagai portofolio lamaran.
-* **UF-03.2** [Modul 3]: Masuk ke halaman Beranda (*Feed Tim Terbaru*).
-* **UF-03.3** [Modul 3]: Menggunakan fitur pencarian dan filter untuk menyaring tim berdasarkan nama kegiatan, kategori (misal: Lomba/Penelitian), dan posisi keahlian yang dibutuhkan.
-* **UF-03.4** [Modul 2 & 3]: Membuka kartu tim untuk melihat detail kegiatan, deskripsi, kebutuhan anggota, dan dokumen poster/panduan.
-* **UF-03.5** [Modul 3]: Menekan tombol *"Ajukan Bergabung"* → Memilih posisi yang ingin dilamar dan menulis pesan motivasi/pengajuan.
-* **UF-03.6** [Modul 3]: Mengirim pengajuan → Data tercatat di entitas `Pengajuan_Bergabung_Tim` dengan status awal `menunggu`.
-* **UF-03.7** [Modul 3]: Memantau riwayat dan status pengajuan di tab lamaran saya.
-* **UF-03.8** [Modul 1 & 2]: Menerima notifikasi saat pembuat tim menerima pengajuan → Mahasiswa otomatis terdaftar dalam daftar anggota tim tersebut dan tercatat pada profil `Tim yang Diikuti` (Modul 1). Pembentukan tim selesai.
-
-##### [UF-04] Calon Anggota: Menerima & Merespons Undangan Tim (Inbound Invitation)
-Alur ketika mahasiswa mendapatkan tawaran langsung dari ketua/pembuat tim untuk bergabung ke suatu tim pada posisi yang spesifik.
-
-* **UF-04.1** [Modul 1]: Buka Aplikasi & Login menggunakan akun mahasiswa.
-* **UF-04.2** [Modul 4]: Menerima notifikasi undangan masuk dan membuka tab *"Undangan Masuk"*.
-* **UF-04.3** [Modul 2 & 4]: Melihat kartu undangan yang memuat nama tim, nama pembuat tim, posisi yang ditawarkan, pesan ajakan, serta tautan ke detail tim lengkap.
-* **UF-04.4** [Modul 4]: Memilih respons: menekan tombol *"Terima"* atau *"Tolak"*.
-* **UF-04.5** [Modul 2 & 4]: **Validasi Integritas Kuota:**
-  - *Jika Diterima & Kuota Posisi Masih Tersedia:* Status undangan berubah menjadi `diterima`, pengguna langsung dimasukkan ke tabel `Anggota_Tim` pada posisi tersebut, dan data tim ditambahkan ke riwayat tim diikuti (Modul 1).
-  - *Jika Diterima namun Kuota Sudah Penuh (telah diisi pelamar lain terlebih dahulu):* Sistem memberikan informasi bahwa kuota telah terisi dan status undangan otomatis dialihkan menjadi `ditolak` (kuota penuh).
-  - *Jika Ditolak oleh Pengguna:* Status undangan berubah menjadi `ditolak`.
-* **UF-04.6** [Modul 4 & 1]: Notifikasi respons dikirimkan kembali kepada pembuat tim.
-* **UF-04.7** [Modul 2]: Proses penerimaan anggota selesai.
+| Kode | Alur | Status |
+| :---: | :--- | :---: |
+| **Alur A** | **Flow Normal A: Pencari Tim Mengajukan ke Tim**<br>*PIC: Rafa Gian Atthari (Modul 3)*<br><br>**Rantai Navigasi:**<br>`Feed Tim` → `Cari / Filter Tim` → `Detail Tim & Kebutuhan Posisi` → `Ajukan Bergabung` → `Monitoring Status Pengajuan`<br><br>**Langkah Alur yang Sudah Berjalan Nyata:**<br>1. Feed Beranda menampilkan daftar tim aktif yang membuka rekrutmen.<br>2. Mahasiswa mencari kata kunci atau menerapkan filter kategori kegiatan dan keahlian.<br>3. Membuka Detail Tim untuk meninjau deskripsi kegiatan dan rincian kebutuhan posisi.<br>4. Menekan tombol **"Ajukan Bergabung"**, memilih posisi yang dilamar, dan mengisi pesan pengajuan.<br>5. Pengajuan dikirim; status tercatat sebagai **Menunggu** pada layar *"Status Pengajuan Saya"* (Tab Status) dan otomatis berubah menjadi **Diterima** atau **Ditolak** setelah diputuskan oleh ketua tim. | Selesai Penuh<br>*(Dapat Didemokan)* |
+| **Alur B** | **Flow Normal B: Pencari Anggota Menerima Pengajuan**<br>*PIC: Nayla Puspita Sari (Modul 2)*<br><br>**Rantai Navigasi:**<br>`Beranda` → `Menu Tim Saya` → `Detail Tim` → `Kelola Pengajuan Masuk` → `Detail Profil Calon Anggota` → `Konfirmasi Terima / Tolak`<br><br>**Langkah Alur yang Sudah Berjalan Nyata:**<br>1. Pembuat tim masuk ke menu **Tim Saya** dan memilih tim yang dikelolanya.<br>2. Pada layar Detail Tim, membuka kartu akses **"Kelola Pengajuan Masuk"**.<br>3. Melihat daftar pelamar, membuka detail profil akademik/portofolio, serta membaca pesan motivasi pelamar.<br>4. Menekan tombol **Terima** atau **Tolak** dan mengonfirmasi pada dialog pop-up.<br>5. Status pengajuan diperbarui seketika; pelamar yang diterima langsung tercatat resmi di daftar **Anggota Tim**, dan kuota posisi tim ter-update. | Selesai Penuh<br>*(Dapat Didemokan)* |
+| **Alur C** | **Flow Normal C: Pencari Anggota Mengajukan ke Calon Anggota**<br>*PIC: Diva Ramadhani (Modul 4)*<br><br>**Rantai Navigasi:**<br>`Beranda` → `Menu Cari Anggota` → `Filter Keahlian & Minat` → `Profil Lengkap Mahasiswa` → `Kirim Undangan Tim` → `Monitoring Respons & Status`<br><br>**Langkah Alur yang Sudah Berjalan Nyata:**<br>1. Pembuat tim membuka menu **Cari Anggota** (*Talent Search*) pada bilah navigasi utama.<br>2. Memfilter berdasarkan keahlian/minat atau mencari nama, NIM, dan program studi kandidat.<br>3. Membuka profil lengkap calon anggota untuk meninjau rekam jejak akademik, keahlian, dan jumlah pengalaman.<br>4. Menekan tombol **"Ajak Bergabung" / "Undang ke Tim"**, memilih tim miliknya dan posisi yang kuotanya masih tersedia, lalu mengisi pesan undangan.<br>5. Undangan dikirim; status terpantau pada daftar undangan terkirim dan pembuat tim menerima notifikasi ketika calon anggota merespons (terima/tolak). | Selesai Penuh<br>*(Dapat Didemokan)* |
+| **Alur D** | **Flow Normal D: Pencari Tim Menerima Undangan dari Pembuat Tim & Menjadi Anggota**<br>*PIC: Fuadi Dhiyaulhaq (Modul 1)*<br><br>**Rantai Navigasi:**<br>`Notifikasi / Tab Status` → `Sub-Tab Undangan Masuk` → `Detail Undangan Tim` → `Konfirmasi Terima / Tolak` → `Pembaruan Riwayat Keanggotaan`<br><br>**Langkah Alur yang Sudah Berjalan Nyata:**<br>1. Mahasiswa menerima notifikasi undangan atau membuka tab **Status** pada sub-tab **"Undangan Masuk"**.<br>2. Meninjau kartu tawaran tim (nama tim, kegiatan, nama pengundang, posisi yang ditawarkan, dan pesan ajakan).<br>3. Menekan tombol aksi **"Terima"** atau **"Tolak"** disertai konfirmasi dialog.<br>4. Sistem melakukan validasi kuota secara atomik; jika diterima, mahasiswa langsung tercatat resmi sebagai **Anggota Tim** pada posisi terkait.<br>5. Status keanggotaan ter-update otomatis dan data tim langsung tampil pada halaman Profil di bagian *"Tim yang Diikuti"*. | Selesai Penuh<br>*(Dapat Didemokan)* |
 
 ---
 
@@ -200,12 +149,12 @@ graph TD
 
 | Interaksi Antar Modul | Aliran Data & Integrasi Fungsional | Kode User Flow Terkait | Kode FR Terkait | Entitas Basis Data Terlibat |
 | :--- | :--- | :---: | :---: | :--- |
-| **Modul 1 ↔ Modul 2** | • **M1 → M2:** `id_pengguna` yang terautentikasi menjadi pemilik/pembuat pada entitas tim.<br>• **M2 → M1:** Ketika pengguna resmi menjadi `Anggota_Tim` (baik lewat `UF-01` atau `UF-04`), riwayat tim otomatis muncul di layar profil bagian *"Tim yang Diikuti"* (FR-06). | UF-01, UF-04 | FR-01, FR-06, FR-08, FR-09 | `Pengguna`, `Data_Tim`, `Anggota_Tim` |
-| **Modul 1 ↔ Modul 3** | • **M1 → M3:** Saat pencari tim mengajukan lamaran ke tim (`UF-03`), pembuat tim dapat mengklik kartu pelamar untuk menginspeksi profil akademik, keahlian, dan riwayat pengalaman (FR-18).<br>• **M3 → M1:** Saat status lamaran berubah (diterima/ditolak), sistem mengirimkan entri notifikasi ke akun pelamar (FR-20). | UF-01, UF-03 | FR-01 s/d FR-05, FR-16, FR-18, FR-20 | `Pengguna`, `Data_Diri`, `Data_Keahlian`, `Data_Pengalaman`, `Pengajuan_Bergabung_Tim`, `Notifikasi` |
-| **Modul 1 ↔ Modul 4** | • **M1 → M4:** Modul 4 mengekstrak kumpulan profil mahasiswa aktif (nama, IPK, keahlian, minat, pengalaman) sebagai sumber data pencarian calon anggota (FR-21, FR-22).<br>• **M4 → M1:** Ketika undangan dikirim atau direspons, sistem mengirimkan notifikasi ke akun mahasiswa terkait (FR-25). | UF-02, UF-04 | FR-01 s/d FR-05, FR-21, FR-22, FR-25 | `Pengguna`, `Data_Diri`, `Data_Minat`, `Data_Keahlian`, `Data_Pengalaman`, `Pengajuan_Anggota`, `Notifikasi` |
-| **Modul 2 ↔ Modul 3** | • **M2 → M3:** Data tim aktif yang dibuat pada Modul 2 menjadi sumber data utama yang disajikan pada Feed dan hasil filter Modul 3 (FR-13, FR-14, FR-15).<br>• **M3 → M2:** Aksi *"Terima Pengajuan"* pada Modul 3 akan membuat *record* baru pada tabel `Anggota_Tim` dan memutakhirkan sisa kuota pada `Kebutuhan_Tim` di Modul 2. | UF-01, UF-03 | FR-08, FR-09, FR-14, FR-16, FR-19 | `Data_Tim`, `Kebutuhan_Tim`, `Dokumen_Pendukung`, `Pengajuan_Bergabung_Tim`, `Anggota_Tim` |
-| **Modul 2 ↔ Modul 4** | • **M2 → M4:** Saat pembuat tim menekan tombol *"Undang Calon Anggota"*, Modul 4 mengambil daftar tim aktif milik pengguna dari Modul 2 beserta daftar posisi yang kuotanya masih tersedia (FR-23).<br>• **M4 → M2:** Saat calon anggota menerima undangan (`UF-04`), sistem melakukan validasi ketersediaan kuota ke Modul 2. Jika valid, calon anggota resmi tercatat di tabel `Anggota_Tim` dan kuota posisi berkurang. | UF-02, UF-04 | FR-08, FR-09, FR-23, FR-24 | `Data_Tim`, `Kebutuhan_Tim`, `Pengajuan_Anggota`, `Anggota_Tim` |
-| **Modul 3 ↔ Modul 4** | • **M3 ↔ M4:** Mencegah terjadinya *double joining* atau inkonsistensi status. Jika seorang pengguna telah diterima di suatu tim melalui jalur Modul 3 (`UF-01`/`UF-03`), maka jika terdapat undangan terbuka di tim yang sama dari Modul 4 (`UF-04`), sistem otomatis memvalidasi atau membatalkan pengajuan yang redundan. | UF-01, UF-04 | FR-19, FR-24 | `Pengajuan_Bergabung_Tim`, `Pengajuan_Anggota`, `Anggota_Tim` |
+| **Modul 1 ↔ Modul 2** | • **M1 → M2:** `id_pengguna` yang terautentikasi menjadi pemilik/pembuat pada entitas tim.<br>• **M2 → M1:** Ketika pengguna resmi menjadi `Anggota_Tim` (baik lewat `Alur B` atau `Alur D`), riwayat tim otomatis muncul di layar profil bagian *"Tim yang Diikuti"* (FR-06). | Alur B, Alur D | FR-01, FR-06, FR-08, FR-09 | `Pengguna`, `Data_Tim`, `Anggota_Tim` |
+| **Modul 1 ↔ Modul 3** | • **M1 → M3:** Saat pencari tim mengajukan lamaran ke tim (`Alur A`), pembuat tim dapat mengklik kartu pelamar untuk menginspeksi profil akademik, keahlian, dan riwayat pengalaman (FR-18).<br>• **M3 → M1:** Saat status lamaran berubah (diterima/ditolak), sistem mengirimkan entri notifikasi ke akun pelamar (FR-20). | Alur A, Alur B | FR-01 s/d FR-05, FR-16, FR-18, FR-20 | `Pengguna`, `Data_Diri`, `Data_Keahlian`, `Data_Pengalaman`, `Pengajuan_Bergabung_Tim`, `Notifikasi` |
+| **Modul 1 ↔ Modul 4** | • **M1 → M4:** Modul 4 mengekstrak kumpulan profil mahasiswa aktif (nama, IPK, keahlian, minat, pengalaman) sebagai sumber data pencarian calon anggota (FR-21, FR-22).<br>• **M4 → M1:** Ketika undangan dikirim atau direspons, sistem mengirimkan notifikasi ke akun mahasiswa terkait (FR-25). | Alur C, Alur D | FR-01 s/d FR-05, FR-21, FR-22, FR-25 | `Pengguna`, `Data_Diri`, `Data_Minat`, `Data_Keahlian`, `Data_Pengalaman`, `Pengajuan_Anggota`, `Notifikasi` |
+| **Modul 2 ↔ Modul 3** | • **M2 → M3:** Data tim aktif yang dibuat pada Modul 2 menjadi sumber data utama yang disajikan pada Feed dan hasil filter Modul 3 (FR-13, FR-14, FR-15).<br>• **M3 → M2:** Aksi *"Terima Pengajuan"* pada Modul 3 akan membuat *record* baru pada tabel `Anggota_Tim` dan memutakhirkan sisa kuota pada `Kebutuhan_Tim` di Modul 2. | Alur A, Alur B | FR-08, FR-09, FR-14, FR-16, FR-19 | `Data_Tim`, `Kebutuhan_Tim`, `Dokumen_Pendukung`, `Pengajuan_Bergabung_Tim`, `Anggota_Tim` |
+| **Modul 2 ↔ Modul 4** | • **M2 → M4:** Saat pembuat tim menekan tombol *"Undang Calon Anggota"*, Modul 4 mengambil daftar tim aktif milik pengguna dari Modul 2 beserta daftar posisi yang kuotanya masih tersedia (FR-23).<br>• **M4 → M2:** Saat calon anggota menerima undangan (`Alur D`), sistem melakukan validasi ketersediaan kuota ke Modul 2. Jika valid, calon anggota resmi tercatat di tabel `Anggota_Tim` dan kuota posisi berkurang. | Alur C, Alur D | FR-08, FR-09, FR-23, FR-24 | `Data_Tim`, `Kebutuhan_Tim`, `Pengajuan_Anggota`, `Anggota_Tim` |
+| **Modul 3 ↔ Modul 4** | • **M3 ↔ M4:** Mencegah terjadinya *double joining* atau inkonsistensi status. Jika seorang pengguna telah diterima di suatu tim melalui jalur Modul 3 (`Alur A`/`Alur B`), maka jika terdapat undangan terbuka di tim yang sama dari Modul 4 (`Alur D`), sistem otomatis memvalidasi atau membatalkan pengajuan yang redundan. | Alur A, Alur B, Alur C, Alur D | FR-19, FR-24 | `Pengajuan_Bergabung_Tim`, `Pengajuan_Anggota`, `Anggota_Tim` |
 
 ### 2.6 Data Requirements
 

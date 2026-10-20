@@ -1,8 +1,9 @@
 /// Definisi konstanta endpoint API MyTeam Backend (Sesuai API Contract v1.0.0)
 class ApiEndpoints {
-  // Auth (Modul 0)
+  // Auth (Modul 0 & Modul 1 OAuth)
   static const String login = '/auth/login';
   static const String register = '/auth/register';
+  static const String googleAuth = '/auth/google';
 
   // Profile & Data Riwayat Diri (Modul 1 - Fuadi)
   static const String profileDetail = '/profile/detail'; // + /{id_pengguna}
