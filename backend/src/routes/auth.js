@@ -172,7 +172,7 @@ router.post('/login', async (req, res) => {
     });
   } catch (error) {
     console.error('Error login:', error);
-    return res.status(500).json({ success: false, message: 'Terjadi kesalahan pada server.' });
+    return res.status(500).json({ success: false, message: error.message || 'Terjadi kesalahan pada server.' });
   }
 });
 

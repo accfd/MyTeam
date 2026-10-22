@@ -47,6 +47,24 @@ app.get('/api/v1', (req, res) => {
   });
 });
 
+app.get('/api/v1/health-db', async (req, res) => {
+  try {
+    const db = require('./src/config/db');
+    const [rows] = await db.query('SELECT 1 + 1 AS result');
+    res.json({
+      success: true,
+      message: 'Database TiDB Cloud terhubung dengan baik!',
+      result: rows[0].result
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: 'Gagal terhubung ke database',
+      error: err.message
+    });
+  }
+});
+
 // Registrasi Modul Endpoint Resmi
 app.use('/api/v1/auth', require('./src/routes/auth'));
 app.use('/api/v1/profile', require('./src/routes/profile'));
